@@ -1,10 +1,8 @@
 import jwt from 'jsonwebtoken';
 import { Response, NextFunction } from 'express';
 import { sendError } from '../utils/response.js';
-import constants from '../utils/constants.js';
+import { ERRORS } from '../utils/constants.js';
 import { AuthRequest } from '../types/index.js';
-
-const { ERRORS } = constants;
 
 // Verify JWT token middleware (same JWT_SECRET as Auth Service)
 export const authenticateToken = (req: AuthRequest, res: Response, next: NextFunction): void | Response => {

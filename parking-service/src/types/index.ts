@@ -1,4 +1,4 @@
-import { Request } from 'express';
+import { Request, Response, NextFunction } from 'express';
 
 // Extend Express Request to include user from JWT
 export interface AuthRequest extends Request {
@@ -6,7 +6,12 @@ export interface AuthRequest extends Request {
     userId: string;
     email: string;
   };
+  body: any;
+  params: any;
+  query: any;
 }
+
+export { Request, Response, NextFunction };
 
 // Booking creation data
 export interface BookingCreateData {

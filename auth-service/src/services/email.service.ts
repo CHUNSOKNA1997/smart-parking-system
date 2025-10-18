@@ -11,7 +11,7 @@ const transporter = nodemailer.createTransport({
 });
 
 // Send verification email
-const sendVerificationEmail = async (email, token) => {
+export const sendVerificationEmail = async (email: string, token: string): Promise<boolean> => {
 	try {
 		const verificationUrl = `${process.env.FRONTEND_URL}/verify-email?token=${token}`;
 
@@ -116,5 +116,3 @@ export const sendWelcomeEmail = async (email: string, firstName: string): Promis
 		return false;
 	}
 };
-
-export { sendVerificationEmail, sendPasswordResetEmail, sendWelcomeEmail };
