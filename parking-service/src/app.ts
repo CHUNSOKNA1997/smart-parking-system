@@ -29,15 +29,6 @@ app.use((req: Request, res: Response, next: NextFunction) => {
 	next();
 });
 
-// Health check endpoint
-app.get("/health", (req: Request, res: Response) => {
-	res.json({
-		service: "parking-service",
-		status: "OK",
-		timestamp: new Date().toISOString(),
-	});
-});
-
 // API v1 routes
 app.use("/api/v1/parking", parkingRoutes);
 app.use("/api/v1/bookings", bookingRoutes);

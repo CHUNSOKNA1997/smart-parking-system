@@ -11,7 +11,10 @@ const transporter = nodemailer.createTransport({
 });
 
 // Send verification email
-export const sendVerificationEmail = async (email: string, token: string): Promise<boolean> => {
+export const sendVerificationEmail = async (
+	email: string,
+	token: string
+): Promise<boolean> => {
 	try {
 		const verificationUrl = `${process.env.FRONTEND_URL}/verify-email?token=${token}`;
 
@@ -48,7 +51,10 @@ export const sendVerificationEmail = async (email: string, token: string): Promi
 };
 
 // Send password reset email
-export const sendPasswordResetEmail = async (email: string, token: string): Promise<boolean> => {
+export const sendPasswordResetEmail = async (
+	email: string,
+	token: string
+): Promise<boolean> => {
 	try {
 		const resetUrl = `${process.env.FRONTEND_URL}/reset-password?token=${token}`;
 
@@ -85,7 +91,10 @@ export const sendPasswordResetEmail = async (email: string, token: string): Prom
 };
 
 // Send welcome email (after verification)
-export const sendWelcomeEmail = async (email: string, firstName: string): Promise<boolean> => {
+export const sendWelcomeEmail = async (
+	email: string,
+	firstName: string
+): Promise<boolean> => {
 	try {
 		const mailOptions = {
 			from: process.env.EMAIL_FROM || process.env.EMAIL_USER,

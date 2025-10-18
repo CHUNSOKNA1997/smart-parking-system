@@ -20,7 +20,7 @@ router.post('/forgot-password', validate(emailSchema), AuthController.forgotPass
 router.post('/reset-password', validate(resetPasswordSchema), AuthController.resetPassword);
 
 // Protected routes
-router.get('/me', authenticateToken, AuthController.getMe);
+router.get('/user', authenticateToken, AuthController.getMe);
 
 // Verify token endpoint (for other microservices)
 router.post('/verify-token', AuthController.verifyToken);
