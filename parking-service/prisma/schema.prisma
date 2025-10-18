@@ -1,0 +1,98 @@
+// Prisma Schema for Smart Parking System
+// Parking Service - manages parking spots, bookings, transactions
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// Users table (shared from auth service)
+model User {
+  id                 String    @id @default(uuid()) @map("user_id") @db.Uuid
+  firstName          String    @map("first_name") @db.VarChar(50)
+  lastName           String    @map("last_name") @db.VarChar(50)
+  email              String    @unique @db.VarChar(100)
+  passwordHash       String    @map("password_hash") @db.VarChar(255)
+  phone              String?   @db.VarChar(20)
+  isVerified         Boolean   @default(false) @map("is_verified")
+  verificationToken  String?   @map("verification_token") @db.VarChar(255)
+  resetToken         String?   @map("reset_token") @db.VarChar(255)
+  resetTokenExpiry   DateTime? @map("reset_token_expiry")
+  createdAt          DateTime  @default(now()) @map("created_at")
+  updatedAt          DateTime  @updatedAt @map("updated_at")
+
+  bookings     Booking[]
+  transactions Transaction[]
+
+  @@index([email])
+  @@index([verificationToken])
+  @@index([resetToken])
+  @@map("users")
+}
+
+// Parking Spots table
+model ParkingSpot {
+  id           String    @id @map("spot_id") @db.VarChar(10)
+  level        Int
+  section      String    @db.VarChar(10)
+  spotType     String    @map("spot_type") @db.VarChar(20)
+  isAvailable  Boolean   @default(true) @map("is_available")
+  pricePerHour Decimal   @default(2.00) @map("price_per_hour") @db.Decimal(10, 2)
+  lastUpdated  DateTime  @default(now()) @map("last_updated")
+  createdAt    DateTime  @default(now()) @map("created_at")
+
+  bookings Booking[]
+
+  @@index([isAvailable])
+  @@index([spotType])
+  @@map("parking_spots")
+}
+
+// Bookings table
+model Booking {
+  id            String    @id @default(uuid()) @map("booking_id") @db.Uuid
+  userId        String    @map("user_id") @db.Uuid
+  spotId        String    @map("spot_id") @db.VarChar(10)
+  startTime     DateTime  @default(now()) @map("start_time")
+  endTime       DateTime? @map("end_time")
+  durationHours Decimal?  @map("duration_hours") @db.Decimal(4, 2)
+  totalPrice    Decimal?  @map("total_price") @db.Decimal(10, 2)
+  status        String    @default("reserved") @db.VarChar(20)
+  qrCode        String?   @map("qr_code") @db.Text
+  createdAt     DateTime  @default(now()) @map("created_at")
+  updatedAt     DateTime  @updatedAt @map("updated_at")
+
+  user         User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  spot         ParkingSpot   @relation(fields: [spotId], references: [id], onDelete: Cascade)
+  transactions Transaction[]
+
+  @@index([userId])
+  @@index([spotId])
+  @@index([status])
+  @@index([startTime, endTime])
+  @@map("bookings")
+}
+
+// Transactions table
+model Transaction {
+  id              String   @id @default(uuid()) @map("transaction_id") @db.Uuid
+  bookingId       String?  @map("booking_id") @db.Uuid
+  userId          String   @map("user_id") @db.Uuid
+  amount          Decimal  @db.Decimal(10, 2)
+  paymentMethod   String   @default("cash") @map("payment_method") @db.VarChar(50)
+  status          String   @default("completed") @db.VarChar(20)
+  description     String?  @db.Text
+  transactionDate DateTime @default(now()) @map("transaction_date")
+
+  user    User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  booking Booking? @relation(fields: [bookingId], references: [id], onDelete: SetNull)
+
+  @@index([userId])
+  @@index([bookingId])
+  @@index([transactionDate])
+  @@map("transactions")
+}
