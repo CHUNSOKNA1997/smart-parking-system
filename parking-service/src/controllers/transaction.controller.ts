@@ -1,6 +1,5 @@
-import TransactionModel from '../models/Transaction.model.js';
-import { sendSuccess, sendError } from '../utils/response.js';
-import logger from '../utils/logger.js';
+import TransactionModel from "../models/Transaction.model.js";
+import { sendSuccess, sendError } from "../utils/response.js";
 
 class TransactionController {
   // Get user transactions
@@ -11,13 +10,18 @@ class TransactionController {
 
       const transactions = await TransactionModel.findByUserId(userId, limit);
 
-      return sendSuccess(res, 200, 'Transactions retrieved successfully', { 
+      return sendSuccess(res, 200, "Transactions retrieved successfully", {
         transactions,
-        count: transactions.length
+        count: transactions.length,
       });
     } catch (error) {
-      logger.error('Get user transactions error:', error);
-      return sendError(res, 500, 'Failed to retrieve transactions', error.message);
+      logger.error("Get user transactions error:", error);
+      return sendError(
+        res,
+        500,
+        "Failed to retrieve transactions",
+        error.message
+      );
     }
   }
 
@@ -30,18 +34,25 @@ class TransactionController {
       const transaction = await TransactionModel.findById(transactionId);
 
       if (!transaction) {
-        return sendError(res, 404, 'Transaction not found');
+        return sendError(res, 404, "Transaction not found");
       }
 
       // Check if transaction belongs to user
       if (transaction.userId !== userId) {
-        return sendError(res, 403, 'Access denied');
+        return sendError(res, 403, "Access denied");
       }
 
-      return sendSuccess(res, 200, 'Transaction retrieved successfully', { transaction });
+      return sendSuccess(res, 200, "Transaction retrieved successfully", {
+        transaction,
+      });
     } catch (error) {
-      logger.error('Get transaction by ID error:', error);
-      return sendError(res, 500, 'Failed to retrieve transaction', error.message);
+      logger.error("Get transaction by ID error:", error);
+      return sendError(
+        res,
+        500,
+        "Failed to retrieve transaction",
+        error.message
+      );
     }
   }
 
@@ -52,10 +63,20 @@ class TransactionController {
 
       const summary = await TransactionModel.getUserSummary(userId);
 
-      return sendSuccess(res, 200, 'Transaction summary retrieved successfully', { summary });
+      return sendSuccess(
+        res,
+        200,
+        "Transaction summary retrieved successfully",
+        { summary }
+      );
     } catch (error) {
-      logger.error('Get user summary error:', error);
-      return sendError(res, 500, 'Failed to retrieve transaction summary', error.message);
+      logger.error("Get user summary error:", error);
+      return sendError(
+        res,
+        500,
+        "Failed to retrieve transaction summary",
+        error.message
+      );
     }
   }
 }

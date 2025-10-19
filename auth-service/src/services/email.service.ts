@@ -3,23 +3,23 @@ import logger from "../utils/logger.js";
 
 // Create transporter
 const transporter = nodemailer.createTransport({
-	service: process.env.EMAIL_SERVICE || "gmail",
-	auth: {
-		user: process.env.EMAIL_USER,
-		pass: process.env.EMAIL_PASSWORD,
-	},
+  service: process.env.EMAIL_SERVICE || "gmail",
+  auth: {
+    user: process.env.EMAIL_USER,
+    pass: process.env.EMAIL_PASSWORD,
+  },
 });
 
 // Send verification email
 const sendVerificationEmail = async (email, token) => {
-	try {
-		const verificationUrl = `${process.env.FRONTEND_URL}/verify-email?token=${token}`;
+  try {
+    const verificationUrl = `${process.env.FRONTEND_URL}/verify-email?token=${token}`;
 
-		const mailOptions = {
-			from: process.env.EMAIL_FROM || process.env.EMAIL_USER,
-			to: email,
-			subject: "Verify Your Email - Smart Parking",
-			html: `
+    const mailOptions = {
+      from: process.env.EMAIL_FROM || process.env.EMAIL_USER,
+      to: email,
+      subject: "Verify Your Email - Smart Parking",
+      html: `
         <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
           <h2 style="color: #333;">Welcome to Smart Parking!</h2>
           <p>Thank you for registering. Please verify your email address to complete your registration.</p>
@@ -36,27 +36,30 @@ const sendVerificationEmail = async (email, token) => {
           </p>
         </div>
       `,
-		};
+    };
 
-		await transporter.sendMail(mailOptions);
-		logger.info(`Verification email sent to: ${email}`);
-		return true;
-	} catch (error) {
-		logger.error("Error sending verification email:", error);
-		throw error;
-	}
+    await transporter.sendMail(mailOptions);
+    logger.info(`Verification email sent to: ${email}`);
+    return true;
+  } catch (error) {
+    logger.error("Error sending verification email:", error);
+    throw error;
+  }
 };
 
 // Send password reset email
-export const sendPasswordResetEmail = async (email: string, token: string): Promise<boolean> => {
-	try {
-		const resetUrl = `${process.env.FRONTEND_URL}/reset-password?token=${token}`;
+const sendPasswordResetEmail = async (
+  email: string,
+  token: string
+): Promise<boolean> => {
+  try {
+    const resetUrl = `${process.env.FRONTEND_URL}/reset-password?token=${token}`;
 
-		const mailOptions = {
-			from: process.env.EMAIL_FROM || process.env.EMAIL_USER,
-			to: email,
-			subject: "Reset Your Password - Smart Parking",
-			html: `
+    const mailOptions = {
+      from: process.env.EMAIL_FROM || process.env.EMAIL_USER,
+      to: email,
+      subject: "Reset Your Password - Smart Parking",
+      html: `
         <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
           <h2 style="color: #333;">Password Reset Request</h2>
           <p>You have requested to reset your password for your Smart Parking account.</p>
@@ -73,25 +76,28 @@ export const sendPasswordResetEmail = async (email: string, token: string): Prom
           </p>
         </div>
       `,
-		};
+    };
 
-		await transporter.sendMail(mailOptions);
-		logger.info(`Password reset email sent to: ${email}`);
-		return true;
-	} catch (error) {
-		logger.error("Error sending password reset email:", error);
-		throw error;
-	}
+    await transporter.sendMail(mailOptions);
+    logger.info(`Password reset email sent to: ${email}`);
+    return true;
+  } catch (error) {
+    logger.error("Error sending password reset email:", error);
+    throw error;
+  }
 };
 
 // Send welcome email (after verification)
-export const sendWelcomeEmail = async (email: string, firstName: string): Promise<boolean> => {
-	try {
-		const mailOptions = {
-			from: process.env.EMAIL_FROM || process.env.EMAIL_USER,
-			to: email,
-			subject: "Welcome to Smart Parking!",
-			html: `
+const sendWelcomeEmail = async (
+  email: string,
+  firstName: string
+): Promise<boolean> => {
+  try {
+    const mailOptions = {
+      from: process.env.EMAIL_FROM || process.env.EMAIL_USER,
+      to: email,
+      subject: "Welcome to Smart Parking!",
+      html: `
         <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
           <h2 style="color: #333;">Welcome, ${firstName}!</h2>
           <p>Your email has been verified successfully. You can now enjoy all features of Smart Parking.</p>
@@ -105,16 +111,16 @@ export const sendWelcomeEmail = async (email: string, firstName: string): Promis
           <p style="color: #666;">The Smart Parking Team</p>
         </div>
       `,
-		};
+    };
 
-		await transporter.sendMail(mailOptions);
-		logger.info(`Welcome email sent to: ${email}`);
-		return true;
-	} catch (error) {
-		logger.error("Error sending welcome email:", error);
-		// Don't throw error for welcome email
-		return false;
-	}
+    await transporter.sendMail(mailOptions);
+    logger.info(`Welcome email sent to: ${email}`);
+    return true;
+  } catch (error) {
+    logger.error("Error sending welcome email:", error);
+    // Don't throw error for welcome email
+    return false;
+  }
 };
 
 export { sendVerificationEmail, sendPasswordResetEmail, sendWelcomeEmail };

@@ -29,7 +29,7 @@ cd parking-service && npm run dev  # Port 3002
 ## 📊 Statistics
 
 - **TypeScript Files**: 41 files
-- **API Endpoints**: 25+ endpoints  
+- **API Endpoints**: 25+ endpoints
 - **Type Coverage**: 100%
 - **Lines of Code**: 6,000+ lines
 

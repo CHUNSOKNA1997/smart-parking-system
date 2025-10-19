@@ -14,26 +14,45 @@ Authentication microservice for Smart Parking System.
 ## Setup
 
 1. Install dependencies:
+
 ```bash
 npm install
 ```
 
 2. Copy environment file:
+
 ```bash
 cp .env.example .env
 ```
 
 3. Configure `.env`:
+
    - Set database credentials (Supabase)
    - Set JWT secret
    - Set Gmail SMTP credentials
 
 4. Run in development:
+
 ```bash
 npm run dev
 ```
 
-5. Run in production:
+5. Swagger document:
+
+```bash
+📄 API Documentation (Swagger)
+
+All endpoints are documented via Swagger. Access it interactively here:
+
+Swagger UI: http://localhost:3001/api-docs
+
+Swagger JSON: http://localhost:3001/swagger.json
+
+Use Swagger UI to explore endpoints, see request/response schemas, and test APIs directly.
+```
+
+6. Run in production:
+
 ```bash
 npm start
 ```
@@ -41,9 +60,11 @@ npm start
 ## API Endpoints
 
 ### POST /api/auth/register
+
 Register a new user
 
 **Request:**
+
 ```json
 {
   "firstName": "John",
@@ -55,9 +76,11 @@ Register a new user
 ```
 
 ### POST /api/auth/login
+
 Login user
 
 **Request:**
+
 ```json
 {
   "email": "john@example.com",
@@ -66,6 +89,7 @@ Login user
 ```
 
 **Response:**
+
 ```json
 {
   "success": true,
@@ -83,21 +107,27 @@ Login user
 ```
 
 ### GET /api/auth/verify-email/:token
+
 Verify email address
 
 ### POST /api/auth/resend-verification
+
 Resend verification email
 
 ### POST /api/auth/forgot-password
+
 Request password reset
 
 ### POST /api/auth/reset-password
+
 Reset password with token
 
 ### GET /api/auth/me (Protected)
+
 Get current user info
 
 ### POST /api/auth/verify-token
+
 Verify JWT token (for other microservices)
 
 ## Gmail Setup for Email

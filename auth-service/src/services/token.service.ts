@@ -1,16 +1,18 @@
-import jwt from 'jsonwebtoken';
-import { v4 as uuidv4 } from 'uuid';
+import { v4 as uuidv4 } from "uuid";
+import jwt, { SignOptions } from "jsonwebtoken";
 
-// Generate JWT access token
 export const generateAccessToken = (userId: string, email: string): string => {
-  const payload = {
-    userId,
-    email
+  if (!process.env.JWT_SECRET) {
+    throw new Error("JWT_SECRET not set in environment");
+  }
+
+  const payload = { userId, email };
+
+  const options: SignOptions = {
+    expiresIn: process.env.JWT_EXPIRE || "7d",
   };
 
-  return jwt.sign(payload, process.env.JWT_SECRET as string, {
-    expiresIn: process.env.JWT_EXPIRE || '7d'
-  });
+  return jwt.sign(payload, process.env.JWT_SECRET, options);
 };
 
 // Generate verification token (UUID)

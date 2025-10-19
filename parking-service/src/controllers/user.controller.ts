@@ -1,6 +1,5 @@
-import UserModel from '../models/User.model.js';
-import { sendSuccess, sendError } from '../utils/response.js';
-import logger from '../utils/logger.js';
+import UserModel from "../models/User.model.js";
+import { sendSuccess, sendError } from "../utils/response.js";
 
 class UserController {
   // Get user profile
@@ -11,13 +10,13 @@ class UserController {
       const user = await UserModel.findById(userId);
 
       if (!user) {
-        return sendError(res, 404, 'User not found');
+        return sendError(res, 404, "User not found");
       }
 
-      return sendSuccess(res, 200, 'Profile retrieved successfully', { user });
+      return sendSuccess(res, 200, "Profile retrieved successfully", { user });
     } catch (error) {
-      logger.error('Get profile error:', error);
-      return sendError(res, 500, 'Failed to retrieve profile', error.message);
+      logger.error("Get profile error:", error);
+      return sendError(res, 500, "Failed to retrieve profile", error.message);
     }
   }
 
@@ -31,10 +30,10 @@ class UserController {
 
       logger.info(`Profile updated for user: ${userId}`);
 
-      return sendSuccess(res, 200, 'Profile updated successfully', { user });
+      return sendSuccess(res, 200, "Profile updated successfully", { user });
     } catch (error) {
-      logger.error('Update profile error:', error);
-      return sendError(res, 500, 'Failed to update profile', error.message);
+      logger.error("Update profile error:", error);
+      return sendError(res, 500, "Failed to update profile", error.message);
     }
   }
 }
