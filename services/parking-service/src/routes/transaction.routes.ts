@@ -5,12 +5,17 @@ import { authenticateToken } from "../middleware/auth.middleware.js";
 const router = express.Router();
 
 // All transaction routes require authentication
+// Get current user's transactions
 router.get(
-	"/user",
+	"/me",
 	authenticateToken,
 	TransactionController.getUserTransactions
 );
-router.get("/summary", authenticateToken, TransactionController.getUserSummary);
+
+// Get current user's transaction summary
+router.get("/me/summary", authenticateToken, TransactionController.getUserSummary);
+
+// Get specific transaction by ID
 router.get(
 	"/:transactionId",
 	authenticateToken,

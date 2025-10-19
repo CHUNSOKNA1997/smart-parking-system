@@ -13,20 +13,26 @@ import {
 
 const router = express.Router();
 
-// Public routes
+// Authentication routes
 router.post('/register', validate(registerSchema), AuthController.register);
 router.post('/login', validate(loginSchema), AuthController.login);
-router.post('/verify-otp', validate(otpVerificationSchema), AuthController.verifyOTP);
-router.post('/resend-verification', validate(emailSchema), AuthController.resendVerification);
-router.post('/forgot-password', validate(emailSchema), AuthController.forgotPassword);
-router.post('/forgot-password/verify-otp', validate(verifyResetOtpSchema), AuthController.verifyResetOTP);
-router.post('/reset-password', validate(resetPasswordSchema), AuthController.resetPassword);
 
-// Protected routes
-router.get('/user', authenticateToken, AuthController.getMe);
+// Email verification routes
+router.post('/email/verify', validate(otpVerificationSchema), AuthController.verifyOTP);
+router.post('/email/verify/resend', validate(emailSchema), AuthController.resendVerification);
 
-// For other microservices
-router.post('/verify-token', AuthController.verifyToken);
+// Password reset routes
+router.post('/password/reset/request', validate(emailSchema), AuthController.forgotPassword);
+router.post('/password/reset/verify', validate(verifyResetOtpSchema), AuthController.verifyResetOTP);
+router.post('/password/reset', validate(resetPasswordSchema), AuthController.resetPassword);
+
+// Current user route (protected)
+router.get('/me', authenticateToken, AuthController.getMe);
+
+// Token verification (for microservices)
+router.post('/token/verify', AuthController.verifyToken);
+
+// User by ID (for microservices)
 router.get('/users/:userId', AuthController.getUserById);
 
 export default router;

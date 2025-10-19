@@ -78,36 +78,6 @@ class UserModel {
 
 	// Find user by email and OTP
 	static async findByOTP(email: string, otp: string): Promise<User | null> {
-		const now = new Date();
-		console.log(
-			`🔍 Searching for user with email: ${email}, OTP: ${otp}, Current time: ${now.toISOString()}`
-		);
-
-		// First, let's check if user exists and see their OTP data
-		const userCheck = await prisma.user.findUnique({
-			where: { email },
-			select: {
-				email: true,
-				verificationOtp: true,
-				otpExpiry: true,
-				isVerified: true,
-			},
-		});
-
-		if (userCheck) {
-			console.log(`📋 User found:`, {
-				email: userCheck.email,
-				storedOtp: userCheck.verificationOtp,
-				otpExpiry: userCheck.otpExpiry?.toISOString(),
-				isExpired: userCheck.otpExpiry
-					? userCheck.otpExpiry <= now
-					: "No expiry set",
-				isVerified: userCheck.isVerified,
-			});
-		} else {
-			console.log(`❌ No user found with email: ${email}`);
-		}
-
 		return await prisma.user.findFirst({
 			where: {
 				email,

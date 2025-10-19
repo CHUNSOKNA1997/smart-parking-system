@@ -189,10 +189,10 @@ class AuthController {
 
 	/**
 	 * @swagger
-	 * /api/v1/auth/verify-otp:
+	 * /api/v1/auth/email/verify:
 	 *   post:
 	 *     summary: Verify email with OTP
-	 *     tags: [Auth]
+	 *     tags: [Auth - Email Verification]
 	 *     requestBody:
 	 *       required: true
 	 *       content:
@@ -214,12 +214,9 @@ class AuthController {
 		try {
 			const { email, otp } = req.body;
 
-			console.log(`🔍 Verifying OTP for email: ${email}, OTP: ${otp}`);
-
 			// Find user by email and OTP
 			const user = await UserModel.findByOTP(email, otp);
 			if (!user) {
-				console.log(`❌ No user found with email: ${email} and OTP: ${otp}`);
 				return sendError(res, 400, "Invalid or expired OTP");
 			}
 
@@ -249,10 +246,10 @@ class AuthController {
 
 	/**
 	 * @swagger
-	 * /api/v1/auth/resend-verification:
+	 * /api/v1/auth/email/verify/resend:
 	 *   post:
-	 *     summary: Resend verification email
-	 *     tags: [Auth]
+	 *     summary: Resend email verification OTP
+	 *     tags: [Auth - Email Verification]
 	 *     requestBody:
 	 *       required: true
 	 *       content:
@@ -307,10 +304,10 @@ class AuthController {
 
 	/**
 	 * @swagger
-	 * /api/v1/auth/forgot-password:
+	 * /api/v1/auth/password/reset/request:
 	 *   post:
-	 *     summary: Request password reset
-	 *     tags: [Auth]
+	 *     summary: Request password reset OTP
+	 *     tags: [Auth - Password Reset]
 	 *     requestBody:
 	 *       required: true
 	 *       content:
@@ -357,10 +354,10 @@ class AuthController {
 
 	/**
 	 * @swagger
-	 * /api/v1/auth/forgot-password/verify-otp:
+	 * /api/v1/auth/password/reset/verify:
 	 *   post:
 	 *     summary: Verify password reset OTP
-	 *     tags: [Auth]
+	 *     tags: [Auth - Password Reset]
 	 *     requestBody:
 	 *       required: true
 	 *       content:
@@ -382,16 +379,11 @@ class AuthController {
 		try {
 			const { email, otp } = req.body;
 
-			console.log(`🔍 Verifying reset OTP for email: ${email}, OTP: ${otp}`);
-
 			// Find user by reset OTP
 			const user = await UserModel.findByResetOTP(email, otp);
 			if (!user) {
-				console.log(`❌ No user found with email: ${email} and reset OTP: ${otp}`);
 				return sendError(res, 400, "Invalid or expired OTP");
 			}
-
-			console.log(`✅ Reset OTP verified for: ${user.email}`);
 
 			return sendSuccess(res, 200, "OTP verified successfully. You can now reset your password.", {
 				email: user.email,
@@ -404,10 +396,10 @@ class AuthController {
 
 	/**
 	 * @swagger
-	 * /api/v1/auth/reset-password:
+	 * /api/v1/auth/password/reset:
 	 *   post:
 	 *     summary: Reset password (after OTP verification)
-	 *     tags: [Auth]
+	 *     tags: [Auth - Password Reset]
 	 *     requestBody:
 	 *       required: true
 	 *       content:
@@ -451,8 +443,6 @@ class AuthController {
 			// Update password and clear reset OTP
 			await UserModel.updatePassword(user.id, passwordHash);
 
-			console.log(`✅ Password reset for: ${user.email}`);
-
 			return sendSuccess(res, 200, SUCCESS.PASSWORD_RESET);
 		} catch (error) {
 			console.error("❌ Reset password error:", error);
@@ -462,10 +452,10 @@ class AuthController {
 
 	/**
 	 * @swagger
-	 * /api/v1/auth/user:
+	 * /api/v1/auth/me:
 	 *   get:
 	 *     summary: Get current logged-in user
-	 *     tags: [Auth]
+	 *     tags: [Auth - User]
 	 *     security:
 	 *       - bearerAuth: []
 	 *     responses:
@@ -494,10 +484,10 @@ class AuthController {
 
 	/**
 	 * @swagger
-	 * /api/v1/auth/verify-token:
+	 * /api/v1/auth/token/verify:
 	 *   post:
 	 *     summary: Verify JWT token for microservices
-	 *     tags: [Auth]
+	 *     tags: [Auth - Microservices]
 	 *     requestBody:
 	 *       required: true
 	 *       content:
@@ -545,7 +535,7 @@ class AuthController {
 	 * /api/v1/auth/users/{userId}:
 	 *   get:
 	 *     summary: Get user by ID (for microservices)
-	 *     tags: [Auth]
+	 *     tags: [Auth - Microservices]
 	 *     parameters:
 	 *       - in: path
 	 *         name: userId

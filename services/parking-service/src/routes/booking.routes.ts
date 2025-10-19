@@ -10,30 +10,29 @@ import {
 const router = express.Router();
 
 // All booking routes require authentication
+// Create new booking
 router.post(
 	"/",
 	authenticateToken,
 	validate(createBookingSchema),
 	BookingController.createBooking
 );
-router.get("/user", authenticateToken, BookingController.getUserBookings);
-router.get("/active", authenticateToken, BookingController.getActiveBooking);
+
+// Get current user's bookings
+router.get("/me", authenticateToken, BookingController.getUserBookings);
+
+// Get current user's active booking
+router.get("/me/active", authenticateToken, BookingController.getActiveBooking);
+
+// Get specific booking by ID
 router.get("/:bookingId", authenticateToken, BookingController.getBookingById);
+
+// Update booking (including status changes)
 router.patch(
-	"/:bookingId/status",
+	"/:bookingId",
 	authenticateToken,
 	validate(updateBookingStatusSchema),
 	BookingController.updateBookingStatus
-);
-router.post(
-	"/:bookingId/cancel",
-	authenticateToken,
-	BookingController.cancelBooking
-);
-router.post(
-	"/:bookingId/complete",
-	authenticateToken,
-	BookingController.completeBooking
 );
 
 export default router;
