@@ -1,4 +1,4 @@
-// aggregator/app.ts
+// aggregator/app.ts - API Gateway for Smart Parking System
 import express, { Request, Response, NextFunction } from "express";
 import swaggerUi from "swagger-ui-express";
 import axios from "axios";
@@ -7,6 +7,10 @@ import _ from "lodash";
 const app = express();
 const PORT = 3000;
 
+// Service URLs
+const AUTH_SERVICE_URL = process.env.AUTH_SERVICE_URL || "http://localhost:3001";
+const PARKING_SERVICE_URL = process.env.PARKING_SERVICE_URL || "http://localhost:3002";
+
 interface SwaggerSpec {
   openapi: string;
   info: { title: string; version: string };
@@ -14,17 +18,91 @@ interface SwaggerSpec {
   components?: Record<string, any>;
 }
 
+// Middleware
+app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
+
+// Proxy helper function
+const proxyRequest = async (
+  req: Request,
+  res: Response,
+  targetUrl: string
+) => {
+  try {
+    const response = await axios({
+      method: req.method,
+      url: targetUrl,
+      data: req.body,
+      headers: {
+        ...req.headers,
+        host: new URL(targetUrl).host,
+      },
+      params: req.query,
+    });
+
+    res.status(response.status).json(response.data);
+  } catch (error: any) {
+    if (error.response) {
+      res.status(error.response.status).json(error.response.data);
+    } else {
+      res.status(503).json({
+        success: false,
+        message: "Service unavailable",
+        error: error.message,
+      });
+    }
+  }
+};
+
+// Health check
+app.get("/health", (req: Request, res: Response) => {
+  res.json({ status: "ok", service: "api-gateway" });
+});
+
+// Route authentication requests to auth-service
+app.all("/api/v1/auth/*", async (req: Request, res: Response) => {
+  const targetUrl = `${AUTH_SERVICE_URL}${req.path}`;
+  await proxyRequest(req, res, targetUrl);
+});
+
+// Route user requests to auth-service
+app.all("/api/v1/users/*", async (req: Request, res: Response) => {
+  const targetUrl = `${AUTH_SERVICE_URL}${req.path}`;
+  await proxyRequest(req, res, targetUrl);
+});
+
+// Route parking requests to parking-service
+app.all("/api/v1/parking/*", async (req: Request, res: Response) => {
+  const targetUrl = `${PARKING_SERVICE_URL}${req.path}`;
+  await proxyRequest(req, res, targetUrl);
+});
+
+// Route booking requests to parking-service
+app.all("/api/v1/bookings/*", async (req: Request, res: Response) => {
+  const targetUrl = `${PARKING_SERVICE_URL}${req.path}`;
+  await proxyRequest(req, res, targetUrl);
+});
+
+// Route transaction requests to parking-service
+app.all("/api/v1/transactions/*", async (req: Request, res: Response) => {
+  const targetUrl = `${PARKING_SERVICE_URL}${req.path}`;
+  await proxyRequest(req, res, targetUrl);
+});
+
 // Endpoint to merge Swagger JSON from microservices
 app.get("/swagger.json", async (req: Request, res: Response) => {
   try {
     const [service1, service2] = await Promise.all([
-      axios.get<SwaggerSpec>("http://localhost:3001/swagger.json"),
-      axios.get<SwaggerSpec>("http://localhost:3002/swagger.json"),
+      axios.get<SwaggerSpec>(`${AUTH_SERVICE_URL}/swagger.json`),
+      axios.get<SwaggerSpec>(`${PARKING_SERVICE_URL}/swagger.json`),
     ]);
 
     const mergedSwagger: SwaggerSpec = {
       openapi: "3.0.0",
-      info: { title: "Centralized API", version: "1.0.0" },
+      info: {
+        title: "Smart Parking System API",
+        version: "1.0.0",
+      },
       paths: { ...service1.data.paths, ...service2.data.paths },
       components: _.merge(
         {},
@@ -58,5 +136,8 @@ app.use(
 );
 
 app.listen(PORT, () => {
-  console.log(`Central Swagger running on http://localhost:${PORT}/api-docs`);
+  console.log(`🚀 API Gateway running on http://localhost:${PORT}`);
+  console.log(`📚 API Documentation: http://localhost:${PORT}/api-docs`);
+  console.log(`🔗 Auth Service: ${AUTH_SERVICE_URL}`);
+  console.log(`🔗 Parking Service: ${PARKING_SERVICE_URL}`);
 });
