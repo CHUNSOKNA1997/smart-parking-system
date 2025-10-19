@@ -47,8 +47,6 @@ class AuthController {
 	 *                 type: string
 	 *               password:
 	 *                 type: string
-	 *               phone:
-	 *                 type: string
 	 *     responses:
 	 *       201:
 	 *         description: User registered successfully
@@ -57,7 +55,7 @@ class AuthController {
 	 */
 	static async register(req: Request, res: Response): Promise<Response> {
 		try {
-			const { firstName, lastName, email, password, phone } = req.body;
+			const { firstName, lastName, email, password } = req.body;
 
 			// Check if email already exists
 			const existingUser = await UserModel.findByEmail(email);
@@ -78,14 +76,16 @@ class AuthController {
 				email,
 				passwordHash,
 				verificationToken,
-				phone,
 			});
 
 			// Send verification email
 			try {
 				await sendVerificationEmail(email, verificationToken);
 			} catch (emailError) {
-				console.error("❌ Failed to send verification email:", emailError);
+				console.error(
+					"❌ Failed to send verification email:",
+					emailError
+				);
 				// Continue even if email fails
 			}
 
@@ -178,7 +178,6 @@ class AuthController {
 					firstName: user.firstName,
 					lastName: user.lastName,
 					email: user.email,
-					phone: user.phone,
 				},
 			});
 		} catch (error) {
@@ -501,7 +500,9 @@ class AuthController {
 				return sendError(res, 404, ERRORS.USER_NOT_FOUND);
 			}
 
-			return sendSuccess(res, 200, "User retrieved successfully", { user });
+			return sendSuccess(res, 200, "User retrieved successfully", {
+				user,
+			});
 		} catch (error) {
 			console.error("❌ Get user by ID error:", error);
 			return sendError(res, 500, ERRORS.SERVER_ERROR, error.message);

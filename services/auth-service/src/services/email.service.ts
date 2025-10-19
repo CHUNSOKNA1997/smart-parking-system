@@ -2,11 +2,11 @@ import nodemailer from "nodemailer";
 
 // Create transporter
 const transporter = nodemailer.createTransport({
-  service: process.env.EMAIL_SERVICE || "gmail",
-  auth: {
-    user: process.env.EMAIL_USER,
-    pass: process.env.EMAIL_PASSWORD,
-  },
+	service: process.env.EMAIL_SERVICE || "gmail",
+	auth: {
+		user: process.env.EMAIL_USER,
+		pass: process.env.EMAIL_PASSWORD,
+	},
 });
 
 // Send verification email
@@ -17,11 +17,11 @@ export const sendVerificationEmail = async (
 	try {
 		const verificationUrl = `${process.env.FRONTEND_URL}/verify-email?token=${token}`;
 
-    const mailOptions = {
-      from: process.env.EMAIL_FROM || process.env.EMAIL_USER,
-      to: email,
-      subject: "Verify Your Email - Smart Parking",
-      html: `
+		const mailOptions = {
+			from: process.env.EMAIL_FROM || process.env.EMAIL_USER,
+			to: email,
+			subject: "Verify Your Email - Smart Parking",
+			html: `
         <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
           <h2 style="color: #333;">Welcome to Smart Parking!</h2>
           <p>Thank you for registering. Please verify your email address to complete your registration.</p>
@@ -38,15 +38,15 @@ export const sendVerificationEmail = async (
           </p>
         </div>
       `,
-    };
+		};
 
-    await transporter.sendMail(mailOptions);
-    console.log(`✉️  Verification email sent to: ${email}`);
-    return true;
-  } catch (error) {
-    console.error("❌ Error sending verification email:", error);
-    throw error;
-  }
+		await transporter.sendMail(mailOptions);
+		console.log(`✉️  Verification email sent to: ${email}`);
+		return true;
+	} catch (error) {
+		console.error("❌ Error sending verification email:", error);
+		throw error;
+	}
 };
 
 // Send password reset email
@@ -57,11 +57,11 @@ export const sendPasswordResetEmail = async (
 	try {
 		const resetUrl = `${process.env.FRONTEND_URL}/reset-password?token=${token}`;
 
-    const mailOptions = {
-      from: process.env.EMAIL_FROM || process.env.EMAIL_USER,
-      to: email,
-      subject: "Reset Your Password - Smart Parking",
-      html: `
+		const mailOptions = {
+			from: process.env.EMAIL_FROM || process.env.EMAIL_USER,
+			to: email,
+			subject: "Reset Your Password - Smart Parking",
+			html: `
         <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
           <h2 style="color: #333;">Password Reset Request</h2>
           <p>You have requested to reset your password for your Smart Parking account.</p>
@@ -78,15 +78,15 @@ export const sendPasswordResetEmail = async (
           </p>
         </div>
       `,
-    };
+		};
 
-    await transporter.sendMail(mailOptions);
-    console.log(`✉️  Password reset email sent to: ${email}`);
-    return true;
-  } catch (error) {
-    console.error("❌ Error sending password reset email:", error);
-    throw error;
-  }
+		await transporter.sendMail(mailOptions);
+		console.log(`✉️  Password reset email sent to: ${email}`);
+		return true;
+	} catch (error) {
+		console.error("❌ Error sending password reset email:", error);
+		throw error;
+	}
 };
 
 // Send welcome email (after verification)
@@ -113,14 +113,14 @@ export const sendWelcomeEmail = async (
           <p style="color: #666;">The Smart Parking Team</p>
         </div>
       `,
-    };
+		};
 
-    await transporter.sendMail(mailOptions);
-    console.log(`✉️  Welcome email sent to: ${email}`);
-    return true;
-  } catch (error) {
-    console.error("❌ Error sending welcome email:", error);
-    // Don't throw error for welcome email
-    return false;
-  }
+		await transporter.sendMail(mailOptions);
+		console.log(`✉️  Welcome email sent to: ${email}`);
+		return true;
+	} catch (error) {
+		console.error("❌ Error sending welcome email:", error);
+		// Don't throw error for welcome email
+		return false;
+	}
 };

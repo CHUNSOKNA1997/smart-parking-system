@@ -16,7 +16,6 @@ export interface RegisterData {
 	lastName: string;
 	email: string;
 	password: string;
-	phone?: string;
 }
 
 // User creation data for model
@@ -26,14 +25,12 @@ export interface UserCreateData {
 	email: string;
 	passwordHash: string;
 	verificationToken: string;
-	phone?: string | null;
 }
 
 // User update data
 export interface UserUpdateData {
 	firstName?: string;
 	lastName?: string;
-	phone?: string;
 }
 
 // Email service types

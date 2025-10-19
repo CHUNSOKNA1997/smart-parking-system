@@ -22,7 +22,6 @@ class UserModel {
       email,
       passwordHash,
       verificationToken,
-      phone,
     } = userData;
 
     const user = await prisma.user.create({
@@ -32,14 +31,12 @@ class UserModel {
         email,
         passwordHash,
         verificationToken,
-        phone: phone || null,
       },
       select: {
         id: true,
         firstName: true,
         lastName: true,
         email: true,
-        phone: true,
         isVerified: true,
         createdAt: true,
       },
@@ -69,7 +66,6 @@ class UserModel {
         firstName: true,
         lastName: true,
         email: true,
-        phone: true,
         isVerified: true,
         createdAt: true,
         updatedAt: true,
@@ -159,21 +155,19 @@ class UserModel {
 
   // Update user profile
   static async updateProfile(userId: string, updates: UserUpdateData) {
-    const { firstName, lastName, phone } = updates;
+    const { firstName, lastName } = updates;
 
     return await prisma.user.update({
       where: { id: userId },
       data: {
         ...(firstName && { firstName }),
         ...(lastName && { lastName }),
-        ...(phone && { phone }),
       },
       select: {
         id: true,
         firstName: true,
         lastName: true,
         email: true,
-        phone: true,
         updatedAt: true,
       },
     });

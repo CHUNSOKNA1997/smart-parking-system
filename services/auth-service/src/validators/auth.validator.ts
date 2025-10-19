@@ -39,14 +39,6 @@ const registerSchema = Joi.object({
     .messages({
       'string.empty': 'Password is required',
       'string.min': `Password must be at least ${PASSWORD_MIN_LENGTH} characters`
-    }),
-
-  phone: Joi.string()
-    .pattern(/^[0-9+\-\s()]+$/)
-    .optional()
-    .allow('')
-    .messages({
-      'string.pattern.base': 'Phone number must contain only digits and valid characters'
     })
 });
 
