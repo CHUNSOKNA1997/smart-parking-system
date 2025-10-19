@@ -4,14 +4,13 @@ import { Request, Response } from "express";
 import UserModel from "../models/User.model.js";
 import {
 	generateAccessToken,
-	generateVerificationToken,
-	generateResetToken,
 } from "../services/token.service.js";
 import {
-	sendVerificationEmail,
-	sendPasswordResetEmail,
+	sendVerificationOTP,
+	sendPasswordResetOTP,
 	sendWelcomeEmail,
 } from "../services/email.service.js";
+import { generateOTP, getOTPExpiry, getResetOTPExpiry } from "../utils/otp.js";
 import { sendSuccess, sendError } from "../utils/response.js";
 import constants from "../utils/constants.js";
 import { AuthRequest } from "../types/index.js";
@@ -66,8 +65,9 @@ class AuthController {
 			// Hash password
 			const passwordHash = await bcrypt.hash(password, 10);
 
-			// Generate verification token
-			const verificationToken = generateVerificationToken();
+			// Generate OTP
+			const verificationOtp = generateOTP();
+			const otpExpiry = getOTPExpiry();
 
 			// Create user
 			const user = await UserModel.create({
@@ -75,15 +75,16 @@ class AuthController {
 				lastName,
 				email,
 				passwordHash,
-				verificationToken,
+				verificationOtp,
+				otpExpiry,
 			});
 
-			// Send verification email
+			// Send verification OTP email
 			try {
-				await sendVerificationEmail(email, verificationToken);
+				await sendVerificationOTP(email, verificationOtp);
 			} catch (emailError) {
 				console.error(
-					"❌ Failed to send verification email:",
+					"❌ Failed to send verification OTP:",
 					emailError
 				);
 				// Continue even if email fails
@@ -188,31 +189,35 @@ class AuthController {
 
 	/**
 	 * @swagger
-	 * /api/v1/auth/verify-email/{token}:
-	 *   get:
-	 *     summary: Verify email using token
+	 * /api/v1/auth/verify-otp:
+	 *   post:
+	 *     summary: Verify email with OTP
 	 *     tags: [Auth]
-	 *     parameters:
-	 *       - in: path
-	 *         name: token
-	 *         schema:
-	 *           type: string
-	 *         required: true
-	 *         description: Verification token
+	 *     requestBody:
+	 *       required: true
+	 *       content:
+	 *         application/json:
+	 *           schema:
+	 *             type: object
+	 *             properties:
+	 *               email:
+	 *                 type: string
+	 *               otp:
+	 *                 type: string
 	 *     responses:
 	 *       200:
 	 *         description: Email verified
 	 *       400:
-	 *         description: Invalid token
+	 *         description: Invalid or expired OTP
 	 */
-	static async verifyEmail(req: Request, res: Response): Promise<Response> {
+	static async verifyOTP(req: Request, res: Response): Promise<Response> {
 		try {
-			const { token } = req.params;
+			const { email, otp } = req.body;
 
-			// Find user by verification token
-			const user = await UserModel.findByVerificationToken(token);
+			// Find user by email and OTP
+			const user = await UserModel.findByOTP(email, otp);
 			if (!user) {
-				return sendError(res, 400, ERRORS.INVALID_TOKEN);
+				return sendError(res, 400, "Invalid or expired OTP");
 			}
 
 			// Check if already verified
@@ -234,7 +239,7 @@ class AuthController {
 
 			return sendSuccess(res, 200, SUCCESS.EMAIL_VERIFIED);
 		} catch (error) {
-			console.error("❌ Email verification error:", error);
+			console.error("❌ OTP verification error:", error);
 			return sendError(res, 500, ERRORS.SERVER_ERROR, error.message);
 		}
 	}
@@ -280,14 +285,15 @@ class AuthController {
 				return sendError(res, 400, "Email already verified");
 			}
 
-			// Generate new verification token
-			const verificationToken = generateVerificationToken();
-			await UserModel.updateVerificationToken(user.id, verificationToken);
+			// Generate new OTP
+			const verificationOtp = generateOTP();
+			const otpExpiry = getOTPExpiry();
+			await UserModel.updateVerificationOTP(user.id, verificationOtp, otpExpiry);
 
-			// Send verification email
-			await sendVerificationEmail(email, verificationToken);
+			// Send verification OTP email
+			await sendVerificationOTP(email, verificationOtp);
 
-			console.log(`✅ Verification email resent to: ${email}`);
+			console.log(`✅ Verification OTP resent to: ${email}`);
 
 			return sendSuccess(res, 200, SUCCESS.VERIFICATION_SENT);
 		} catch (error) {
@@ -329,15 +335,15 @@ class AuthController {
 				return sendSuccess(res, 200, SUCCESS.PASSWORD_RESET_SENT);
 			}
 
-			// Generate reset token
-			const resetToken = generateResetToken();
-			const expiry = new Date(Date.now() + 60 * 60 * 1000); // 1 hour from now
+			// Generate reset OTP
+			const resetOtp = generateOTP();
+			const resetOtpExpiry = getResetOTPExpiry();
 
-			// Save reset token
-			await UserModel.setResetToken(user.id, resetToken, expiry);
+			// Save reset OTP
+			await UserModel.setResetOTP(user.id, resetOtp, resetOtpExpiry);
 
-			// Send reset email
-			await sendPasswordResetEmail(email, resetToken);
+			// Send reset OTP email
+			await sendPasswordResetOTP(email, resetOtp);
 
 			return sendSuccess(res, 200, SUCCESS.PASSWORD_RESET_SENT);
 		} catch (error) {
@@ -350,7 +356,7 @@ class AuthController {
 	 * @swagger
 	 * /api/v1/auth/reset-password:
 	 *   post:
-	 *     summary: Reset password
+	 *     summary: Reset password with OTP
 	 *     tags: [Auth]
 	 *     requestBody:
 	 *       required: true
@@ -359,7 +365,9 @@ class AuthController {
 	 *           schema:
 	 *             type: object
 	 *             properties:
-	 *               token:
+	 *               email:
+	 *                 type: string
+	 *               otp:
 	 *                 type: string
 	 *               newPassword:
 	 *                 type: string
@@ -367,16 +375,16 @@ class AuthController {
 	 *       200:
 	 *         description: Password reset successfully
 	 *       400:
-	 *         description: Invalid token
+	 *         description: Invalid or expired OTP
 	 */
 	static async resetPassword(req: Request, res: Response): Promise<Response> {
 		try {
-			const { token, newPassword } = req.body;
+			const { email, otp, newPassword } = req.body;
 
-			// Find user by reset token
-			const user = await UserModel.findByResetToken(token);
+			// Find user by reset OTP
+			const user = await UserModel.findByResetOTP(email, otp);
 			if (!user) {
-				return sendError(res, 400, ERRORS.INVALID_TOKEN);
+				return sendError(res, 400, "Invalid or expired OTP");
 			}
 
 			// Hash new password

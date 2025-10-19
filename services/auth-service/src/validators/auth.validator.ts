@@ -72,10 +72,22 @@ const emailSchema = Joi.object({
 
 // Reset password validation schema
 const resetPasswordSchema = Joi.object({
-  token: Joi.string()
+  email: Joi.string()
+    .email()
     .required()
     .messages({
-      'string.empty': 'Reset token is required'
+      'string.empty': 'Email is required',
+      'string.email': 'Email must be a valid email address'
+    }),
+
+  otp: Joi.string()
+    .length(6)
+    .pattern(/^[0-9]+$/)
+    .required()
+    .messages({
+      'string.empty': 'OTP is required',
+      'string.length': 'OTP must be 6 digits',
+      'string.pattern.base': 'OTP must contain only numbers'
     }),
 
   newPassword: Joi.string()
@@ -87,9 +99,31 @@ const resetPasswordSchema = Joi.object({
     })
 });
 
+// OTP verification schema
+const otpVerificationSchema = Joi.object({
+  email: Joi.string()
+    .email()
+    .required()
+    .messages({
+      'string.empty': 'Email is required',
+      'string.email': 'Email must be a valid email address'
+    }),
+
+  otp: Joi.string()
+    .length(6)
+    .pattern(/^[0-9]+$/)
+    .required()
+    .messages({
+      'string.empty': 'OTP is required',
+      'string.length': 'OTP must be 6 digits',
+      'string.pattern.base': 'OTP must contain only numbers'
+    })
+});
+
 export {
   registerSchema,
   loginSchema,
   emailSchema,
-  resetPasswordSchema
+  resetPasswordSchema,
+  otpVerificationSchema
 };

@@ -1,5 +1,6 @@
 import { Request } from "express";
 
+// Type definitions for auth service
 // Extend Express Request to include user from JWT
 export interface AuthRequest extends Request {
 	user?: {
@@ -18,13 +19,14 @@ export interface RegisterData {
 	password: string;
 }
 
-// User creation data for model
+// User creation data for model (OTP-based verification)
 export interface UserCreateData {
 	firstName: string;
 	lastName: string;
 	email: string;
 	passwordHash: string;
-	verificationToken: string;
+	verificationOtp: string;
+	otpExpiry: Date;
 }
 
 // User update data

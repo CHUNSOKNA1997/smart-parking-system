@@ -1,5 +1,6 @@
 import nodemailer from "nodemailer";
 
+// Email service for sending OTP and notifications
 // Create transporter
 const transporter = nodemailer.createTransport({
 	service: process.env.EMAIL_SERVICE || "gmail",
@@ -9,82 +10,71 @@ const transporter = nodemailer.createTransport({
 	},
 });
 
-// Send verification email
-export const sendVerificationEmail = async (
+// Send verification OTP email
+export const sendVerificationOTP = async (
 	email: string,
-	token: string
+	otp: string
 ): Promise<boolean> => {
 	try {
-		const verificationUrl = `${process.env.FRONTEND_URL}/verify-email?token=${token}`;
-
 		const mailOptions = {
 			from: process.env.EMAIL_FROM || process.env.EMAIL_USER,
 			to: email,
-			subject: "Verify Your Email - Smart Parking",
+			subject: "Your Verification Code - Smart Parking",
 			html: `
         <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
           <h2 style="color: #333;">Welcome to Smart Parking!</h2>
-          <p>Thank you for registering. Please verify your email address to complete your registration.</p>
-          <p>Click the button below to verify your email:</p>
-          <a href="${verificationUrl}" 
-             style="display: inline-block; padding: 12px 24px; background-color: #4CAF50; 
-                    color: white; text-decoration: none; border-radius: 4px; margin: 20px 0;">
-            Verify Email
-          </a>
-          <p>Or copy and paste this link in your browser:</p>
-          <p style="word-break: break-all; color: #666;">${verificationUrl}</p>
+          <p>Thank you for registering. Please use the verification code below to complete your registration.</p>
+          <div style="background-color: #f5f5f5; padding: 20px; border-radius: 8px; text-align: center; margin: 30px 0;">
+            <h1 style="color: #4CAF50; font-size: 48px; margin: 0; letter-spacing: 8px;">${otp}</h1>
+          </div>
+          <p style="color: #666;">Enter this code in the app to verify your email address.</p>
           <p style="color: #999; font-size: 12px; margin-top: 40px;">
-            This link will expire in 24 hours. If you didn't create an account, please ignore this email.
+            This code will expire in 5 minutes. If you didn't create an account, please ignore this email.
           </p>
         </div>
       `,
 		};
 
 		await transporter.sendMail(mailOptions);
-		console.log(`✉️  Verification email sent to: ${email}`);
+		console.log(`✉️  Verification OTP sent to: ${email}`);
 		return true;
 	} catch (error) {
-		console.error("❌ Error sending verification email:", error);
+		console.error("❌ Error sending verification OTP:", error);
 		throw error;
 	}
 };
 
-// Send password reset email
-export const sendPasswordResetEmail = async (
+// Send password reset OTP email
+export const sendPasswordResetOTP = async (
 	email: string,
-	token: string
+	otp: string
 ): Promise<boolean> => {
 	try {
-		const resetUrl = `${process.env.FRONTEND_URL}/reset-password?token=${token}`;
-
 		const mailOptions = {
 			from: process.env.EMAIL_FROM || process.env.EMAIL_USER,
 			to: email,
-			subject: "Reset Your Password - Smart Parking",
+			subject: "Password Reset Code - Smart Parking",
 			html: `
         <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
           <h2 style="color: #333;">Password Reset Request</h2>
           <p>You have requested to reset your password for your Smart Parking account.</p>
-          <p>Click the button below to reset your password:</p>
-          <a href="${resetUrl}" 
-             style="display: inline-block; padding: 12px 24px; background-color: #2196F3; 
-                    color: white; text-decoration: none; border-radius: 4px; margin: 20px 0;">
-            Reset Password
-          </a>
-          <p>Or copy and paste this link in your browser:</p>
-          <p style="word-break: break-all; color: #666;">${resetUrl}</p>
+          <p>Use the code below to reset your password:</p>
+          <div style="background-color: #f5f5f5; padding: 20px; border-radius: 8px; text-align: center; margin: 30px 0;">
+            <h1 style="color: #2196F3; font-size: 48px; margin: 0; letter-spacing: 8px;">${otp}</h1>
+          </div>
+          <p style="color: #666;">Enter this code in the app to reset your password.</p>
           <p style="color: #999; font-size: 12px; margin-top: 40px;">
-            This link will expire in 1 hour. If you didn't request a password reset, please ignore this email.
+            This code will expire in 10 minutes. If you didn't request a password reset, please ignore this email.
           </p>
         </div>
       `,
 		};
 
 		await transporter.sendMail(mailOptions);
-		console.log(`✉️  Password reset email sent to: ${email}`);
+		console.log(`✉️  Password reset OTP sent to: ${email}`);
 		return true;
 	} catch (error) {
-		console.error("❌ Error sending password reset email:", error);
+		console.error("❌ Error sending password reset OTP:", error);
 		throw error;
 	}
 };

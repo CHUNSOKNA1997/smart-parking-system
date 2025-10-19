@@ -10,7 +10,8 @@ class UserModel {
     Omit<
       User,
       | "passwordHash"
-      | "verificationToken"
+      | "verificationOtp"
+      | "otpExpiry"
       | "resetToken"
       | "resetTokenExpiry"
       | "updatedAt"
@@ -21,7 +22,8 @@ class UserModel {
       lastName,
       email,
       passwordHash,
-      verificationToken,
+      verificationOtp,
+      otpExpiry,
     } = userData;
 
     const user = await prisma.user.create({
@@ -30,7 +32,8 @@ class UserModel {
         lastName,
         email,
         passwordHash,
-        verificationToken,
+        verificationOtp,
+        otpExpiry,
       },
       select: {
         id: true,
@@ -73,32 +76,40 @@ class UserModel {
     });
   }
 
-  // Find user by verification token
-  static async findByVerificationToken(token: string): Promise<User | null> {
+  // Find user by email and OTP
+  static async findByOTP(email: string, otp: string): Promise<User | null> {
     return await prisma.user.findFirst({
-      where: { verificationToken: token },
+      where: {
+        email,
+        verificationOtp: otp,
+        otpExpiry: {
+          gt: new Date(), // OTP not expired
+        },
+      },
     });
   }
 
-  // Find user by reset token
-  static async findByResetToken(token: string): Promise<User | null> {
+  // Find user by reset OTP
+  static async findByResetOTP(email: string, otp: string): Promise<User | null> {
     return await prisma.user.findFirst({
       where: {
-        resetToken: token,
-        resetTokenExpiry: {
+        email,
+        resetOtp: otp,
+        resetOtpExpiry: {
           gt: new Date(), // Greater than now (not expired)
         },
       },
     });
   }
 
-  // Update verification status
+  // Update verification status after OTP verification
   static async verifyEmail(userId: string) {
     return await prisma.user.update({
       where: { id: userId },
       data: {
         isVerified: true,
-        verificationToken: null,
+        verificationOtp: null,
+        otpExpiry: null,
       },
       select: {
         id: true,
@@ -110,11 +121,14 @@ class UserModel {
     });
   }
 
-  // Update verification token
-  static async updateVerificationToken(userId: string, token: string) {
+  // Update verification OTP
+  static async updateVerificationOTP(userId: string, otp: string, expiry: Date) {
     return await prisma.user.update({
       where: { id: userId },
-      data: { verificationToken: token },
+      data: {
+        verificationOtp: otp,
+        otpExpiry: expiry,
+      },
       select: {
         id: true,
         email: true,
@@ -122,13 +136,13 @@ class UserModel {
     });
   }
 
-  // Set reset token
-  static async setResetToken(userId: string, token: string, expiry: Date) {
+  // Set reset OTP
+  static async setResetOTP(userId: string, otp: string, expiry: Date) {
     return await prisma.user.update({
       where: { id: userId },
       data: {
-        resetToken: token,
-        resetTokenExpiry: expiry,
+        resetOtp: otp,
+        resetOtpExpiry: expiry,
       },
       select: {
         id: true,
@@ -143,8 +157,8 @@ class UserModel {
       where: { id: userId },
       data: {
         passwordHash,
-        resetToken: null,
-        resetTokenExpiry: null,
+        resetOtp: null,
+        resetOtpExpiry: null,
       },
       select: {
         id: true,
