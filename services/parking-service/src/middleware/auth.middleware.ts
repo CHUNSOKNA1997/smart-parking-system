@@ -3,7 +3,7 @@ import { sendError } from "../utils/response.js";
 import { ERRORS } from "../utils/constants.js";
 import { AuthRequest } from "../types/index.js";
 import authServiceClient from "../services/authService.client.js";
-import logger from "../utils/logger.js";
+
 
 // Verify JWT token middleware using Auth Service
 export const authenticateToken = async (
@@ -31,7 +31,7 @@ export const authenticateToken = async (
 		req.user = result.data.user;
 		next();
 	} catch (error: any) {
-		logger.error("Auth middleware error:", error.message);
+		console.error("Auth middleware error:", error.message);
 		return sendError(res, 500, ERRORS.SERVER_ERROR);
 	}
 };

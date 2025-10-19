@@ -4,7 +4,7 @@ import ParkingSpotModel from "../models/ParkingSpot.model.js";
 import TransactionModel from "../models/Transaction.model.js";
 import { generateQRCode } from "../services/qr.service.js";
 import { sendSuccess, sendError } from "../utils/response.js";
-import logger from "../utils/logger.js";
+
 import { AuthRequest } from "../types/index.js";
 
 class BookingController {
@@ -81,7 +81,7 @@ class BookingController {
 				description: `Parking booking for spot ${spotId}`,
 			});
 
-			logger.info(`Booking created: ${booking.id} for user: ${userId}`);
+			console.log(`Booking created: ${booking.id} for user: ${userId}`);
 
 			return sendSuccess(res, 201, "Booking created successfully", {
 				booking: {
@@ -90,7 +90,7 @@ class BookingController {
 				},
 			});
 		} catch (error) {
-			logger.error("Create booking error:", error);
+			console.error("Create booking error:", error);
 			return sendError(
 				res,
 				500,
@@ -116,7 +116,7 @@ class BookingController {
 				count: bookings.length,
 			});
 		} catch (error) {
-			logger.error("Get user bookings error:", error);
+			console.error("Get user bookings error:", error);
 			return sendError(
 				res,
 				500,
@@ -150,7 +150,7 @@ class BookingController {
 				booking,
 			});
 		} catch (error) {
-			logger.error("Get booking by ID error:", error);
+			console.error("Get booking by ID error:", error);
 			return sendError(
 				res,
 				500,
@@ -181,7 +181,7 @@ class BookingController {
 				{ booking }
 			);
 		} catch (error) {
-			logger.error("Get active booking error:", error);
+			console.error("Get active booking error:", error);
 			return sendError(
 				res,
 				500,
@@ -226,7 +226,7 @@ class BookingController {
 				await ParkingSpotModel.updateAvailability(booking.spotId, true);
 			}
 
-			logger.info(`Booking ${bookingId} status updated to: ${status}`);
+			console.log(`Booking ${bookingId} status updated to: ${status}`);
 
 			return sendSuccess(
 				res,
@@ -235,7 +235,7 @@ class BookingController {
 				{ booking: updatedBooking }
 			);
 		} catch (error) {
-			logger.error("Update booking status error:", error);
+			console.error("Update booking status error:", error);
 			return sendError(
 				res,
 				500,
@@ -275,13 +275,13 @@ class BookingController {
 			// Make spot available
 			await ParkingSpotModel.updateAvailability(booking.spotId, true);
 
-			logger.info(`Booking cancelled: ${bookingId}`);
+			console.log(`Booking cancelled: ${bookingId}`);
 
 			return sendSuccess(res, 200, "Booking cancelled successfully", {
 				booking: cancelledBooking,
 			});
 		} catch (error) {
-			logger.error("Cancel booking error:", error);
+			console.error("Cancel booking error:", error);
 			return sendError(
 				res,
 				500,
@@ -321,13 +321,13 @@ class BookingController {
 			// Make spot available
 			await ParkingSpotModel.updateAvailability(booking.spotId, true);
 
-			logger.info(`Booking completed: ${bookingId}`);
+			console.log(`Booking completed: ${bookingId}`);
 
 			return sendSuccess(res, 200, "Parking completed successfully", {
 				booking: completedBooking,
 			});
 		} catch (error) {
-			logger.error("Complete booking error:", error);
+			console.error("Complete booking error:", error);
 			return sendError(
 				res,
 				500,

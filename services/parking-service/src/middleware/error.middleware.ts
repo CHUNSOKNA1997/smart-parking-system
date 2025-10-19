@@ -1,5 +1,5 @@
 import { Request, Response, NextFunction } from "express";
-import logger from "../utils/logger.js";
+
 import { sendError } from "../utils/response.js";
 
 // Global error handler middleware
@@ -9,7 +9,7 @@ export const errorHandler = (
 	res: Response,
 	next: NextFunction
 ): Response => {
-	logger.error("Error occurred:", {
+	console.error("Error occurred:", {
 		message: err.message,
 		stack: err.stack,
 		path: req.path,

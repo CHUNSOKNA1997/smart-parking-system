@@ -14,7 +14,6 @@ import {
 } from "../services/email.service.js";
 import { sendSuccess, sendError } from "../utils/response.js";
 import constants from "../utils/constants.js";
-import logger from "../utils/logger.js";
 import { AuthRequest } from "../types/index.js";
 
 const { ERRORS, SUCCESS } = constants;
@@ -86,11 +85,11 @@ class AuthController {
 			try {
 				await sendVerificationEmail(email, verificationToken);
 			} catch (emailError) {
-				logger.error("Failed to send verification email:", emailError);
+				console.error("❌ Failed to send verification email:", emailError);
 				// Continue even if email fails
 			}
 
-			logger.info(`New user registered: ${email}`);
+			console.log(`✅ New user registered: ${email}`);
 
 			return sendSuccess(res, 201, SUCCESS.REGISTRATION, {
 				user: {
@@ -101,7 +100,7 @@ class AuthController {
 				},
 			});
 		} catch (error) {
-			logger.error("Registration error:", error);
+			console.error("❌ Registration error:", error);
 			return sendError(res, 500, ERRORS.SERVER_ERROR, error.message);
 		}
 	}
@@ -183,7 +182,7 @@ class AuthController {
 				},
 			});
 		} catch (error) {
-			logger.error("Login error:", error);
+			console.error("❌ Login error:", error);
 			return sendError(res, 500, ERRORS.SERVER_ERROR, error.message);
 		}
 	}
@@ -229,14 +228,14 @@ class AuthController {
 			try {
 				await sendWelcomeEmail(user.email, user.firstName);
 			} catch (emailError) {
-				logger.error("Failed to send welcome email:", emailError);
+				console.error("❌ Failed to send welcome email:", emailError);
 			}
 
-			logger.info(`Email verified: ${user.email}`);
+			console.log(`✅ Email verified: ${user.email}`);
 
 			return sendSuccess(res, 200, SUCCESS.EMAIL_VERIFIED);
 		} catch (error) {
-			logger.error("Email verification error:", error);
+			console.error("❌ Email verification error:", error);
 			return sendError(res, 500, ERRORS.SERVER_ERROR, error.message);
 		}
 	}
@@ -289,11 +288,11 @@ class AuthController {
 			// Send verification email
 			await sendVerificationEmail(email, verificationToken);
 
-			logger.info(`Verification email resent to: ${email}`);
+			console.log(`✅ Verification email resent to: ${email}`);
 
 			return sendSuccess(res, 200, SUCCESS.VERIFICATION_SENT);
 		} catch (error) {
-			logger.error("Resend verification error:", error);
+			console.error("❌ Resend verification error:", error);
 			return sendError(res, 500, ERRORS.SERVER_ERROR, error.message);
 		}
 	}
@@ -343,7 +342,7 @@ class AuthController {
 
 			return sendSuccess(res, 200, SUCCESS.PASSWORD_RESET_SENT);
 		} catch (error) {
-			logger.error("Forgot password error:", error);
+			console.error("❌ Forgot password error:", error);
 			return sendError(res, 500, ERRORS.SERVER_ERROR, error.message);
 		}
 	}
@@ -389,7 +388,7 @@ class AuthController {
 
 			return sendSuccess(res, 200, SUCCESS.PASSWORD_RESET);
 		} catch (error) {
-			logger.error("Reset password error:", error);
+			console.error("❌ Reset password error:", error);
 			return sendError(res, 500, ERRORS.SERVER_ERROR, error.message);
 		}
 	}
@@ -421,7 +420,7 @@ class AuthController {
 				user,
 			});
 		} catch (error) {
-			logger.error("Get user error:", error);
+			console.error("❌ Get user error:", error);
 			return sendError(res, 500, ERRORS.SERVER_ERROR, error.message);
 		}
 	}
@@ -504,7 +503,7 @@ class AuthController {
 
 			return sendSuccess(res, 200, "User retrieved successfully", { user });
 		} catch (error) {
-			logger.error("Get user by ID error:", error);
+			console.error("❌ Get user by ID error:", error);
 			return sendError(res, 500, ERRORS.SERVER_ERROR, error.message);
 		}
 	}

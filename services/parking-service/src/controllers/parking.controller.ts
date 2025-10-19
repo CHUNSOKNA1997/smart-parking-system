@@ -1,7 +1,7 @@
 import { Request, Response } from "../types/index.js";
 import ParkingSpotModel from "../models/ParkingSpot.model.js";
 import { sendSuccess, sendError } from "../utils/response.js";
-import logger from "../utils/logger.js";
+
 
 class ParkingController {
 	// Get all parking spots
@@ -16,7 +16,7 @@ class ParkingController {
 				{ spots }
 			);
 		} catch (error) {
-			logger.error("Get all spots error:", error);
+			console.error("Get all spots error:", error);
 			return sendError(
 				res,
 				500,
@@ -44,7 +44,7 @@ class ParkingController {
 				}
 			);
 		} catch (error) {
-			logger.error("Get available spots error:", error);
+			console.error("Get available spots error:", error);
 			return sendError(
 				res,
 				500,
@@ -72,7 +72,7 @@ class ParkingController {
 				{ spot }
 			);
 		} catch (error) {
-			logger.error("Get spot by ID error:", error);
+			console.error("Get spot by ID error:", error);
 			return sendError(
 				res,
 				500,
@@ -110,7 +110,7 @@ class ParkingController {
 				}
 			);
 		} catch (error) {
-			logger.error("Get spots by type error:", error);
+			console.error("Get spots by type error:", error);
 			return sendError(
 				res,
 				500,
@@ -129,7 +129,7 @@ class ParkingController {
 				statistics: stats,
 			});
 		} catch (error) {
-			logger.error("Get statistics error:", error);
+			console.error("Get statistics error:", error);
 			return sendError(
 				res,
 				500,

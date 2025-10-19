@@ -1,5 +1,4 @@
 import nodemailer from "nodemailer";
-import logger from "../utils/logger.js";
 
 // Create transporter
 const transporter = nodemailer.createTransport({
@@ -42,10 +41,10 @@ export const sendVerificationEmail = async (
     };
 
     await transporter.sendMail(mailOptions);
-    logger.info(`Verification email sent to: ${email}`);
+    console.log(`✉️  Verification email sent to: ${email}`);
     return true;
   } catch (error) {
-    logger.error("Error sending verification email:", error);
+    console.error("❌ Error sending verification email:", error);
     throw error;
   }
 };
@@ -82,10 +81,10 @@ export const sendPasswordResetEmail = async (
     };
 
     await transporter.sendMail(mailOptions);
-    logger.info(`Password reset email sent to: ${email}`);
+    console.log(`✉️  Password reset email sent to: ${email}`);
     return true;
   } catch (error) {
-    logger.error("Error sending password reset email:", error);
+    console.error("❌ Error sending password reset email:", error);
     throw error;
   }
 };
@@ -117,10 +116,10 @@ export const sendWelcomeEmail = async (
     };
 
     await transporter.sendMail(mailOptions);
-    logger.info(`Welcome email sent to: ${email}`);
+    console.log(`✉️  Welcome email sent to: ${email}`);
     return true;
   } catch (error) {
-    logger.error("Error sending welcome email:", error);
+    console.error("❌ Error sending welcome email:", error);
     // Don't throw error for welcome email
     return false;
   }

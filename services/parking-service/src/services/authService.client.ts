@@ -1,5 +1,5 @@
 import axios, { AxiosInstance } from "axios";
-import logger from "../utils/logger.js";
+
 
 interface UserData {
 	id: string;
@@ -73,7 +73,7 @@ class AuthServiceClient {
 			}
 
 			const delay = this.retryDelay * (this.maxRetries - retries + 1);
-			logger.warn(
+			console.warn(
 				`Auth service request failed, retrying in ${delay}ms... (${retries} retries left)`
 			);
 
@@ -95,7 +95,7 @@ class AuthServiceClient {
 
 				return response.data;
 			} catch (error: any) {
-				logger.error("Auth service - verify token error:", error.message);
+				console.error("Auth service - verify token error:", error.message);
 
 				if (error.response) {
 					return {
@@ -125,7 +125,7 @@ class AuthServiceClient {
 
 				return null;
 			} catch (error: any) {
-				logger.error("Auth service - get user error:", error.message);
+				console.error("Auth service - get user error:", error.message);
 
 				if (error.response?.status === 404) {
 					return null;
@@ -144,7 +144,7 @@ class AuthServiceClient {
 			await this.client.get("/health");
 			return true;
 		} catch (error) {
-			logger.error("Auth service health check failed");
+			console.error("Auth service health check failed");
 			return false;
 		}
 	}

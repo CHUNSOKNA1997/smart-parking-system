@@ -1,6 +1,6 @@
 import TransactionModel from "../models/Transaction.model.js";
 import { sendSuccess, sendError } from "../utils/response.js";
-import logger from "../utils/logger.js";
+
 
 class TransactionController {
 	// Get user transactions
@@ -24,7 +24,7 @@ class TransactionController {
 				}
 			);
 		} catch (error) {
-			logger.error("Get user transactions error:", error);
+			console.error("Get user transactions error:", error);
 			return sendError(
 				res,
 				500,
@@ -55,7 +55,7 @@ class TransactionController {
 				transaction,
 			});
 		} catch (error) {
-			logger.error("Get transaction by ID error:", error);
+			console.error("Get transaction by ID error:", error);
 			return sendError(
 				res,
 				500,
@@ -79,7 +79,7 @@ class TransactionController {
 				{ summary }
 			);
 		} catch (error) {
-			logger.error("Get user summary error:", error);
+			console.error("Get user summary error:", error);
 			return sendError(
 				res,
 				500,

@@ -1,5 +1,5 @@
 import QRCode from "qrcode";
-import logger from "../utils/logger.js";
+
 import { QRCodeData } from "../types/index.js";
 
 // Generate QR code for booking
@@ -26,10 +26,10 @@ export const generateQRCode = async (
 			margin: 1,
 		});
 
-		logger.info(`QR code generated for booking: ${bookingId}`);
+		console.log(`QR code generated for booking: ${bookingId}`);
 		return qrCodeDataURL;
 	} catch (error) {
-		logger.error("Error generating QR code:", error);
+		console.error("Error generating QR code:", error);
 		throw error;
 	}
 };
@@ -57,7 +57,7 @@ export const generateQRCodeBuffer = async (
 
 		return buffer;
 	} catch (error) {
-		logger.error("Error generating QR code buffer:", error);
+		console.error("Error generating QR code buffer:", error);
 		throw error;
 	}
 };

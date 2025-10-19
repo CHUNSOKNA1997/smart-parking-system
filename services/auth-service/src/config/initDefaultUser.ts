@@ -1,6 +1,5 @@
 import bcrypt from "bcrypt";
 import prisma from "../config/prisma"; // or your UserModel
-import logger from "../utils/logger";
 
 const DEFAULT_USER = {
   firstName: "Super",
@@ -18,7 +17,7 @@ export async function initDefaultUser() {
     });
 
     if (existingUser) {
-      logger.info(`Default user already exists: ${DEFAULT_USER.email}`);
+      console.log(`✅ Default user already exists: ${DEFAULT_USER.email}`);
       return;
     }
 
@@ -37,9 +36,9 @@ export async function initDefaultUser() {
       },
     });
 
-    logger.info(`Default user created: ${user.email}`);
+    console.log(`✅ Default user created: ${user.email}`);
   } catch (error) {
-    logger.error("Failed to initialize default user:", error);
+    console.error("❌ Failed to initialize default user:", error);
   } finally {
     await prisma.$disconnect();
   }

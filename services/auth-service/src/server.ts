@@ -2,7 +2,6 @@ import "dotenv/config";
 import { Server } from "http";
 import app from "./app.js";
 import prisma from "./config/prisma.js";
-import logger from "./utils/logger.js";
 import { initDefaultUser } from "./config/initDefaultUser.js";
 
 const PORT: number = parseInt(process.env.PORT || "3001", 10);
@@ -10,11 +9,11 @@ const PORT: number = parseInt(process.env.PORT || "3001", 10);
 // Test database connection
 prisma.$queryRaw`SELECT NOW()`
   .then((result) => {
-    logger.info("Database connected successfully");
-    logger.info(`Database time: ${result[0].now}`);
+    console.log("✅ Database connected successfully");
+    console.log(`📅 Database time: ${result[0].now}`);
   })
   .catch((err) => {
-    logger.error("Database connection failed:", err);
+    console.error("❌ Database connection failed:", err);
     process.exit(1);
   });
 
@@ -22,19 +21,19 @@ await initDefaultUser();
 
 // Start server
 const server: Server = app.listen(PORT, () => {
-	logger.info(`🚀 Auth Service running on port ${PORT}`);
-	logger.info(`Environment: ${process.env.NODE_ENV || "development"}`);
-	logger.info(`Health check: http://localhost:${PORT}/health`);
-	logger.info(`API: http://localhost:${PORT}/api/v1/auth`);
+	console.log(`🚀 Auth Service running on port ${PORT}`);
+	console.log(`🌍 Environment: ${process.env.NODE_ENV || "development"}`);
+	console.log(`💚 Health check: http://localhost:${PORT}/health`);
+	console.log(`📡 API: http://localhost:${PORT}/api/v1/auth`);
 });
 
 // Graceful shutdown
 const shutdown = async (signal) => {
-	logger.info(`${signal} signal received: closing HTTP server`);
+	console.log(`⚠️  ${signal} signal received: closing HTTP server`);
 	server.close(async () => {
-		logger.info("HTTP server closed");
+		console.log("✅ HTTP server closed");
 		await prisma.$disconnect();
-		logger.info("Database disconnected");
+		console.log("✅ Database disconnected");
 		process.exit(0);
 	});
 };
