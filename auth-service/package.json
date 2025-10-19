@@ -5,9 +5,9 @@
   "main": "dist/server.js",
   "type": "module",
   "scripts": {
-    "build": "npx tsc",
-    "start": "node dist/server.js",
+    "start": "npx tsx src/server.ts",
     "dev": "npx tsx watch src/server.ts",
+    "list:routes": "npx tsx src/scripts/listRoutes.ts",
     "prisma:generate": "prisma generate",
     "prisma:migrate": "prisma migrate dev",
     "prisma:studio": "prisma studio"

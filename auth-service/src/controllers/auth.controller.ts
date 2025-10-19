@@ -164,8 +164,6 @@ class AuthController {
       // Generate JWT token
       const token = generateAccessToken(user.id, user.email);
 
-      logger.info(`User logged in: ${email}`);
-
       return sendSuccess(res, 200, SUCCESS.LOGIN, {
         token,
         user: {
@@ -332,8 +330,6 @@ class AuthController {
       // Send reset email
       await sendPasswordResetEmail(email, resetToken);
 
-      logger.info(`Password reset email sent to: ${email}`);
-
       return sendSuccess(res, 200, SUCCESS.PASSWORD_RESET_SENT);
     } catch (error) {
       logger.error("Forgot password error:", error);
@@ -380,8 +376,6 @@ class AuthController {
       // Update password
       await UserModel.updatePassword(user.id, passwordHash);
 
-      logger.info(`Password reset successful for: ${user.email}`);
-
       return sendSuccess(res, 200, SUCCESS.PASSWORD_RESET);
     } catch (error) {
       logger.error("Reset password error:", error);
@@ -391,7 +385,7 @@ class AuthController {
 
   /**
    * @swagger
-   * /api/v1/auth/me:
+   * /api/v1/auth/user:
    *   get:
    *     summary: Get current logged-in user
    *     tags: [Auth]

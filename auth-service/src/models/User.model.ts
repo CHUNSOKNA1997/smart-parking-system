@@ -191,7 +191,7 @@ class UserModel {
   static async delete(userId: string) {
     return await prisma.user.delete({
       where: { id: userId },
-      select: { id: true },
+      select: { id: true }
     });
   }
 }

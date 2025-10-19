@@ -11,9 +11,12 @@ const transporter = nodemailer.createTransport({
 });
 
 // Send verification email
-const sendVerificationEmail = async (email, token) => {
-  try {
-    const verificationUrl = `${process.env.FRONTEND_URL}/verify-email?token=${token}`;
+export const sendVerificationEmail = async (
+	email: string,
+	token: string
+): Promise<boolean> => {
+	try {
+		const verificationUrl = `${process.env.FRONTEND_URL}/verify-email?token=${token}`;
 
     const mailOptions = {
       from: process.env.EMAIL_FROM || process.env.EMAIL_USER,
@@ -48,12 +51,12 @@ const sendVerificationEmail = async (email, token) => {
 };
 
 // Send password reset email
-const sendPasswordResetEmail = async (
-  email: string,
-  token: string
+export const sendPasswordResetEmail = async (
+	email: string,
+	token: string
 ): Promise<boolean> => {
-  try {
-    const resetUrl = `${process.env.FRONTEND_URL}/reset-password?token=${token}`;
+	try {
+		const resetUrl = `${process.env.FRONTEND_URL}/reset-password?token=${token}`;
 
     const mailOptions = {
       from: process.env.EMAIL_FROM || process.env.EMAIL_USER,
@@ -88,16 +91,16 @@ const sendPasswordResetEmail = async (
 };
 
 // Send welcome email (after verification)
-const sendWelcomeEmail = async (
-  email: string,
-  firstName: string
+export const sendWelcomeEmail = async (
+	email: string,
+	firstName: string
 ): Promise<boolean> => {
-  try {
-    const mailOptions = {
-      from: process.env.EMAIL_FROM || process.env.EMAIL_USER,
-      to: email,
-      subject: "Welcome to Smart Parking!",
-      html: `
+	try {
+		const mailOptions = {
+			from: process.env.EMAIL_FROM || process.env.EMAIL_USER,
+			to: email,
+			subject: "Welcome to Smart Parking!",
+			html: `
         <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
           <h2 style="color: #333;">Welcome, ${firstName}!</h2>
           <p>Your email has been verified successfully. You can now enjoy all features of Smart Parking.</p>
@@ -122,5 +125,3 @@ const sendWelcomeEmail = async (
     return false;
   }
 };
-
-export { sendVerificationEmail, sendPasswordResetEmail, sendWelcomeEmail };
