@@ -6,6 +6,7 @@ import {
   registerSchema,
   loginSchema,
   emailSchema,
+  verifyResetOtpSchema,
   resetPasswordSchema,
   otpVerificationSchema
 } from '../validators/auth.validator.js';
@@ -18,6 +19,7 @@ router.post('/login', validate(loginSchema), AuthController.login);
 router.post('/verify-otp', validate(otpVerificationSchema), AuthController.verifyOTP);
 router.post('/resend-verification', validate(emailSchema), AuthController.resendVerification);
 router.post('/forgot-password', validate(emailSchema), AuthController.forgotPassword);
+router.post('/forgot-password/verify-otp', validate(verifyResetOtpSchema), AuthController.verifyResetOTP);
 router.post('/reset-password', validate(resetPasswordSchema), AuthController.resetPassword);
 
 // Protected routes

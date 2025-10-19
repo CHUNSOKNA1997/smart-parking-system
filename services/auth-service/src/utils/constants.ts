@@ -39,11 +39,11 @@ export default {
 
   // Success messages
   SUCCESS: {
-    REGISTRATION: 'Registration successful. Please check your email to verify your account.',
+    REGISTRATION: 'Registration successful. Please check your email for the verification code.',
     LOGIN: 'Login successful',
     EMAIL_VERIFIED: 'Email verified successfully. You can now login.',
-    PASSWORD_RESET_SENT: 'Password reset link sent to your email',
+    PASSWORD_RESET_SENT: 'Password reset code sent to your email',
     PASSWORD_RESET: 'Password reset successful. You can now login with your new password.',
-    VERIFICATION_SENT: 'Verification email sent successfully'
+    VERIFICATION_SENT: 'Verification code sent successfully'
   }
 };

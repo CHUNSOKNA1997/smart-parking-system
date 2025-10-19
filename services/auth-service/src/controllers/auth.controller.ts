@@ -214,9 +214,12 @@ class AuthController {
 		try {
 			const { email, otp } = req.body;
 
+			console.log(`🔍 Verifying OTP for email: ${email}, OTP: ${otp}`);
+
 			// Find user by email and OTP
 			const user = await UserModel.findByOTP(email, otp);
 			if (!user) {
+				console.log(`❌ No user found with email: ${email} and OTP: ${otp}`);
 				return sendError(res, 400, "Invalid or expired OTP");
 			}
 
@@ -354,9 +357,9 @@ class AuthController {
 
 	/**
 	 * @swagger
-	 * /api/v1/auth/reset-password:
+	 * /api/v1/auth/forgot-password/verify-otp:
 	 *   post:
-	 *     summary: Reset password with OTP
+	 *     summary: Verify password reset OTP
 	 *     tags: [Auth]
 	 *     requestBody:
 	 *       required: true
@@ -369,29 +372,86 @@ class AuthController {
 	 *                 type: string
 	 *               otp:
 	 *                 type: string
+	 *     responses:
+	 *       200:
+	 *         description: OTP verified successfully
+	 *       400:
+	 *         description: Invalid or expired OTP
+	 */
+	static async verifyResetOTP(req: Request, res: Response): Promise<Response> {
+		try {
+			const { email, otp } = req.body;
+
+			console.log(`🔍 Verifying reset OTP for email: ${email}, OTP: ${otp}`);
+
+			// Find user by reset OTP
+			const user = await UserModel.findByResetOTP(email, otp);
+			if (!user) {
+				console.log(`❌ No user found with email: ${email} and reset OTP: ${otp}`);
+				return sendError(res, 400, "Invalid or expired OTP");
+			}
+
+			console.log(`✅ Reset OTP verified for: ${user.email}`);
+
+			return sendSuccess(res, 200, "OTP verified successfully. You can now reset your password.", {
+				email: user.email,
+			});
+		} catch (error) {
+			console.error("❌ Verify reset OTP error:", error);
+			return sendError(res, 500, ERRORS.SERVER_ERROR, error.message);
+		}
+	}
+
+	/**
+	 * @swagger
+	 * /api/v1/auth/reset-password:
+	 *   post:
+	 *     summary: Reset password (after OTP verification)
+	 *     tags: [Auth]
+	 *     requestBody:
+	 *       required: true
+	 *       content:
+	 *         application/json:
+	 *           schema:
+	 *             type: object
+	 *             properties:
+	 *               email:
+	 *                 type: string
 	 *               newPassword:
 	 *                 type: string
 	 *     responses:
 	 *       200:
 	 *         description: Password reset successfully
 	 *       400:
-	 *         description: Invalid or expired OTP
+	 *         description: User not found or OTP not verified
 	 */
 	static async resetPassword(req: Request, res: Response): Promise<Response> {
 		try {
-			const { email, otp, newPassword } = req.body;
+			const { email, newPassword } = req.body;
 
-			// Find user by reset OTP
-			const user = await UserModel.findByResetOTP(email, otp);
+			// Find user by email
+			const user = await UserModel.findByEmail(email);
 			if (!user) {
-				return sendError(res, 400, "Invalid or expired OTP");
+				return sendError(res, 404, ERRORS.USER_NOT_FOUND);
+			}
+
+			// Check if reset OTP exists and is valid (ensures OTP was verified)
+			if (!user.resetOtp || !user.resetOtpExpiry) {
+				return sendError(res, 400, "Please verify OTP first");
+			}
+
+			// Check if OTP is still valid (not expired)
+			if (user.resetOtpExpiry <= new Date()) {
+				return sendError(res, 400, "OTP has expired. Please request a new one.");
 			}
 
 			// Hash new password
 			const passwordHash = await bcrypt.hash(newPassword, 10);
 
-			// Update password
+			// Update password and clear reset OTP
 			await UserModel.updatePassword(user.id, passwordHash);
+
+			console.log(`✅ Password reset for: ${user.email}`);
 
 			return sendSuccess(res, 200, SUCCESS.PASSWORD_RESET);
 		} catch (error) {
