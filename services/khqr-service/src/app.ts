@@ -24,8 +24,8 @@ app.use(
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-// API Routes
-app.use("/api/payments", paymentRoutes);
+// API Routes (v1)
+app.use("/api/v1/payments", paymentRoutes);
 
 // 404 Handler
 app.use((req: Request, res: Response) => {
