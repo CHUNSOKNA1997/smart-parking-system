@@ -1,0 +1,58 @@
+// Prisma Schema for Smart Parking System
+// KHQR Service - manages KHQR payments and transactions
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// KHQR Payments table
+model KHQRPayment {
+  id                String    @id @default(uuid()) @map("payment_id") @db.Uuid
+  bookingId         String?   @map("booking_id") @db.Uuid
+  userId            String    @map("user_id") @db.Uuid
+  amount            Decimal   @db.Decimal(10, 2)
+  currency          String    @default("USD") @db.VarChar(3)
+  qrString          String?   @map("qr_string") @db.Text
+  deeplinkUrl       String?   @map("deeplink_url") @db.Text
+  transactionHash   String?   @unique @map("transaction_hash") @db.VarChar(255)
+  md5Hash           String?   @map("md5_hash") @db.VarChar(32)
+  fromAccountId     String?   @map("from_account_id") @db.VarChar(100)
+  toAccountId       String?   @map("to_account_id") @db.VarChar(100)
+  status            String    @default("pending") @db.VarChar(20)
+  paymentMethod     String    @default("khqr") @map("payment_method") @db.VarChar(20)
+  description       String?   @db.Text
+  metadata          Json?
+  paidAt            DateTime? @map("paid_at")
+  createdAt         DateTime  @default(now()) @map("created_at")
+  updatedAt         DateTime  @updatedAt @map("updated_at")
+
+  @@index([userId])
+  @@index([bookingId])
+  @@index([status])
+  @@index([transactionHash])
+  @@index([createdAt])
+  @@map("khqr_payments")
+}
+
+// KHQR Token Management (for storing Bakong API tokens)
+model KHQRToken {
+  id             String   @id @default(uuid()) @map("token_id") @db.Uuid
+  email          String   @unique @db.VarChar(100)
+  organization   String   @db.VarChar(100)
+  project        String   @db.VarChar(100)
+  token          String   @db.Text
+  isActive       Boolean  @default(true) @map("is_active")
+  expiresAt      DateTime @map("expires_at")
+  lastRenewedAt  DateTime @default(now()) @map("last_renewed_at")
+  createdAt      DateTime @default(now()) @map("created_at")
+  updatedAt      DateTime @updatedAt @map("updated_at")
+
+  @@index([email])
+  @@index([isActive])
+  @@map("khqr_tokens")
+}
