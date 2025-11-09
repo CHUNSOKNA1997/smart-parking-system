@@ -20,7 +20,7 @@ model KHQRPayment {
   qrString          String?   @map("qr_string") @db.Text
   deeplinkUrl       String?   @map("deeplink_url") @db.Text
   transactionHash   String?   @unique @map("transaction_hash") @db.VarChar(255)
-  md5Hash           String?   @map("md5_hash") @db.VarChar(32)
+  md5Hash           String?   @unique @map("md5_hash") @db.VarChar(32)
   fromAccountId     String?   @map("from_account_id") @db.VarChar(100)
   toAccountId       String?   @map("to_account_id") @db.VarChar(100)
   status            String    @default("pending") @db.VarChar(20)

@@ -6,7 +6,6 @@ const DEFAULT_USER = {
   lastName: "User",
   email: "admin@gmail.com",
   password: "88889999", // default password
-  phone: "0000000000",
 };
 
 export async function initDefaultUser() {
@@ -31,8 +30,7 @@ export async function initDefaultUser() {
         lastName: DEFAULT_USER.lastName,
         email: DEFAULT_USER.email,
         passwordHash,
-        isVerified: true, // optional: mark as verified
-        phone: DEFAULT_USER.phone,
+        isVerified: true, // Mark as verified so admin can login immediately
       },
     });
 

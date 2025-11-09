@@ -83,6 +83,36 @@ export class PaymentController {
 	}
 
 	/**
+	 * Check payment status by MD5 (for auto-polling)
+	 * This is the key endpoint for automatic payment verification
+	 */
+	async checkPayment(req: Request, res: Response): Promise<void> {
+		try {
+			const { md5 } = req.body;
+
+			if (!md5) {
+				res.status(HTTP_STATUS.BAD_REQUEST).json(
+					errorResponse("MD5 hash is required")
+				);
+				return;
+			}
+
+			const result = await paymentService.checkPaymentByMD5(md5);
+
+			res.status(HTTP_STATUS.OK).json(
+				successResponse("Payment confirmed", result)
+			);
+		} catch (error: any) {
+			console.error("Check payment error:", error);
+			// Return 400 instead of 500 for "not found" errors
+			// This is normal during polling - payment might not be completed yet
+			res.status(HTTP_STATUS.BAD_REQUEST).json(
+				errorResponse("Payment not found or not completed", error.message)
+			);
+		}
+	}
+
+	/**
 	 * Get user payments
 	 */
 	async getUserPayments(req: Request, res: Response): Promise<void> {

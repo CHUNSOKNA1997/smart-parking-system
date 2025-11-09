@@ -17,6 +17,7 @@ import {
 	KHQR_PAYMENT_STATUS,
 	KHQR_ERROR_MESSAGES,
 } from "../utils/constants.js";
+import { generateMD5 } from "../utils/hash.js";
 
 class PaymentService {
 	/**
@@ -40,19 +41,29 @@ class PaymentService {
 			billNumber: request.bookingId || undefined,
 		});
 
-		// Generate deeplink using Bakong API
-		const deeplinkResult = await khqrBakongService.generateDeeplink({
-			qr: qrString,
-			sourceInfo: {
-				appIconUrl: process.env.APP_ICON_URL || "",
-				appName: process.env.APP_NAME || "Smart Parking",
-				appDeepLinkCallback: process.env.APP_CALLBACK_URL || "",
-			},
-		});
+		// Generate deeplink using Bakong API (optional - QR code works without it)
+		let deeplinkUrl = "";
+		try {
+			const deeplinkResult = await khqrBakongService.generateDeeplink({
+				qr: qrString,
+				sourceInfo: {
+					appIconUrl: process.env.APP_ICON_URL || "",
+					appName: process.env.APP_NAME || "Smart Parking",
+					appDeepLinkCallback: process.env.APP_DEEPLINK_CALLBACK || "",
+				},
+			});
 
-		if (deeplinkResult.responseCode !== 0 || !deeplinkResult.data) {
-			throw new Error(KHQR_ERROR_MESSAGES.DEEPLINK_GENERATION_FAILED);
+			if (deeplinkResult.responseCode === 0 && deeplinkResult.data) {
+				deeplinkUrl = deeplinkResult.data.shortLink;
+			}
+		} catch (error) {
+			// Deeplink generation failed (CloudFront blocking), but QR still works
+			console.warn('⚠️  Deeplink generation failed:', error);
+			deeplinkUrl = ""; // Leave empty - QR code is still functional
 		}
+
+		// Generate MD5 hash from QR string for payment verification
+		const md5Hash = generateMD5(qrString);
 
 		// Save payment to database
 		const payment = await prisma.kHQRPayment.create({
@@ -62,7 +73,8 @@ class PaymentService {
 				amount: request.amount,
 				currency: request.currency,
 				qrString: qrString,
-				deeplinkUrl: deeplinkResult.data.shortLink,
+				deeplinkUrl: deeplinkUrl || null, // May be empty if deeplink generation failed
+				md5Hash: md5Hash,
 				status: KHQR_PAYMENT_STATUS.PENDING,
 				description: request.description,
 			},
@@ -72,6 +84,7 @@ class PaymentService {
 			paymentId: payment.id,
 			qrString: payment.qrString || "",
 			deeplinkUrl: payment.deeplinkUrl || "",
+			md5: payment.md5Hash || "",
 			amount: Number(payment.amount),
 			currency: payment.currency,
 			status: payment.status,
@@ -131,6 +144,85 @@ class PaymentService {
 			data: {
 				status: KHQR_PAYMENT_STATUS.PAID,
 				transactionHash: request.transactionHash,
+				fromAccountId: transactionData.fromAccountId,
+				toAccountId: transactionData.toAccountId,
+				paidAt: new Date(),
+			},
+		});
+
+		return {
+			paymentId: updatedPayment.id,
+			status: updatedPayment.status as any,
+			transactionData,
+			verifiedAt: updatedPayment.paidAt || new Date(),
+		};
+	}
+
+	/**
+	 * Check payment status using MD5 hash (for automatic polling)
+	 * This is the key method for auto-verification like in the guide
+	 */
+	async checkPaymentByMD5(md5: string): Promise<VerifyPaymentResponse> {
+		// Find payment by MD5 hash
+		const payment = await prisma.kHQRPayment.findUnique({
+			where: { md5Hash: md5 },
+		});
+
+		if (!payment) {
+			throw new Error(KHQR_ERROR_MESSAGES.PAYMENT_NOT_FOUND);
+		}
+
+		// If already paid, return existing data
+		if (payment.status === KHQR_PAYMENT_STATUS.PAID) {
+			return {
+				paymentId: payment.id,
+				status: payment.status as any,
+				transactionData: {
+					hash: payment.transactionHash || "",
+					fromAccountId: payment.fromAccountId || "",
+					toAccountId: payment.toAccountId || "",
+					currency: payment.currency,
+					amount: Number(payment.amount),
+					description: payment.description || null,
+					createdDateMs: payment.createdAt.getTime(),
+					acknowledgedDateMs: payment.paidAt?.getTime() || 0,
+					trackingStatus: null,
+					receiverBank: null,
+					receiverBankAccount: null,
+					instructionRef: null,
+					externalRef: null,
+				},
+				verifiedAt: payment.paidAt || new Date(),
+			};
+		}
+
+		// Check transaction with Bakong API using MD5
+		const transactionResult = await khqrBakongService.checkTransactionByMD5({
+			md5,
+		});
+
+		// If no transaction found yet, throw error (payment still pending)
+		if (transactionResult.responseCode !== 0 || !transactionResult.data) {
+			throw new Error(KHQR_ERROR_MESSAGES.TRANSACTION_NOT_FOUND);
+		}
+
+		const transactionData = transactionResult.data;
+
+		// Verify amount and currency match
+		if (Number(transactionData.amount) !== Number(payment.amount)) {
+			throw new Error(KHQR_ERROR_MESSAGES.AMOUNT_MISMATCH);
+		}
+
+		if (transactionData.currency !== payment.currency) {
+			throw new Error(KHQR_ERROR_MESSAGES.CURRENCY_MISMATCH);
+		}
+
+		// Update payment as verified
+		const updatedPayment = await prisma.kHQRPayment.update({
+			where: { id: payment.id },
+			data: {
+				status: KHQR_PAYMENT_STATUS.PAID,
+				transactionHash: transactionData.hash,
 				fromAccountId: transactionData.fromAccountId,
 				toAccountId: transactionData.toAccountId,
 				paidAt: new Date(),

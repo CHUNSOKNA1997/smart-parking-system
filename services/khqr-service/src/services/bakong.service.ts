@@ -29,19 +29,54 @@ class KHQRBakongService {
 
 	constructor() {
 		// Use development or production API URL
-		this.baseUrl = process.env.NODE_ENV === 'production' 
+		this.baseUrl = process.env.NODE_ENV === 'production'
 			? process.env.BAKONG_PROD_BASE_API_URL || "https://api-bakong.nbc.gov.kh/v1"
 			: process.env.BAKONG_DEV_BASE_API_URL || "https://sit-api-bakong.nbc.gov.kh/v1";
-		
+
 		this.token = process.env.BAKONG_ACCESS_TOKEN || null;
 
 		this.axiosInstance = axios.create({
 			baseURL: this.baseUrl,
 			timeout: 30000,
-			headers: {
-				"Content-Type": "application/json",
-			},
+			// Don't override User-Agent - let axios use its default
+			// CloudFront blocks custom User-Agents but allows axios default
 		});
+
+		// Add request interceptor for debugging
+		this.axiosInstance.interceptors.request.use(
+			(config) => {
+				console.log('🔵 Bakong API Request:', {
+					method: config.method?.toUpperCase(),
+					url: `${config.baseURL}${config.url}`,
+					headers: config.headers,
+					data: config.data,
+				});
+				return config;
+			},
+			(error) => {
+				console.error('🔴 Request Error:', error);
+				return Promise.reject(error);
+			}
+		);
+
+		// Add response interceptor for debugging
+		this.axiosInstance.interceptors.response.use(
+			(response) => {
+				console.log('🟢 Bakong API Response:', {
+					status: response.status,
+					data: response.data,
+				});
+				return response;
+			},
+			(error) => {
+				console.error('🔴 Response Error:', {
+					status: error.response?.status,
+					statusText: error.response?.statusText,
+					data: error.response?.data,
+				});
+				return Promise.reject(error);
+			}
+		);
 	}
 
 	/**
@@ -54,16 +89,19 @@ class KHQRBakongService {
 	/**
 	 * Get authorization headers
 	 */
-	private getAuthHeaders(): Record<string, string> {
-		if (!this.token) {
+	private getAuthHeaders(required: boolean = true): Record<string, string> {
+		if (!this.token && required) {
 			throw new Error(
 				"KHQR token not available. Please authenticate first."
 			);
 		}
-		return {
-			Authorization: `Bearer ${this.token}`,
+		const headers: Record<string, string> = {
 			"Content-Type": "application/json",
 		};
+		if (this.token) {
+			headers.Authorization = `Bearer ${this.token}`;
+		}
+		return headers;
 	}
 
 	/**
@@ -76,7 +114,7 @@ class KHQRBakongService {
 		try {
 			const response =
 				await this.axiosInstance.post<KHQRRequestTokenResponse>(
-					"/v1/request_token",
+					"/request_token",
 					request
 				);
 			return response.data;
@@ -95,7 +133,7 @@ class KHQRBakongService {
 		try {
 			const response =
 				await this.axiosInstance.post<KHQRVerifyTokenResponse>(
-					"/v1/verify",
+					"/verify",
 					request
 				);
 
@@ -120,7 +158,7 @@ class KHQRBakongService {
 		try {
 			const response =
 				await this.axiosInstance.post<KHQRRenewTokenResponse>(
-					"/v1/renew_token",
+					"/renew_token",
 					request
 				);
 
@@ -138,6 +176,7 @@ class KHQRBakongService {
 	/**
 	 * 4. Generate Deeplink
 	 * Generate a deeplink URL from a Bakong QR code string
+	 * NOTE: This endpoint does NOT require authentication
 	 */
 	async generateDeeplink(
 		request: KHQRGenerateDeeplinkRequest
@@ -145,7 +184,7 @@ class KHQRBakongService {
 		try {
 			const response =
 				await this.axiosInstance.post<KHQRGenerateDeeplinkResponse>(
-					"/v1/generate_deeplink_by_qr",
+					"/generate_deeplink_by_qr",
 					request
 				);
 			return response.data;
@@ -163,7 +202,7 @@ class KHQRBakongService {
 		try {
 			const response =
 				await this.axiosInstance.post<KHQRCheckTransactionResponse>(
-					"/v1/check_transaction_by_md5",
+					"/check_transaction_by_md5",
 					request,
 					{
 						headers: this.getAuthHeaders(),
@@ -184,7 +223,7 @@ class KHQRBakongService {
 		try {
 			const response =
 				await this.axiosInstance.post<KHQRCheckTransactionResponse>(
-					"/v1/check_transaction_by_hash",
+					"/check_transaction_by_hash",
 					request,
 					{
 						headers: this.getAuthHeaders(),
@@ -205,7 +244,7 @@ class KHQRBakongService {
 		try {
 			const response =
 				await this.axiosInstance.post<KHQRCheckTransactionResponse>(
-					"/v1/check_transaction_by_short_hash",
+					"/check_transaction_by_short_hash",
 					request,
 					{
 						headers: this.getAuthHeaders(),
@@ -226,7 +265,7 @@ class KHQRBakongService {
 		try {
 			const response =
 				await this.axiosInstance.post<KHQRCheckAccountResponse>(
-					"/v1/check_bakong_account",
+					"/check_bakong_account",
 					request,
 					{
 						headers: this.getAuthHeaders(),
@@ -243,6 +282,16 @@ class KHQRBakongService {
 	 */
 	private handleError(error: any): Error {
 		if (error.response?.data) {
+			// Check if error is HTML (CloudFront error pages)
+			if (typeof error.response.data === 'string' && error.response.data.includes('<!DOCTYPE')) {
+				const statusCode = error.response.status || 'unknown';
+				return new Error(
+					`Bakong API Error (${statusCode}): Request blocked by CloudFront. ` +
+					`Check your credentials and network access.`
+				);
+			}
+
+			// Handle JSON error responses
 			const errorData = error.response.data as KHQRErrorResponse;
 			return new Error(
 				errorData.responseMessage ||

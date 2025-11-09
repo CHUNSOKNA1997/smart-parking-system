@@ -8,7 +8,6 @@ import helmet from "helmet";
 import dotenv from "dotenv";
 import paymentRoutes from "./routes/payment.routes.js";
 import { errorMiddleware } from "./middleware/error.middleware.js";
-import prisma from "./config/prisma.js";
 
 dotenv.config();
 
@@ -24,28 +23,6 @@ app.use(
 );
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
-
-// Health check
-app.get("/health", async (req: Request, res: Response) => {
-	try {
-		// Check database connection
-		await prisma.$queryRaw`SELECT 1`;
-
-		res.json({
-			success: true,
-			message: "KHQR Service is running",
-			service: process.env.SERVICE_NAME || "khqr-service",
-			timestamp: new Date().toISOString(),
-			database: "connected",
-		});
-	} catch (error) {
-		res.status(500).json({
-			success: false,
-			message: "Service is unhealthy",
-			error: "Database connection failed",
-		});
-	}
-});
 
 // API Routes
 app.use("/api/payments", paymentRoutes);

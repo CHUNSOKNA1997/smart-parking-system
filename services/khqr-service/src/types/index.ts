@@ -177,6 +177,7 @@ export interface CreatePaymentResponse {
 	paymentId: string;
 	qrString: string;
 	deeplinkUrl: string;
+	md5: string;
 	amount: number;
 	currency: string;
 	status: string;
@@ -193,6 +194,10 @@ export interface VerifyPaymentResponse {
 	status: KHQRPaymentStatus;
 	transactionData: KHQRTransactionData;
 	verifiedAt: Date;
+}
+
+export interface CheckPaymentRequest {
+	md5: string;
 }
 
 // ============================================================================
