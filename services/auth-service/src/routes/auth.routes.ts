@@ -3,12 +3,12 @@ import AuthController from "../controllers/auth.controller.js";
 import { validate } from "../middleware/validation.middleware.js";
 import { authenticateToken } from "../middleware/auth.middleware.js";
 import {
-  registerSchema,
-  loginSchema,
-  emailSchema,
-  verifyResetOtpSchema,
-  resetPasswordSchema,
-  otpVerificationSchema,
+    registerSchema,
+    loginSchema,
+    emailSchema,
+    verifyResetOtpSchema,
+    resetPasswordSchema,
+    otpVerificationSchema,
 } from "../validators/auth.validator.js";
 
 const router = express.Router();
@@ -19,31 +19,31 @@ router.post("/login", validate(loginSchema), AuthController.login);
 
 // Email verification routes
 router.post(
-  "/email/verify",
-  validate(otpVerificationSchema),
-  AuthController.verifyOTP
+    "/email/verify",
+    validate(otpVerificationSchema),
+    AuthController.verifyOTP
 );
 router.post(
-  "/email/verify/resend",
-  validate(emailSchema),
-  AuthController.resendVerification
+    "/email/verify/resend",
+    validate(emailSchema),
+    AuthController.resendVerification
 );
 
 // Password reset routes
 router.post(
-  "/password/reset/request",
-  validate(emailSchema),
-  AuthController.forgotPassword
+    "/password/reset/request",
+    validate(emailSchema),
+    AuthController.forgotPassword
 );
 router.post(
-  "/password/reset/verify",
-  validate(verifyResetOtpSchema),
-  AuthController.verifyResetOTP
+    "/password/reset/verify",
+    validate(verifyResetOtpSchema),
+    AuthController.verifyResetOTP
 );
 router.post(
-  "/password/reset",
-  validate(resetPasswordSchema),
-  AuthController.resetPassword
+    "/password/reset",
+    validate(resetPasswordSchema),
+    AuthController.resetPassword
 );
 
 // Current user route (protected)
