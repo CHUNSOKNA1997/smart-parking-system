@@ -117,7 +117,7 @@ Service is running correctly with:
 
 ## 🚀 Ready to Use!
 
-Your KHQR service is now configured with your Bakong credentials and ready to:
+Your payment service is now configured with your Bakong credentials and ready to:
 1. Generate KHQR payment codes
 2. Create deeplinks
 3. Verify payments
@@ -125,7 +125,7 @@ Your KHQR service is now configured with your Bakong credentials and ready to:
 
 **Start the service:**
 ```bash
-cd services/khqr-service
+cd services/payment-service
 npm run dev
 ```
 

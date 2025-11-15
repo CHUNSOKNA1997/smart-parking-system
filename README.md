@@ -18,6 +18,7 @@
 ```
 API Gateway (3000) → Auth Service (3001) → PostgreSQL
                   ↘ Parking Service (3002) → PostgreSQL
+                  ↘ Payment Service (3003) → PostgreSQL
 ```
 
 **Key Principles:**
@@ -41,6 +42,11 @@ npm run prisma:generate
 
 # Parking Service
 cd ../parking-service
+npm install
+npm run prisma:generate
+
+# Payment Service
+cd ../payment-service
 npm install
 npm run prisma:generate
 
@@ -70,6 +76,16 @@ AUTH_SERVICE_URL=http://localhost:3001
 PORT=3002
 ```
 
+**services/payment-service/.env:**
+```env
+DATABASE_URL=postgresql://user:password@host:5432/payment_db
+JWT_SECRET=your_super_secret_key  # Must match auth-service
+PORT=3003
+BAKONG_ACCESS_TOKEN=your_bakong_token
+KHQR_MERCHANT_ID=your_merchant_id
+KHQR_ACCOUNT_ID=your_account_id
+```
+
 ### 3. Run Services
 
 **Terminal 1 - Auth Service:**
@@ -84,7 +100,13 @@ cd services/parking-service
 npm run dev
 ```
 
-**Terminal 3 - API Gateway:**
+**Terminal 3 - Payment Service:**
+```bash
+cd services/payment-service
+npm run dev
+```
+
+**Terminal 4 - API Gateway:**
 ```bash
 cd aggregator
 npm start
@@ -96,6 +118,7 @@ npm start
 - **API Documentation:** http://localhost:3000/api-docs
 - **Auth Service:** http://localhost:3001
 - **Parking Service:** http://localhost:3002
+- **Payment Service:** http://localhost:3003
 
 ## API Endpoints
 
@@ -160,24 +183,38 @@ smart-parking-system/
 │   │   │   └── schema.prisma   # Users table only
 │   │   └── package.json
 │   │
-│   └── parking-service/        # Parking management microservice
+│   ├── parking-service/        # Parking management microservice
+│   │   ├── src/
+│   │   │   ├── controllers/    # Parking, booking controllers
+│   │   │   ├── models/         # Parking, booking models
+│   │   │   ├── routes/         # API routes
+│   │   │   ├── services/       # QR, AuthServiceClient
+│   │   │   ├── middleware/     # Auth via HTTP
+│   │   │   └── utils/          # Helpers
+│   │   ├── prisma/
+│   │   │   └── schema.prisma   # Parking tables (no User)
+│   │   └── package.json
+│   │
+│   └── payment-service/        # Payment processing microservice
 │       ├── src/
-│       │   ├── controllers/    # Parking, booking controllers
-│       │   ├── models/         # Parking, booking models
+│       │   ├── controllers/    # Payment controllers
+│       │   ├── services/       # Bakong, KHQR services
 │       │   ├── routes/         # API routes
-│       │   ├── services/       # QR, AuthServiceClient
-│       │   ├── middleware/     # Auth via HTTP
-│       │   └── utils/          # Helpers
+│       │   ├── middleware/     # Auth, error handling
+│       │   └── utils/          # Constants, helpers
 │       ├── prisma/
-│       │   └── schema.prisma   # Parking tables (no User)
+│       │   └── schema.prisma   # Payment tables
 │       └── package.json
 │
 ├── aggregator/                 # API Gateway
 │   └── app.ts                  # Request routing, Swagger
 │
 ├── docs/                       # Documentation
-│   ├── MICROSERVICES-ARCHITECTURE.md
-│   └── MIGRATION-SUMMARY.md
+│   ├── services/               # Service-specific docs
+│   │   ├── auth-service/
+│   │   ├── parking-service/
+│   │   └── payment-service/
+│   └── *.md                    # General documentation
 │
 └── shared/                     # Shared utilities (future)
 ```
@@ -303,6 +340,15 @@ npm run prisma:migrate
 npm run prisma:studio
 ```
 
+**services/payment-service:**
+```bash
+npm run dev          # Start with hot reload
+npm start            # Start production
+npm run prisma:generate
+npm run prisma:migrate
+npm run prisma:studio
+```
+
 **aggregator:**
 ```bash
 npm start            # Start API Gateway
@@ -331,11 +377,13 @@ Each service can be deployed independently:
 # Build
 cd services/auth-service && npm run build
 cd services/parking-service && npm run build
+cd services/payment-service && npm run build
 
 # Deploy to different servers
 Server 1: services/auth-service (with its database)
 Server 2: services/parking-service (with its database)
-Server 3: aggregator (stateless)
+Server 3: services/payment-service (with its database)
+Server 4: aggregator (stateless)
 ```
 
 **Environment Variables for Production:**
@@ -389,12 +437,13 @@ MIT
 
 - [Microservices Architecture](./docs/MICROSERVICES-ARCHITECTURE.md) - Detailed architecture guide
 - [Migration Summary](./docs/MIGRATION-SUMMARY.md) - What changed in the refactoring
-- [Auth Service README](./services/auth-service/README.md) - Auth service specifics
-- [Parking Service README](./services/parking-service/README.md) - Parking service specifics
+- [Auth Service README](./docs/services/auth-service/README.md) - Auth service specifics
+- [Parking Service README](./docs/services/parking-service/README.md) - Parking service specifics
+- [Payment Service README](./docs/services/payment-service/README.md) - Payment service with KHQR integration
 
 ## Stats
 
-- **Services:** 3 (auth, parking, gateway)
+- **Services:** 4 (auth, parking, payment, gateway)
 - **TypeScript Files:** 40+
 - **API Endpoints:** 25+
 - **Type Coverage:** 100%

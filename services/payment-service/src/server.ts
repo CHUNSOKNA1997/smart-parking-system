@@ -4,13 +4,13 @@ import dotenv from "dotenv";
 dotenv.config();
 
 const PORT = process.env.PORT || 3003;
-const SERVICE_NAME = process.env.SERVICE_NAME || "khqr-service";
+const SERVICE_NAME = process.env.SERVICE_NAME || "payment-service";
 
 const server = app.listen(PORT, () => {
 	console.log(
 		"╔════════════════════════════════════════════════════════════╗"
 	);
-	console.log(`║  ${SERVICE_NAME.toUpperCase()} - KHQR Payment Service`);
+	console.log(`║  ${SERVICE_NAME.toUpperCase()} - Payment Service (KHQR)`);
 	console.log(
 		"╠════════════════════════════════════════════════════════════╣"
 	);

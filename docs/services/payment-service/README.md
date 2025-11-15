@@ -1,14 +1,14 @@
-# KHQR Service Implementation - Smart Parking System
+# Payment Service Implementation - Smart Parking System
 
-**Service Name:** khqr-service  
-**Port:** 3003  
-**Status:** ✅ IN PROGRESS - Core files created
+**Service Name:** payment-service
+**Port:** 3003
+**Status:** ✅ COMPLETE - KHQR integration active
 
 ---
 
 ## 📊 Overview
 
-A microservice for handling KHQR (Bakong QR) payments in the Smart Parking System. This service integrates with the Bakong Open API to process parking payments via Cambodia's national QR payment system.
+The Payment Service handles all payment processing for the Smart Parking System, with primary integration using KHQR (Bakong QR). This service integrates with the Bakong Open API to process parking payments via Cambodia's national QR payment system.
 
 ---
 
@@ -160,10 +160,10 @@ CREATE TABLE "khqr_tokens" (
 # Server
 NODE_ENV=development
 PORT=3003
-SERVICE_NAME=khqr-service
+SERVICE_NAME=payment-service
 
 # Database
-DATABASE_URL=postgresql://postgres:12345678@localhost:5432/auth_db
+DATABASE_URL=postgresql://postgres:12345678@localhost:5432/payment_db
 
 # JWT (shared with auth-service)
 JWT_SECRET=9O07i+qCnuBg0HslcMzYsiSDP3tQqsDhtmDYI3h/mo0=
@@ -242,7 +242,7 @@ CORS_ORIGIN=http://localhost:8080,http://localhost:3000
 
 ```bash
 # 1. Navigate to service
-cd services/khqr-service
+cd services/payment-service
 
 # 2. Install dependencies (already done)
 npm install
@@ -320,7 +320,7 @@ npm run dev
 
 5. **Run Migrations** (2 min)
    ```bash
-   cd services/khqr-service
+   cd services/payment-service
    npx prisma db push
    ```
 

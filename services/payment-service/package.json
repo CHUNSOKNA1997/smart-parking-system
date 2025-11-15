@@ -1,7 +1,7 @@
 {
-  "name": "khqr-service",
+  "name": "payment-service",
   "version": "1.0.0",
-  "description": "KHQR (Bakong QR) Payment microservice for Smart Parking System",
+  "description": "Payment microservice with KHQR (Bakong QR) integration for Smart Parking System",
   "main": "dist/server.js",
   "type": "module",
   "scripts": {

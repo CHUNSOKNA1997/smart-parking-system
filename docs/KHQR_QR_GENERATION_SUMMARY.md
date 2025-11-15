@@ -7,14 +7,14 @@
 
 ## 🎉 SUCCESS - QR Generation Added!
 
-Your KHQR service now generates **real, valid Bakong QR codes** according to the EMVCo specification!
+Your payment service now generates **real, valid Bakong QR codes** according to the EMVCo specification!
 
 ---
 
 ## ✅ What Was Added
 
 ### 1. New Service: KHQR Generator
-**File:** `services/khqr-service/src/services/khqr-generator.service.ts`
+**File:** `services/payment-service/src/services/khqr-generator.service.ts`
 
 **Features:**
 - ✅ Generates valid KHQR strings (EMVCo format)
@@ -134,10 +134,10 @@ CRC: Checksum
 
 ```bash
 # 1. Add your merchant details to .env
-nano services/khqr-service/.env
+nano services/payment-service/.env
 
 # 2. Start service
-cd services/khqr-service
+cd services/payment-service
 npm run dev
 
 # 3. Create payment and get QR code!
@@ -148,7 +148,7 @@ npm run dev
 ## 📚 Documentation
 
 Full guide available at:
-`services/khqr-service/KHQR_QR_GENERATION.md`
+`docs/services/payment-service/KHQR_QR_GENERATION.md`
 
 ---
 

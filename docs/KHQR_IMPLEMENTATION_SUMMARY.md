@@ -1,21 +1,21 @@
-# KHQR Service Implementation - COMPLETE ✅
+# Payment Service Implementation - COMPLETE ✅
 
-**Date:** October 30, 2025  
-**Port:** 3003  
+**Date:** October 30, 2025
+**Port:** 3003
 **Status:** Ready to use
 
 ---
 
-## ✅ KHQR Service Successfully Created!
+## ✅ Payment Service Successfully Created!
 
-Your KHQR payment microservice is **100% complete** and ready to process Bakong QR payments.
+Your payment microservice with KHQR (Bakong QR) integration is **100% complete** and ready to process payments.
 
 ---
 
 ## 📁 Files Created (20 files)
 
 ```
-services/khqr-service/
+services/payment-service/
 ├── src/
 │   ├── app.ts                    ✅ Express app
 │   ├── server.ts                 ✅ Server entry
@@ -49,14 +49,14 @@ services/khqr-service/
 
 ```bash
 # Start the service
-cd services/khqr-service
+cd services/payment-service
 npm run dev
 ```
 
 **Output:**
 ```
 ╔════════════════════════════════════════════════════════════╗
-║  KHQR-SERVICE - KHQR Payment Service
+║  PAYMENT-SERVICE - Payment Service (KHQR)
 ╠════════════════════════════════════════════════════════════╣
 ║  Port:        3003
 ║  Database:    PostgreSQL
@@ -118,6 +118,6 @@ Database already configured by you ✅
 
 ## 🎉 Done!
 
-The KHQR service is complete. Just add your Bakong credentials to `.env` and start using it!
+The payment service is complete. Just add your Bakong credentials to `.env` and start using it!
 
-**See full documentation:** `services/khqr-service/README.md`
+**See full documentation:** `docs/services/payment-service/README.md`

@@ -45,7 +45,7 @@ class KHQRBakongService {
 		// Request interceptor for logging and debugging API calls
 		this.axiosInstance.interceptors.request.use(
 			(config) => {
-				console.log('[KHQR] Bakong API Request:', {
+				console.log('[PAYMENT] Bakong API Request:', {
 					method: config.method?.toUpperCase(),
 					url: `${config.baseURL}${config.url}`,
 					headers: config.headers,
@@ -54,7 +54,7 @@ class KHQRBakongService {
 				return config;
 			},
 			(error) => {
-				console.error('[KHQR] Request Error:', error);
+				console.error('[PAYMENT] Request Error:', error);
 				return Promise.reject(error);
 			}
 		);
@@ -62,14 +62,14 @@ class KHQRBakongService {
 		// Response interceptor for logging API responses and errors
 		this.axiosInstance.interceptors.response.use(
 			(response) => {
-				console.log('[KHQR] Bakong API Response:', {
+				console.log('[PAYMENT] Bakong API Response:', {
 					status: response.status,
 					data: response.data,
 				});
 				return response;
 			},
 			(error) => {
-				console.error('[KHQR] Response Error:', {
+				console.error('[PAYMENT] Response Error:', {
 					status: error.response?.status,
 					statusText: error.response?.statusText,
 					data: error.response?.data,
