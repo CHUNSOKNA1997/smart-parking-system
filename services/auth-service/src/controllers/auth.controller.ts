@@ -56,20 +56,16 @@ class AuthController {
 		try {
 			const { firstName, lastName, email, password } = req.body;
 
-			// Check if email already exists
 			const existingUser = await UserModel.findByEmail(email);
 			if (existingUser) {
 				return sendError(res, 400, ERRORS.EMAIL_ALREADY_EXISTS);
 			}
 
-			// Hash password
 			const passwordHash = await bcrypt.hash(password, 10);
 
-			// Generate OTP
 			const verificationOtp = generateOTP();
 			const otpExpiry = getOTPExpiry();
 
-			// Create user
 			const user = await UserModel.create({
 				firstName,
 				lastName,
@@ -79,7 +75,6 @@ class AuthController {
 				otpExpiry,
 			});
 
-			// Send verification OTP email
 			try {
 				await sendVerificationOTP(email, verificationOtp);
 			} catch (emailError) {
@@ -87,7 +82,6 @@ class AuthController {
 					"❌ Failed to send verification OTP:",
 					emailError
 				);
-				// Continue even if email fails
 			}
 
 			console.log(`✅ New user registered: ${email}`);
@@ -144,18 +138,15 @@ class AuthController {
 		try {
 			const { email, password } = req.body;
 
-			// Find user
 			const user = await UserModel.findByEmail(email);
 			if (!user) {
 				return sendError(res, 401, ERRORS.INVALID_CREDENTIALS);
 			}
 
-			// Check if email is verified
 			if (!user.isVerified) {
 				return sendError(res, 403, ERRORS.EMAIL_NOT_VERIFIED);
 			}
 
-			// Verify password
 			const isValidPassword = await bcrypt.compare(
 				password,
 				user.passwordHash
@@ -164,7 +155,6 @@ class AuthController {
 				return sendError(res, 401, ERRORS.INVALID_CREDENTIALS);
 			}
 
-			// Generate JWT token with user info
 			const token = generateAccessToken(
 				user.id,
 				user.email,
@@ -214,21 +204,17 @@ class AuthController {
 		try {
 			const { email, otp } = req.body;
 
-			// Find user by email and OTP
 			const user = await UserModel.findByOTP(email, otp);
 			if (!user) {
 				return sendError(res, 400, "Invalid or expired OTP");
 			}
 
-			// Check if already verified
 			if (user.isVerified) {
 				return sendSuccess(res, 200, "Email already verified");
 			}
 
-			// Verify email
 			await UserModel.verifyEmail(user.id);
 
-			// Send welcome email
 			try {
 				await sendWelcomeEmail(user.email, user.firstName);
 			} catch (emailError) {
@@ -274,23 +260,19 @@ class AuthController {
 		try {
 			const { email } = req.body;
 
-			// Find user
 			const user = await UserModel.findByEmail(email);
 			if (!user) {
 				return sendError(res, 404, ERRORS.USER_NOT_FOUND);
 			}
 
-			// Check if already verified
 			if (user.isVerified) {
 				return sendError(res, 400, "Email already verified");
 			}
 
-			// Generate new OTP
 			const verificationOtp = generateOTP();
 			const otpExpiry = getOTPExpiry();
 			await UserModel.updateVerificationOTP(user.id, verificationOtp, otpExpiry);
 
-			// Send verification OTP email
 			await sendVerificationOTP(email, verificationOtp);
 
 			console.log(`✅ Verification OTP resent to: ${email}`);
