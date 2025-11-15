@@ -8,7 +8,12 @@ import { sendSuccess, sendError } from "../utils/response.js";
 import { AuthRequest } from "../types/index.js";
 
 class BookingController {
-	// Create new booking
+	/**
+	 * Creates a new parking booking for a user.
+	 * Validates spot availability, generates QR code, and creates transaction record.
+	 *
+	 * @route POST /api/v1/bookings
+	 */
 	static async createBooking(
 		req: AuthRequest,
 		res: Response
@@ -17,7 +22,7 @@ class BookingController {
 			const { spotId, durationHours } = req.body;
 			const userId = req.user!.userId;
 
-			// Check if spot exists and is available
+			// Validate that the parking spot exists and is available for booking
 			const spot = await ParkingSpotModel.findById(spotId);
 			if (!spot) {
 				return sendError(res, 404, "Parking spot not found");
@@ -27,7 +32,7 @@ class BookingController {
 				return sendError(res, 400, "Parking spot is not available");
 			}
 
-			// Check if user already has an active booking
+			// Prevent users from creating multiple active bookings simultaneously
 			const activeBooking = await BookingModel.findActiveByUserId(userId);
 			if (activeBooking) {
 				return sendError(
@@ -37,11 +42,11 @@ class BookingController {
 				);
 			}
 
-			// Calculate total price
+			// Calculate total booking cost based on hourly rate and duration
 			const totalPrice =
 				Number(spot.pricePerHour) * Number(durationHours);
 
-			// Generate QR code
+			// Prepare QR code data payload for booking verification
 			const qrCodeData = {
 				bookingId: "temp", // Will be replaced with actual ID
 				spotId,
@@ -49,30 +54,30 @@ class BookingController {
 				startTime: new Date().toISOString(),
 			};
 
-			// Create booking
+			// Create initial booking record in database
 			const booking = await BookingModel.create({
 				userId,
 				spotId,
 				durationHours,
 				totalPrice,
-				qrCode: null, // Generate after booking created
+				qrCode: null, // Will be generated after booking ID is assigned
 			});
 
-			// Generate QR code with actual booking ID
+			// Update QR code data with the actual booking ID
 			qrCodeData.bookingId = booking.id;
 			const qrCode = await generateQRCode(qrCodeData);
 
-			// Update booking with QR code
+			// Update booking status to reserved
 			const updatedBooking = await BookingModel.updateStatus(
 				booking.id,
 				"reserved"
 			);
 			updatedBooking.qrCode = qrCode;
 
-			// Update spot availability
+			// Mark the parking spot as unavailable
 			await ParkingSpotModel.updateAvailability(spotId, false);
 
-			// Create transaction record
+			// Create transaction record for payment tracking
 			await TransactionModel.create({
 				bookingId: booking.id,
 				userId,
@@ -81,7 +86,7 @@ class BookingController {
 				description: `Parking booking for spot ${spotId}`,
 			});
 
-			console.log(`Booking created: ${booking.id} for user: ${userId}`);
+			console.log(`[BOOKING] Booking created: ${booking.id} for user: ${userId}`);
 
 			return sendSuccess(res, 201, "Booking created successfully", {
 				booking: {
@@ -90,7 +95,7 @@ class BookingController {
 				},
 			});
 		} catch (error) {
-			console.error("Create booking error:", error);
+			console.error("[BOOKING] Create booking error:", error);
 			return sendError(
 				res,
 				500,
@@ -100,7 +105,12 @@ class BookingController {
 		}
 	}
 
-	// Get user bookings
+	/**
+	 * Retrieves all bookings for the authenticated user.
+	 * Optionally filters by booking status.
+	 *
+	 * @route GET /api/v1/bookings
+	 */
 	static async getUserBookings(
 		req: AuthRequest,
 		res: Response
@@ -116,7 +126,7 @@ class BookingController {
 				count: bookings.length,
 			});
 		} catch (error) {
-			console.error("Get user bookings error:", error);
+			console.error("[BOOKING] Get user bookings error:", error);
 			return sendError(
 				res,
 				500,
@@ -126,7 +136,12 @@ class BookingController {
 		}
 	}
 
-	// Get booking by ID
+	/**
+	 * Retrieves a specific booking by its ID.
+	 * Validates that the booking belongs to the authenticated user.
+	 *
+	 * @route GET /api/v1/bookings/:bookingId
+	 */
 	static async getBookingById(
 		req: AuthRequest,
 		res: Response
@@ -141,7 +156,7 @@ class BookingController {
 				return sendError(res, 404, "Booking not found");
 			}
 
-			// Check if booking belongs to user
+			// Ensure user can only access their own bookings
 			if (booking.userId !== userId) {
 				return sendError(res, 403, "Access denied");
 			}
@@ -150,7 +165,7 @@ class BookingController {
 				booking,
 			});
 		} catch (error) {
-			console.error("Get booking by ID error:", error);
+			console.error("[BOOKING] Get booking by ID error:", error);
 			return sendError(
 				res,
 				500,
@@ -160,7 +175,11 @@ class BookingController {
 		}
 	}
 
-	// Get active booking for user
+	/**
+	 * Retrieves the currently active booking for the authenticated user.
+	 *
+	 * @route GET /api/v1/bookings/active
+	 */
 	static async getActiveBooking(
 		req: AuthRequest,
 		res: Response
@@ -181,7 +200,7 @@ class BookingController {
 				{ booking }
 			);
 		} catch (error) {
-			console.error("Get active booking error:", error);
+			console.error("[BOOKING] Get active booking error:", error);
 			return sendError(
 				res,
 				500,
@@ -191,7 +210,12 @@ class BookingController {
 		}
 	}
 
-	// Update booking status
+	/**
+	 * Updates the status of a booking (e.g., completed, cancelled).
+	 * Releases the parking spot when booking is completed or cancelled.
+	 *
+	 * @route PATCH /api/v1/bookings/:bookingId/status
+	 */
 	static async updateBookingStatus(
 		req: AuthRequest,
 		res: Response
@@ -207,7 +231,7 @@ class BookingController {
 				return sendError(res, 404, "Booking not found");
 			}
 
-			// Check if booking belongs to user
+			// Ensure user can only modify their own bookings
 			if (booking.userId !== userId) {
 				return sendError(res, 403, "Access denied");
 			}
@@ -221,12 +245,12 @@ class BookingController {
 				endTime
 			);
 
-			// If booking is completed or cancelled, make spot available
+			// Release the parking spot when booking ends
 			if (["completed", "cancelled"].includes(status)) {
 				await ParkingSpotModel.updateAvailability(booking.spotId, true);
 			}
 
-			console.log(`Booking ${bookingId} status updated to: ${status}`);
+			console.log(`[BOOKING] Booking ${bookingId} status updated to: ${status}`);
 
 			return sendSuccess(
 				res,
@@ -235,7 +259,7 @@ class BookingController {
 				{ booking: updatedBooking }
 			);
 		} catch (error) {
-			console.error("Update booking status error:", error);
+			console.error("[BOOKING] Update booking status error:", error);
 			return sendError(
 				res,
 				500,

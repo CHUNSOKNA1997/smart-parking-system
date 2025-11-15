@@ -3,6 +3,9 @@ import jwt from 'jsonwebtoken';
 import { errorResponse } from '../utils/response.js';
 import { HTTP_STATUS } from '../utils/constants.js';
 
+/**
+ * JWT payload structure for authenticated requests.
+ */
 interface JWTPayload {
   userId: string;
   email: string;
@@ -18,6 +21,14 @@ declare global {
   }
 }
 
+/**
+ * Middleware to authenticate and verify JWT tokens for KHQR service endpoints.
+ * Validates the Authorization header, verifies the token, and attaches user information to the request.
+ *
+ * @param req - Express request object
+ * @param res - Express response object
+ * @param next - Express next middleware function
+ */
 export const authMiddleware = async (
   req: Request,
   res: Response,

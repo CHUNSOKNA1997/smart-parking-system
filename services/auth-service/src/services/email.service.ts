@@ -1,7 +1,13 @@
 import nodemailer from "nodemailer";
 
-// Email service for sending OTP and notifications
-// Create transporter
+/**
+ * Email service for sending OTP and notifications.
+ * Handles verification emails, password reset OTPs, and welcome messages.
+ */
+
+/**
+ * Nodemailer transporter configured with SMTP settings from environment variables
+ */
 const transporter = nodemailer.createTransport({
 	service: process.env.EMAIL_SERVICE || "gmail",
 	auth: {
@@ -10,7 +16,14 @@ const transporter = nodemailer.createTransport({
 	},
 });
 
-// Send verification OTP email
+/**
+ * Sends a verification OTP to the user's email address during registration.
+ *
+ * @param email - Recipient's email address
+ * @param otp - 6-digit verification code
+ * @returns Promise resolving to true if email sent successfully
+ * @throws Error if email sending fails
+ */
 export const sendVerificationOTP = async (
 	email: string,
 	otp: string
@@ -36,15 +49,22 @@ export const sendVerificationOTP = async (
 		};
 
 		await transporter.sendMail(mailOptions);
-		console.log(`✉️  Verification OTP sent to: ${email}`);
+		console.log(`[EMAIL] Verification OTP sent to: ${email}`);
 		return true;
 	} catch (error) {
-		console.error("❌ Error sending verification OTP:", error);
+		console.error("[EMAIL] Error sending verification OTP:", error);
 		throw error;
 	}
 };
 
-// Send password reset OTP email
+/**
+ * Sends a password reset OTP to the user's email address.
+ *
+ * @param email - Recipient's email address
+ * @param otp - 6-digit password reset code
+ * @returns Promise resolving to true if email sent successfully
+ * @throws Error if email sending fails
+ */
 export const sendPasswordResetOTP = async (
 	email: string,
 	otp: string
@@ -71,15 +91,22 @@ export const sendPasswordResetOTP = async (
 		};
 
 		await transporter.sendMail(mailOptions);
-		console.log(`✉️  Password reset OTP sent to: ${email}`);
+		console.log(`[EMAIL] Password reset OTP sent to: ${email}`);
 		return true;
 	} catch (error) {
-		console.error("❌ Error sending password reset OTP:", error);
+		console.error("[EMAIL] Error sending password reset OTP:", error);
 		throw error;
 	}
 };
 
-// Send welcome email (after verification)
+/**
+ * Sends a welcome email to newly verified users.
+ *
+ * @param email - Recipient's email address
+ * @param firstName - User's first name for personalization
+ * @returns Promise resolving to true if email sent successfully, false otherwise
+ * @note Does not throw errors to prevent disrupting the verification flow
+ */
 export const sendWelcomeEmail = async (
 	email: string,
 	firstName: string
@@ -106,11 +133,11 @@ export const sendWelcomeEmail = async (
 		};
 
 		await transporter.sendMail(mailOptions);
-		console.log(`✉️  Welcome email sent to: ${email}`);
+		console.log(`[EMAIL] Welcome email sent to: ${email}`);
 		return true;
 	} catch (error) {
-		console.error("❌ Error sending welcome email:", error);
-		// Don't throw error for welcome email
+		console.error("[EMAIL] Error sending welcome email:", error);
+		// Don't throw error for welcome email to prevent disrupting the verification flow
 		return false;
 	}
 };

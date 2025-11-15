@@ -21,12 +21,16 @@ import { generateMD5 } from "../utils/hash.js";
 
 class PaymentService {
 	/**
-	 * Create a new KHQR payment
+	 * Creates a new KHQR payment with QR code generation and optional deeplink.
+	 *
+	 * @param request - Payment creation details including amount, currency, and booking ID
+	 * @returns Payment response with QR string, deeplink URL, and MD5 hash
+	 * @throws Error if KHQR configuration is incomplete
 	 */
 	async createPayment(
 		request: CreatePaymentRequest
 	): Promise<CreatePaymentResponse> {
-		// Validate KHQR configuration
+		// Validate that all required KHQR merchant configuration is present
 		const configValidation = khqrGenerator.validateConfig();
 		if (!configValidation.valid) {
 			throw new Error(
@@ -34,14 +38,14 @@ class PaymentService {
 			);
 		}
 
-		// Generate valid KHQR string using merchant account details
+		// Generate KHQR-compliant QR code string using merchant account details
 		const qrString = khqrGenerator.generateQRString({
 			amount: request.amount,
 			currency: request.currency,
 			billNumber: request.bookingId || undefined,
 		});
 
-		// Generate deeplink using Bakong API (optional - QR code works without it)
+		// Attempt to generate deeplink URL via Bakong API (optional - QR code remains functional if this fails)
 		let deeplinkUrl = "";
 		try {
 			const deeplinkResult = await khqrBakongService.generateDeeplink({
@@ -57,15 +61,15 @@ class PaymentService {
 				deeplinkUrl = deeplinkResult.data.shortLink;
 			}
 		} catch (error) {
-			// Deeplink generation failed (CloudFront blocking), but QR still works
-			console.warn('⚠️  Deeplink generation failed:', error);
-			deeplinkUrl = ""; // Leave empty - QR code is still functional
+			// Deeplink generation failed (possibly due to CloudFront blocking), but QR code remains functional
+			console.warn('[PAYMENT] Deeplink generation failed:', error);
+			deeplinkUrl = ""; // QR code will still work for payment processing
 		}
 
-		// Generate MD5 hash from QR string for payment verification
+		// Generate MD5 hash of QR string for automatic payment verification polling
 		const md5Hash = generateMD5(qrString);
 
-		// Save payment to database
+		// Persist payment record to database
 		const payment = await prisma.kHQRPayment.create({
 			data: {
 				bookingId: request.bookingId,
@@ -73,7 +77,7 @@ class PaymentService {
 				amount: request.amount,
 				currency: request.currency,
 				qrString: qrString,
-				deeplinkUrl: deeplinkUrl || null, // May be empty if deeplink generation failed
+				deeplinkUrl: deeplinkUrl || null, // Null if deeplink generation failed
 				md5Hash: md5Hash,
 				status: KHQR_PAYMENT_STATUS.PENDING,
 				description: request.description,
@@ -93,12 +97,16 @@ class PaymentService {
 	}
 
 	/**
-	 * Verify payment using transaction hash
+	 * Verifies a payment by validating the transaction hash with Bakong API.
+	 *
+	 * @param request - Payment ID and transaction hash
+	 * @returns Verification response with transaction details
+	 * @throws Error if payment not found, already verified, or verification fails
 	 */
 	async verifyPayment(
 		request: VerifyPaymentRequest
 	): Promise<VerifyPaymentResponse> {
-		// Get payment from database
+		// Retrieve payment record from database
 		const payment = await prisma.kHQRPayment.findUnique({
 			where: { id: request.paymentId },
 		});
@@ -111,14 +119,14 @@ class PaymentService {
 			throw new Error(KHQR_ERROR_MESSAGES.PAYMENT_ALREADY_VERIFIED);
 		}
 
-		// Check transaction with Bakong API
+		// Verify transaction details with Bakong API using the transaction hash
 		const transactionResult =
 			await khqrBakongService.checkTransactionByHash({
 				hash: request.transactionHash,
 			});
 
 		if (transactionResult.responseCode !== 0 || !transactionResult.data) {
-			// Update payment status to failed
+			// Mark payment as failed if transaction not found in Bakong system
 			await prisma.kHQRPayment.update({
 				where: { id: request.paymentId },
 				data: { status: KHQR_PAYMENT_STATUS.FAILED },
@@ -129,7 +137,7 @@ class PaymentService {
 
 		const transactionData = transactionResult.data;
 
-		// Verify amount and currency match
+		// Validate that transaction amount matches the expected payment amount
 		if (Number(transactionData.amount) !== Number(payment.amount)) {
 			throw new Error(KHQR_ERROR_MESSAGES.AMOUNT_MISMATCH);
 		}
@@ -138,7 +146,7 @@ class PaymentService {
 			throw new Error(KHQR_ERROR_MESSAGES.CURRENCY_MISMATCH);
 		}
 
-		// Update payment as verified
+		// Mark payment as successfully verified and store transaction details
 		const updatedPayment = await prisma.kHQRPayment.update({
 			where: { id: request.paymentId },
 			data: {
@@ -159,11 +167,15 @@ class PaymentService {
 	}
 
 	/**
-	 * Check payment status using MD5 hash (for automatic polling)
-	 * This is the key method for auto-verification like in the guide
+	 * Checks and auto-verifies payment status using MD5 hash polling.
+	 * This is the primary method for automatic payment verification without manual hash entry.
+	 *
+	 * @param md5 - MD5 hash of the QR code string
+	 * @returns Verification response with transaction details
+	 * @throws Error if payment not found or transaction not completed yet
 	 */
 	async checkPaymentByMD5(md5: string): Promise<VerifyPaymentResponse> {
-		// Find payment by MD5 hash
+		// Locate payment record using MD5 hash
 		const payment = await prisma.kHQRPayment.findUnique({
 			where: { md5Hash: md5 },
 		});
@@ -172,7 +184,7 @@ class PaymentService {
 			throw new Error(KHQR_ERROR_MESSAGES.PAYMENT_NOT_FOUND);
 		}
 
-		// If already paid, return existing data
+		// Return cached transaction data if payment is already verified
 		if (payment.status === KHQR_PAYMENT_STATUS.PAID) {
 			return {
 				paymentId: payment.id,
@@ -196,19 +208,19 @@ class PaymentService {
 			};
 		}
 
-		// Check transaction with Bakong API using MD5
+		// Poll Bakong API to check if transaction has been completed
 		const transactionResult = await khqrBakongService.checkTransactionByMD5({
 			md5,
 		});
 
-		// If no transaction found yet, throw error (payment still pending)
+		// Transaction not found indicates payment is still pending (user hasn't completed payment yet)
 		if (transactionResult.responseCode !== 0 || !transactionResult.data) {
 			throw new Error(KHQR_ERROR_MESSAGES.TRANSACTION_NOT_FOUND);
 		}
 
 		const transactionData = transactionResult.data;
 
-		// Verify amount and currency match
+		// Validate transaction integrity by comparing amount and currency
 		if (Number(transactionData.amount) !== Number(payment.amount)) {
 			throw new Error(KHQR_ERROR_MESSAGES.AMOUNT_MISMATCH);
 		}
@@ -217,7 +229,7 @@ class PaymentService {
 			throw new Error(KHQR_ERROR_MESSAGES.CURRENCY_MISMATCH);
 		}
 
-		// Update payment as verified
+		// Mark payment as verified and persist transaction details
 		const updatedPayment = await prisma.kHQRPayment.update({
 			where: { id: payment.id },
 			data: {
@@ -238,7 +250,11 @@ class PaymentService {
 	}
 
 	/**
-	 * Get payment by ID
+	 * Retrieves a payment record by its unique identifier.
+	 *
+	 * @param paymentId - Payment UUID
+	 * @returns Payment record
+	 * @throws Error if payment not found
 	 */
 	async getPaymentById(paymentId: string) {
 		const payment = await prisma.kHQRPayment.findUnique({
@@ -253,7 +269,10 @@ class PaymentService {
 	}
 
 	/**
-	 * Get payments by user ID
+	 * Retrieves all payments associated with a specific user.
+	 *
+	 * @param userId - User UUID
+	 * @returns Array of payment records ordered by creation date (newest first)
 	 */
 	async getPaymentsByUserId(userId: string) {
 		return await prisma.kHQRPayment.findMany({
@@ -263,7 +282,10 @@ class PaymentService {
 	}
 
 	/**
-	 * Get payments by booking ID
+	 * Retrieves all payments associated with a specific booking.
+	 *
+	 * @param bookingId - Booking UUID
+	 * @returns Array of payment records ordered by creation date (newest first)
 	 */
 	async getPaymentsByBookingId(bookingId: string) {
 		return await prisma.kHQRPayment.findMany({
@@ -273,7 +295,11 @@ class PaymentService {
 	}
 
 	/**
-	 * Generate QR code image for payment
+	 * Generates a QR code image representation of the payment's KHQR string.
+	 *
+	 * @param paymentId - Payment UUID
+	 * @returns Base64-encoded QR code image
+	 * @throws Error if payment not found or QR string is missing
 	 */
 	async generateQRImage(paymentId: string): Promise<string> {
 		const payment = await this.getPaymentById(paymentId);
@@ -286,5 +312,9 @@ class PaymentService {
 	}
 }
 
+/**
+ * Singleton instance of PaymentService.
+ * Use this instance for all payment operations.
+ */
 export const paymentService = new PaymentService();
 export default PaymentService;

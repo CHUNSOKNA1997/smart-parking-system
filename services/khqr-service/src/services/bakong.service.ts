@@ -28,7 +28,7 @@ class KHQRBakongService {
 	private token: string | null = null;
 
 	constructor() {
-		// Use development or production API URL
+		// Determine API base URL based on environment (production vs development)
 		this.baseUrl = process.env.NODE_ENV === 'production'
 			? process.env.BAKONG_PROD_BASE_API_URL || "https://api-bakong.nbc.gov.kh/v1"
 			: process.env.BAKONG_DEV_BASE_API_URL || "https://sit-api-bakong.nbc.gov.kh/v1";
@@ -38,14 +38,14 @@ class KHQRBakongService {
 		this.axiosInstance = axios.create({
 			baseURL: this.baseUrl,
 			timeout: 30000,
-			// Don't override User-Agent - let axios use its default
-			// CloudFront blocks custom User-Agents but allows axios default
+			// Note: User-Agent header is not overridden to avoid CloudFront blocking.
+			// CloudFront blocks custom User-Agents but allows the default axios User-Agent.
 		});
 
-		// Add request interceptor for debugging
+		// Request interceptor for logging and debugging API calls
 		this.axiosInstance.interceptors.request.use(
 			(config) => {
-				console.log('🔵 Bakong API Request:', {
+				console.log('[KHQR] Bakong API Request:', {
 					method: config.method?.toUpperCase(),
 					url: `${config.baseURL}${config.url}`,
 					headers: config.headers,
@@ -54,22 +54,22 @@ class KHQRBakongService {
 				return config;
 			},
 			(error) => {
-				console.error('🔴 Request Error:', error);
+				console.error('[KHQR] Request Error:', error);
 				return Promise.reject(error);
 			}
 		);
 
-		// Add response interceptor for debugging
+		// Response interceptor for logging API responses and errors
 		this.axiosInstance.interceptors.response.use(
 			(response) => {
-				console.log('🟢 Bakong API Response:', {
+				console.log('[KHQR] Bakong API Response:', {
 					status: response.status,
 					data: response.data,
 				});
 				return response;
 			},
 			(error) => {
-				console.error('🔴 Response Error:', {
+				console.error('[KHQR] Response Error:', {
 					status: error.response?.status,
 					statusText: error.response?.statusText,
 					data: error.response?.data,
@@ -80,14 +80,20 @@ class KHQRBakongService {
 	}
 
 	/**
-	 * Set token for authenticated requests
+	 * Sets the authentication token for subsequent API requests.
+	 *
+	 * @param token - JWT token obtained from Bakong API
 	 */
 	setToken(token: string): void {
 		this.token = token;
 	}
 
 	/**
-	 * Get authorization headers
+	 * Constructs authorization headers for authenticated API requests.
+	 *
+	 * @param required - Whether authentication token is required (default: true)
+	 * @returns Headers object with Content-Type and optional Authorization
+	 * @throws Error if token is required but not available
 	 */
 	private getAuthHeaders(required: boolean = true): Record<string, string> {
 		if (!this.token && required) {
@@ -105,8 +111,12 @@ class KHQRBakongService {
 	}
 
 	/**
-	 * 1. Request Token
-	 * Register integrator information to get access token
+	 * Registers integrator information with Bakong to obtain an access token.
+	 * This is the first step in the Bakong authentication flow.
+	 *
+	 * @param request - Integrator registration details
+	 * @returns Response containing registration status
+	 * @throws Error if API request fails
 	 */
 	async requestToken(
 		request: KHQRRequestTokenRequest
@@ -124,8 +134,12 @@ class KHQRBakongService {
 	}
 
 	/**
-	 * 2. Verify Token
-	 * Verify the code received in email to get the JWT token
+	 * Verifies the OTP code received via email and retrieves the JWT token.
+	 * Automatically stores the token if verification is successful.
+	 *
+	 * @param request - Verification code from email
+	 * @returns Response containing JWT token if successful
+	 * @throws Error if verification fails
 	 */
 	async verifyToken(
 		request: KHQRVerifyTokenRequest
@@ -137,7 +151,7 @@ class KHQRBakongService {
 					request
 				);
 
-			// Save token if verification successful
+			// Automatically store the token if verification is successful
 			if (response.data.responseCode === 0 && response.data.data?.token) {
 				this.setToken(response.data.data.token);
 			}
@@ -149,8 +163,12 @@ class KHQRBakongService {
 	}
 
 	/**
-	 * 3. Renew Token
-	 * Renew expired token using registered email
+	 * Renews an expired JWT token using the registered email address.
+	 * Automatically updates the stored token if renewal is successful.
+	 *
+	 * @param request - Email address used during registration
+	 * @returns Response containing new JWT token
+	 * @throws Error if renewal fails
 	 */
 	async renewToken(
 		request: KHQRRenewTokenRequest
@@ -162,7 +180,7 @@ class KHQRBakongService {
 					request
 				);
 
-			// Update token if renewal successful
+			// Automatically update the stored token if renewal is successful
 			if (response.data.responseCode === 0 && response.data.data?.token) {
 				this.setToken(response.data.data.token);
 			}
@@ -174,9 +192,12 @@ class KHQRBakongService {
 	}
 
 	/**
-	 * 4. Generate Deeplink
-	 * Generate a deeplink URL from a Bakong QR code string
-	 * NOTE: This endpoint does NOT require authentication
+	 * Generates a mobile deeplink URL from a Bakong KHQR code string.
+	 * This endpoint does not require authentication.
+	 *
+	 * @param request - QR code string and source application information
+	 * @returns Response containing deeplink URL
+	 * @throws Error if deeplink generation fails
 	 */
 	async generateDeeplink(
 		request: KHQRGenerateDeeplinkRequest
@@ -194,7 +215,12 @@ class KHQRBakongService {
 	}
 
 	/**
-	 * 5. Check Transaction Status by MD5
+	 * Checks the status of a KHQR transaction using its MD5 hash.
+	 * Requires authentication token.
+	 *
+	 * @param request - MD5 hash of the QR code
+	 * @returns Response containing transaction details if found
+	 * @throws Error if authentication fails or transaction not found
 	 */
 	async checkTransactionByMD5(
 		request: KHQRCheckTransactionByMD5Request
@@ -215,7 +241,12 @@ class KHQRBakongService {
 	}
 
 	/**
-	 * 6. Check Transaction Status by Full Hash
+	 * Checks the status of a KHQR transaction using its full transaction hash.
+	 * Requires authentication token.
+	 *
+	 * @param request - Full transaction hash
+	 * @returns Response containing transaction details if found
+	 * @throws Error if authentication fails or transaction not found
 	 */
 	async checkTransactionByHash(
 		request: KHQRCheckTransactionByHashRequest
@@ -236,7 +267,12 @@ class KHQRBakongService {
 	}
 
 	/**
-	 * 7. Check Transaction Status by Short Hash
+	 * Checks the status of a KHQR transaction using its short hash.
+	 * Requires authentication token.
+	 *
+	 * @param request - Short transaction hash
+	 * @returns Response containing transaction details if found
+	 * @throws Error if authentication fails or transaction not found
 	 */
 	async checkTransactionByShortHash(
 		request: KHQRCheckTransactionByShortHashRequest
@@ -257,7 +293,12 @@ class KHQRBakongService {
 	}
 
 	/**
-	 * 8. Check Bakong Account
+	 * Verifies and retrieves information about a Bakong account.
+	 * Requires authentication token.
+	 *
+	 * @param request - Account identifier to check
+	 * @returns Response containing account details if found
+	 * @throws Error if authentication fails or account not found
 	 */
 	async checkBakongAccount(
 		request: KHQRCheckAccountRequest
@@ -278,11 +319,15 @@ class KHQRBakongService {
 	}
 
 	/**
-	 * Error handler
+	 * Handles and transforms API errors into standardized Error objects.
+	 * Detects CloudFront HTML error pages and JSON error responses.
+	 *
+	 * @param error - Axios error object
+	 * @returns Formatted Error with descriptive message
 	 */
 	private handleError(error: any): Error {
 		if (error.response?.data) {
-			// Check if error is HTML (CloudFront error pages)
+			// Detect CloudFront HTML error pages (blocked requests)
 			if (typeof error.response.data === 'string' && error.response.data.includes('<!DOCTYPE')) {
 				const statusCode = error.response.status || 'unknown';
 				return new Error(
@@ -291,7 +336,7 @@ class KHQRBakongService {
 				);
 			}
 
-			// Handle JSON error responses
+			// Handle JSON error responses from Bakong API
 			const errorData = error.response.data as KHQRErrorResponse;
 			return new Error(
 				errorData.responseMessage ||
@@ -305,6 +350,9 @@ class KHQRBakongService {
 	}
 }
 
-// Export singleton instance
+/**
+ * Singleton instance of KHQRBakongService.
+ * Use this instance for all Bakong API interactions.
+ */
 export const khqrBakongService = new KHQRBakongService();
 export default KHQRBakongService;

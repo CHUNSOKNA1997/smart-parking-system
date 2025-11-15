@@ -5,7 +5,10 @@ import { HTTP_STATUS } from "../utils/constants.js";
 
 export class PaymentController {
 	/**
-	 * Create new payment
+	 * Creates a new KHQR payment for a booking.
+	 * Generates QR code and optional deeplink for payment processing.
+	 *
+	 * @route POST /api/v1/payments
 	 */
 	async createPayment(req: Request, res: Response): Promise<void> {
 		try {
@@ -31,7 +34,7 @@ export class PaymentController {
 				successResponse("Payment created successfully", payment)
 			);
 		} catch (error: any) {
-			console.error("Create payment error:", error);
+			console.error("[PAYMENT] Create payment error:", error);
 			res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).json(
 				errorResponse("Failed to create payment", error.message)
 			);
@@ -39,7 +42,9 @@ export class PaymentController {
 	}
 
 	/**
-	 * Get payment by ID
+	 * Retrieves payment details by payment ID.
+	 *
+	 * @route GET /api/v1/payments/:id
 	 */
 	async getPaymentById(req: Request, res: Response): Promise<void> {
 		try {
@@ -51,7 +56,7 @@ export class PaymentController {
 				successResponse("Payment retrieved successfully", payment)
 			);
 		} catch (error: any) {
-			console.error("Get payment error:", error);
+			console.error("[PAYMENT] Get payment error:", error);
 			res.status(HTTP_STATUS.NOT_FOUND).json(
 				errorResponse("Payment not found", error.message)
 			);
@@ -59,7 +64,9 @@ export class PaymentController {
 	}
 
 	/**
-	 * Verify payment
+	 * Verifies a payment using the transaction hash from Bakong.
+	 *
+	 * @route POST /api/v1/payments/:id/verify
 	 */
 	async verifyPayment(req: Request, res: Response): Promise<void> {
 		try {
@@ -75,7 +82,7 @@ export class PaymentController {
 				successResponse("Payment verified successfully", result)
 			);
 		} catch (error: any) {
-			console.error("Verify payment error:", error);
+			console.error("[PAYMENT] Verify payment error:", error);
 			res.status(HTTP_STATUS.BAD_REQUEST).json(
 				errorResponse("Payment verification failed", error.message)
 			);
@@ -83,8 +90,10 @@ export class PaymentController {
 	}
 
 	/**
-	 * Check payment status by MD5 (for auto-polling)
-	 * This is the key endpoint for automatic payment verification
+	 * Checks payment status using MD5 hash for automatic polling.
+	 * This endpoint is used by clients to poll for payment completion without manual hash entry.
+	 *
+	 * @route POST /api/v1/payments/check
 	 */
 	async checkPayment(req: Request, res: Response): Promise<void> {
 		try {
@@ -103,9 +112,9 @@ export class PaymentController {
 				successResponse("Payment confirmed", result)
 			);
 		} catch (error: any) {
-			console.error("Check payment error:", error);
-			// Return 400 instead of 500 for "not found" errors
-			// This is normal during polling - payment might not be completed yet
+			console.error("[PAYMENT] Check payment error:", error);
+			// Return 400 for pending payments during polling (not an error condition)
+			// Payment may not be completed yet by the user
 			res.status(HTTP_STATUS.BAD_REQUEST).json(
 				errorResponse("Payment not found or not completed", error.message)
 			);
@@ -113,7 +122,9 @@ export class PaymentController {
 	}
 
 	/**
-	 * Get user payments
+	 * Retrieves all payments for a specific user.
+	 *
+	 * @route GET /api/v1/payments/user/:userId
 	 */
 	async getUserPayments(req: Request, res: Response): Promise<void> {
 		try {
@@ -125,7 +136,7 @@ export class PaymentController {
 				successResponse("Payments retrieved successfully", payments)
 			);
 		} catch (error: any) {
-			console.error("Get user payments error:", error);
+			console.error("[PAYMENT] Get user payments error:", error);
 			res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).json(
 				errorResponse("Failed to retrieve payments", error.message)
 			);
@@ -133,7 +144,9 @@ export class PaymentController {
 	}
 
 	/**
-	 * Get booking payments
+	 * Retrieves all payments for a specific booking.
+	 *
+	 * @route GET /api/v1/payments/booking/:bookingId
 	 */
 	async getBookingPayments(req: Request, res: Response): Promise<void> {
 		try {
@@ -147,7 +160,7 @@ export class PaymentController {
 				successResponse("Payments retrieved successfully", payments)
 			);
 		} catch (error: any) {
-			console.error("Get booking payments error:", error);
+			console.error("[PAYMENT] Get booking payments error:", error);
 			res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).json(
 				errorResponse("Failed to retrieve payments", error.message)
 			);
@@ -155,7 +168,9 @@ export class PaymentController {
 	}
 
 	/**
-	 * Get QR code image for payment
+	 * Generates a QR code image for a payment.
+	 *
+	 * @route GET /api/v1/payments/:id/qr
 	 */
 	async getQRImage(req: Request, res: Response): Promise<void> {
 		try {
@@ -167,7 +182,7 @@ export class PaymentController {
 				successResponse("QR image generated successfully", { qrImage })
 			);
 		} catch (error: any) {
-			console.error("Get QR image error:", error);
+			console.error("[PAYMENT] Get QR image error:", error);
 			res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).json(
 				errorResponse("Failed to generate QR image", error.message)
 			);
@@ -175,4 +190,8 @@ export class PaymentController {
 	}
 }
 
+/**
+ * Singleton instance of PaymentController.
+ * Use this instance for handling payment-related HTTP requests.
+ */
 export const paymentController = new PaymentController();

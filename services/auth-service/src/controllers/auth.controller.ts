@@ -79,12 +79,12 @@ class AuthController {
 				await sendVerificationOTP(email, verificationOtp);
 			} catch (emailError) {
 				console.error(
-					"❌ Failed to send verification OTP:",
+					"[AUTH] Failed to send verification OTP:",
 					emailError
 				);
 			}
 
-			console.log(`✅ New user registered: ${email}`);
+			console.log(`[AUTH] New user registered: ${email}`);
 
 			return sendSuccess(res, 201, SUCCESS.REGISTRATION, {
 				user: {
@@ -95,7 +95,7 @@ class AuthController {
 				},
 			});
 		} catch (error) {
-			console.error("❌ Registration error:", error);
+			console.error("[AUTH] Registration error:", error);
 			return sendError(res, 500, ERRORS.SERVER_ERROR, error.message);
 		}
 	}
@@ -172,7 +172,7 @@ class AuthController {
 				},
 			});
 		} catch (error) {
-			console.error("❌ Login error:", error);
+			console.error("[AUTH] Login error:", error);
 			return sendError(res, 500, ERRORS.SERVER_ERROR, error.message);
 		}
 	}
@@ -218,14 +218,14 @@ class AuthController {
 			try {
 				await sendWelcomeEmail(user.email, user.firstName);
 			} catch (emailError) {
-				console.error("❌ Failed to send welcome email:", emailError);
+				console.error("[AUTH] Failed to send welcome email:", emailError);
 			}
 
-			console.log(`✅ Email verified: ${user.email}`);
+			console.log(`[AUTH] Email verified: ${user.email}`);
 
 			return sendSuccess(res, 200, SUCCESS.EMAIL_VERIFIED);
 		} catch (error) {
-			console.error("❌ OTP verification error:", error);
+			console.error("[AUTH] OTP verification error:", error);
 			return sendError(res, 500, ERRORS.SERVER_ERROR, error.message);
 		}
 	}
@@ -275,11 +275,11 @@ class AuthController {
 
 			await sendVerificationOTP(email, verificationOtp);
 
-			console.log(`✅ Verification OTP resent to: ${email}`);
+			console.log(`[AUTH] Verification OTP resent to: ${email}`);
 
 			return sendSuccess(res, 200, SUCCESS.VERIFICATION_SENT);
 		} catch (error) {
-			console.error("❌ Resend verification error:", error);
+			console.error("[AUTH] Resend verification error:", error);
 			return sendError(res, 500, ERRORS.SERVER_ERROR, error.message);
 		}
 	}
@@ -310,26 +310,21 @@ class AuthController {
 		try {
 			const { email } = req.body;
 
-			// Find user
 			const user = await UserModel.findByEmail(email);
 			if (!user) {
-				// Don't reveal if email exists for security
 				return sendSuccess(res, 200, SUCCESS.PASSWORD_RESET_SENT);
 			}
 
-			// Generate reset OTP
 			const resetOtp = generateOTP();
 			const resetOtpExpiry = getResetOTPExpiry();
 
-			// Save reset OTP
 			await UserModel.setResetOTP(user.id, resetOtp, resetOtpExpiry);
 
-			// Send reset OTP email
 			await sendPasswordResetOTP(email, resetOtp);
 
 			return sendSuccess(res, 200, SUCCESS.PASSWORD_RESET_SENT);
 		} catch (error) {
-			console.error("❌ Forgot password error:", error);
+			console.error("[AUTH] Forgot password error:", error);
 			return sendError(res, 500, ERRORS.SERVER_ERROR, error.message);
 		}
 	}
@@ -361,7 +356,6 @@ class AuthController {
 		try {
 			const { email, otp } = req.body;
 
-			// Find user by reset OTP
 			const user = await UserModel.findByResetOTP(email, otp);
 			if (!user) {
 				return sendError(res, 400, "Invalid or expired OTP");
@@ -371,7 +365,7 @@ class AuthController {
 				email: user.email,
 			});
 		} catch (error) {
-			console.error("❌ Verify reset OTP error:", error);
+			console.error("[AUTH] Verify reset OTP error:", error);
 			return sendError(res, 500, ERRORS.SERVER_ERROR, error.message);
 		}
 	}
@@ -403,31 +397,26 @@ class AuthController {
 		try {
 			const { email, newPassword } = req.body;
 
-			// Find user by email
 			const user = await UserModel.findByEmail(email);
 			if (!user) {
 				return sendError(res, 404, ERRORS.USER_NOT_FOUND);
 			}
 
-			// Check if reset OTP exists and is valid (ensures OTP was verified)
 			if (!user.resetOtp || !user.resetOtpExpiry) {
 				return sendError(res, 400, "Please verify OTP first");
 			}
 
-			// Check if OTP is still valid (not expired)
 			if (user.resetOtpExpiry <= new Date()) {
 				return sendError(res, 400, "OTP has expired. Please request a new one.");
 			}
 
-			// Hash new password
 			const passwordHash = await bcrypt.hash(newPassword, 10);
 
-			// Update password and clear reset OTP
 			await UserModel.updatePassword(user.id, passwordHash);
 
 			return sendSuccess(res, 200, SUCCESS.PASSWORD_RESET);
 		} catch (error) {
-			console.error("❌ Reset password error:", error);
+			console.error("[AUTH] Reset password error:", error);
 			return sendError(res, 500, ERRORS.SERVER_ERROR, error.message);
 		}
 	}
@@ -459,7 +448,7 @@ class AuthController {
 				user,
 			});
 		} catch (error) {
-			console.error("❌ Get user error:", error);
+			console.error("[AUTH] Get user error:", error);
 			return sendError(res, 500, ERRORS.SERVER_ERROR, error.message);
 		}
 	}
@@ -544,7 +533,7 @@ class AuthController {
 				user,
 			});
 		} catch (error) {
-			console.error("❌ Get user by ID error:", error);
+			console.error("[AUTH] Get user by ID error:", error);
 			return sendError(res, 500, ERRORS.SERVER_ERROR, error.message);
 		}
 	}
