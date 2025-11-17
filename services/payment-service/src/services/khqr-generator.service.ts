@@ -140,6 +140,9 @@ class KHQRGeneratorService {
 
 	/**
 	 * Build merchant info according to Bakong specification
+	 *
+	 * Bakong uses a simplified format where the accountId IS the merchant identifier
+	 * For personal Bakong accounts: merchantId should be the same as accountId
 	 */
 	private buildMerchantInfo(): string {
 		let merchantInfo = "";
@@ -147,11 +150,12 @@ class KHQRGeneratorService {
 		// Global Unique Identifier (Tag 00) - Bakong identifier
 		merchantInfo += this.buildTag("00", "kh.gov.nbc.bakong");
 
-		// Merchant ID (Tag 01)
-		merchantInfo += this.buildTag("01", this.config.merchantId);
+		// Bakong Merchant ID (Tag 01) - For personal accounts, use the account ID
+		const bakongMerchantId = this.config.merchantId && this.config.merchantId.trim() !== ""
+			? this.config.merchantId
+			: this.config.accountId; // Use accountId as merchantId for personal accounts
 
-		// Account ID (Tag 02)
-		merchantInfo += this.buildTag("02", this.config.accountId);
+		merchantInfo += this.buildTag("01", bakongMerchantId);
 
 		return merchantInfo;
 	}
@@ -224,19 +228,23 @@ class KHQRGeneratorService {
 
 	/**
 	 * Validate configuration
+	 * Note: KHQR_MERCHANT_ID is optional for personal Bakong accounts
 	 */
 	validateConfig(): { valid: boolean; errors: string[] } {
 		const errors: string[] = [];
 
-		if (!this.config.merchantId) {
-			errors.push("KHQR_MERCHANT_ID is not configured");
-		}
-		if (!this.config.merchantName) {
-			errors.push("KHQR_MERCHANT_NAME is not configured");
-		}
+		// Account ID is required
 		if (!this.config.accountId) {
-			errors.push("KHQR_ACCOUNT_ID is not configured");
+			errors.push("KHQR_ACCOUNT_ID is not configured (required)");
 		}
+
+		// Merchant Name is required
+		if (!this.config.merchantName) {
+			errors.push("KHQR_MERCHANT_NAME is not configured (required)");
+		}
+
+		// Merchant ID is optional (only needed for registered merchants)
+		// Personal Bakong accounts don't need a merchant ID
 
 		return {
 			valid: errors.length === 0,
