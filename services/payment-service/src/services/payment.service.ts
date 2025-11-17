@@ -13,9 +13,7 @@ import type {
 	VerifyPaymentResponse,
 	KHQRCurrency,
 } from "../types/index.js";
-import {
-	KHQR_PAYMENT_STATUS,
-} from "../utils/constants.js";
+import { PaymentStatus } from "@prisma/client";
 import { generateMD5 } from "../utils/hash.js";
 
 class PaymentService {
@@ -27,7 +25,7 @@ class PaymentService {
 	 */
 	private checkPaymentExpiration(payment: any): void {
 		// Skip expiration check for already completed payments
-		if (payment.status === KHQR_PAYMENT_STATUS.PAID) {
+		if (payment.status === PaymentStatus.PAID) {
 			return;
 		}
 
@@ -40,7 +38,7 @@ class PaymentService {
 				// Mark payment as expired in database (fire and forget)
 				prisma.kHQRPayment.update({
 					where: { id: payment.id },
-					data: { status: KHQR_PAYMENT_STATUS.EXPIRED },
+					data: { status: PaymentStatus.EXPIRED },
 				}).catch((error) => {
 					console.error('[PAYMENT] Failed to update expired payment status:', error);
 				});
@@ -112,11 +110,11 @@ class PaymentService {
 				bookingId: request.bookingId,
 				userId: request.userId,
 				amount: request.amount,
-				currency: request.currency,
+				currency: request.currency as any,
 				qrString: qrString,
 				deeplinkUrl: deeplinkUrl || null, // Null if deeplink generation failed
 				md5Hash: md5Hash,
-				status: KHQR_PAYMENT_STATUS.PENDING,
+				status: PaymentStatus.PENDING,
 				description: request.description,
 				expiresAt: expiresAt, // Set QR code expiration time
 			},
@@ -153,7 +151,7 @@ class PaymentService {
 			throw new Error("Payment not found");
 		}
 
-		if (payment.status === KHQR_PAYMENT_STATUS.PAID) {
+		if (payment.status === PaymentStatus.PAID) {
 			throw new Error("Payment already verified");
 		}
 
@@ -170,7 +168,7 @@ class PaymentService {
 			// Mark payment as failed if transaction not found in Bakong system
 			await prisma.kHQRPayment.update({
 				where: { id: request.paymentId },
-				data: { status: KHQR_PAYMENT_STATUS.FAILED },
+				data: { status: PaymentStatus.FAILED },
 			});
 
 			throw new Error("Transaction not found");
@@ -191,7 +189,7 @@ class PaymentService {
 		const updatedPayment = await prisma.kHQRPayment.update({
 			where: { id: request.paymentId },
 			data: {
-				status: KHQR_PAYMENT_STATUS.PAID,
+				status: PaymentStatus.PAID,
 				transactionHash: request.transactionHash,
 				fromAccountId: transactionData.fromAccountId,
 				toAccountId: transactionData.toAccountId,
@@ -229,7 +227,7 @@ class PaymentService {
 		this.checkPaymentExpiration(payment);
 
 		// Return cached transaction data if payment is already verified
-		if (payment.status === KHQR_PAYMENT_STATUS.PAID) {
+		if (payment.status === PaymentStatus.PAID) {
 			return {
 				paymentId: payment.id,
 				status: payment.status as any,
@@ -239,14 +237,7 @@ class PaymentService {
 					toAccountId: payment.toAccountId || "",
 					currency: payment.currency,
 					amount: Number(payment.amount),
-					description: payment.description || null,
-					createdDateMs: payment.createdAt.getTime(),
-					acknowledgedDateMs: payment.paidAt?.getTime() || 0,
-					trackingStatus: null,
-					receiverBank: null,
-					receiverBankAccount: null,
-					instructionRef: null,
-					externalRef: null,
+					description: payment.description || undefined,
 				},
 				verifiedAt: payment.paidAt || new Date(),
 			};
@@ -277,7 +268,7 @@ class PaymentService {
 		const updatedPayment = await prisma.kHQRPayment.update({
 			where: { id: payment.id },
 			data: {
-				status: KHQR_PAYMENT_STATUS.PAID,
+				status: PaymentStatus.PAID,
 				transactionHash: transactionData.hash,
 				fromAccountId: transactionData.fromAccountId,
 				toAccountId: transactionData.toAccountId,
@@ -310,17 +301,17 @@ class PaymentService {
 		}
 
 		// Check and update expiration status (but don't throw error, just return the payment)
-		if (payment.expiresAt && payment.status === KHQR_PAYMENT_STATUS.PENDING) {
+		if (payment.expiresAt && payment.status === PaymentStatus.PENDING) {
 			const now = new Date();
 			const expiresAt = new Date(payment.expiresAt);
 
-			if (now > expiresAt && payment.status !== KHQR_PAYMENT_STATUS.EXPIRED) {
+			if (now > expiresAt && payment.status !== PaymentStatus.EXPIRED) {
 				// Update status to expired
 				await prisma.kHQRPayment.update({
 					where: { id: payment.id },
-					data: { status: KHQR_PAYMENT_STATUS.EXPIRED },
+					data: { status: PaymentStatus.EXPIRED },
 				});
-				payment.status = KHQR_PAYMENT_STATUS.EXPIRED;
+				payment.status = PaymentStatus.EXPIRED;
 			}
 		}
 

@@ -11,12 +11,38 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+// Enums
+enum BookingStatus {
+  RESERVED
+  ACTIVE
+  COMPLETED
+  CANCELLED
+}
+
+enum SpotType {
+  CAR
+  MOTORCYCLE
+}
+
+enum PaymentMethod {
+  CASH
+  KHQR
+  CARD
+}
+
+enum TransactionStatus {
+  PENDING
+  COMPLETED
+  FAILED
+  REFUNDED
+}
+
 // Parking Spots table
 model ParkingSpot {
   id           String    @id @map("spot_id") @db.VarChar(10)
   level        Int
   section      String    @db.VarChar(10)
-  spotType     String    @map("spot_type") @db.VarChar(20)
+  spotType     SpotType  @map("spot_type")
   isAvailable  Boolean   @default(true) @map("is_available")
   pricePerHour Decimal   @default(2.00) @map("price_per_hour") @db.Decimal(10, 2)
   lastUpdated  DateTime  @default(now()) @map("last_updated")
@@ -31,17 +57,17 @@ model ParkingSpot {
 
 // Bookings table
 model Booking {
-  id            String    @id @default(uuid()) @map("booking_id") @db.Uuid
-  userId        String    @map("user_id") @db.Uuid // Reference to auth-service User (no FK)
-  spotId        String    @map("spot_id") @db.VarChar(10)
-  startTime     DateTime  @default(now()) @map("start_time")
-  endTime       DateTime? @map("end_time")
-  durationHours Decimal?  @map("duration_hours") @db.Decimal(4, 2)
-  totalPrice    Decimal?  @map("total_price") @db.Decimal(10, 2)
-  status        String    @default("reserved") @db.VarChar(20)
-  qrCode        String?   @map("qr_code") @db.Text
-  createdAt     DateTime  @default(now()) @map("created_at")
-  updatedAt     DateTime  @updatedAt @map("updated_at")
+  id            String        @id @default(uuid()) @map("booking_id") @db.Uuid
+  userId        String        @map("user_id") @db.Uuid // Reference to auth-service User (no FK)
+  spotId        String        @map("spot_id") @db.VarChar(10)
+  startTime     DateTime      @default(now()) @map("start_time")
+  endTime       DateTime?     @map("end_time")
+  durationHours Decimal?      @map("duration_hours") @db.Decimal(4, 2)
+  totalPrice    Decimal?      @map("total_price") @db.Decimal(10, 2)
+  status        BookingStatus @default(RESERVED)
+  qrCode        String?       @map("qr_code") @db.Text
+  createdAt     DateTime      @default(now()) @map("created_at")
+  updatedAt     DateTime      @updatedAt @map("updated_at")
 
   spot         ParkingSpot   @relation(fields: [spotId], references: [id], onDelete: Cascade)
   transactions Transaction[]
@@ -55,14 +81,14 @@ model Booking {
 
 // Transactions table
 model Transaction {
-  id              String   @id @default(uuid()) @map("transaction_id") @db.Uuid
-  bookingId       String?  @map("booking_id") @db.Uuid
-  userId          String   @map("user_id") @db.Uuid // Reference to auth-service User (no FK)
-  amount          Decimal  @db.Decimal(10, 2)
-  paymentMethod   String   @default("cash") @map("payment_method") @db.VarChar(50)
-  status          String   @default("completed") @db.VarChar(20)
-  description     String?  @db.Text
-  transactionDate DateTime @default(now()) @map("transaction_date")
+  id              String            @id @default(uuid()) @map("transaction_id") @db.Uuid
+  bookingId       String?           @map("booking_id") @db.Uuid
+  userId          String            @map("user_id") @db.Uuid // Reference to auth-service User (no FK)
+  amount          Decimal           @db.Decimal(10, 2)
+  paymentMethod   PaymentMethod     @default(CASH) @map("payment_method")
+  status          TransactionStatus @default(COMPLETED)
+  description     String?           @db.Text
+  transactionDate DateTime          @default(now()) @map("transaction_date")
 
   booking Booking? @relation(fields: [bookingId], references: [id], onDelete: SetNull)
 

@@ -1,6 +1,7 @@
 import { Request, Response } from "../types/index.js";
 import ParkingSpotModel from "../models/ParkingSpot.model.js";
 import { sendSuccess, sendError } from "../utils/response.js";
+import { SpotType } from "@prisma/client";
 
 
 class ParkingController {
@@ -89,16 +90,17 @@ class ParkingController {
 	): Promise<Response> {
 		try {
 			const { type } = req.params;
+			const typeUpper = type.toUpperCase() as SpotType;
 
-			if (!["car", "motorcycle"].includes(type)) {
+			if (!Object.values(SpotType).includes(typeUpper)) {
 				return sendError(
 					res,
 					400,
-					'Invalid spot type. Must be "car" or "motorcycle"'
+					`Invalid spot type. Must be one of: ${Object.values(SpotType).join(", ")}`
 				);
 			}
 
-			const spots = await ParkingSpotModel.findByType(type);
+			const spots = await ParkingSpotModel.findByType(typeUpper);
 
 			return sendSuccess(
 				res,

@@ -4,6 +4,7 @@ import ParkingSpotModel from "../models/ParkingSpot.model.js";
 import TransactionModel from "../models/Transaction.model.js";
 import { generateQRCode } from "../services/qr.service.js";
 import { sendSuccess, sendError } from "../utils/response.js";
+import { BookingStatus, PaymentMethod } from "@prisma/client";
 
 import { AuthRequest } from "../types/index.js";
 
@@ -70,7 +71,7 @@ class BookingController {
 			// Update booking status to reserved
 			const updatedBooking = await BookingModel.updateStatus(
 				booking.id,
-				"reserved"
+				BookingStatus.RESERVED
 			);
 			updatedBooking.qrCode = qrCode;
 
@@ -82,7 +83,7 @@ class BookingController {
 				bookingId: booking.id,
 				userId,
 				amount: totalPrice,
-				paymentMethod: "cash",
+				paymentMethod: PaymentMethod.CASH,
 				description: `Parking booking for spot ${spotId}`,
 			});
 
@@ -236,7 +237,7 @@ class BookingController {
 				return sendError(res, 403, "Access denied");
 			}
 
-			const endTime = ["completed", "cancelled"].includes(status)
+			const endTime = [BookingStatus.COMPLETED, BookingStatus.CANCELLED].includes(status)
 				? new Date()
 				: null;
 			const updatedBooking = await BookingModel.updateStatus(
@@ -246,7 +247,7 @@ class BookingController {
 			);
 
 			// Release the parking spot when booking ends
-			if (["completed", "cancelled"].includes(status)) {
+			if ([BookingStatus.COMPLETED, BookingStatus.CANCELLED].includes(status)) {
 				await ParkingSpotModel.updateAvailability(booking.spotId, true);
 			}
 

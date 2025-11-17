@@ -1,4 +1,5 @@
 import Joi from "joi";
+import { BookingStatus } from "@prisma/client";
 
 // Create booking validation schema
 export const createBookingSchema = Joi.object({
@@ -16,11 +17,11 @@ export const createBookingSchema = Joi.object({
 // Update booking status validation
 export const updateBookingStatusSchema = Joi.object({
 	status: Joi.string()
-		.valid("reserved", "active", "completed", "cancelled")
+		.valid(...Object.values(BookingStatus))
 		.required()
 		.messages({
 			"any.only":
-				"Status must be one of: reserved, active, completed, cancelled",
+				`Status must be one of: ${Object.values(BookingStatus).join(", ")}`,
 			"any.required": "Status is required",
 		}),
 });

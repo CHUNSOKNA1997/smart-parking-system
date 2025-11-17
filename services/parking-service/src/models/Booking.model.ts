@@ -1,4 +1,5 @@
 import prisma from "../config/prisma.js";
+import { BookingStatus } from "@prisma/client";
 
 class BookingModel {
 	// Create new booking
@@ -13,19 +14,11 @@ class BookingModel {
 				durationHours,
 				totalPrice,
 				qrCode,
-				status: "reserved",
+				status: BookingStatus.RESERVED,
 				startTime: new Date(),
 			},
 			include: {
 				spot: true,
-				user: {
-					select: {
-						id: true,
-						firstName: true,
-						lastName: true,
-						email: true,
-					},
-				},
 			},
 		});
 	}
@@ -36,15 +29,6 @@ class BookingModel {
 			where: { id: bookingId },
 			include: {
 				spot: true,
-				user: {
-					select: {
-						id: true,
-						firstName: true,
-						lastName: true,
-						email: true,
-						phone: true,
-					},
-				},
 			},
 		});
 	}
@@ -73,7 +57,7 @@ class BookingModel {
 			where: {
 				userId,
 				status: {
-					in: ["reserved", "active"],
+					in: [BookingStatus.RESERVED, BookingStatus.ACTIVE],
 				},
 			},
 			include: {
@@ -88,7 +72,7 @@ class BookingModel {
 			where: {
 				spotId,
 				status: {
-					in: ["reserved", "active"],
+					in: [BookingStatus.RESERVED, BookingStatus.ACTIVE],
 				},
 			},
 		});
@@ -115,7 +99,7 @@ class BookingModel {
 		return await prisma.booking.update({
 			where: { id: bookingId },
 			data: {
-				status: "cancelled",
+				status: BookingStatus.CANCELLED,
 				endTime: new Date(),
 			},
 		});
@@ -126,7 +110,7 @@ class BookingModel {
 		return await prisma.booking.update({
 			where: { id: bookingId },
 			data: {
-				status: "completed",
+				status: BookingStatus.COMPLETED,
 				endTime: new Date(),
 			},
 		});
