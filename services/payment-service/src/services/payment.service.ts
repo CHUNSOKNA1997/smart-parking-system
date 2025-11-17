@@ -15,11 +15,41 @@ import type {
 } from "../types/index.js";
 import {
 	KHQR_PAYMENT_STATUS,
-	KHQR_ERROR_MESSAGES,
 } from "../utils/constants.js";
 import { generateMD5 } from "../utils/hash.js";
 
 class PaymentService {
+	/**
+	 * Checks if a payment QR code has expired and updates status if needed.
+	 *
+	 * @param payment - Payment record to check
+	 * @throws Error if payment has expired
+	 */
+	private checkPaymentExpiration(payment: any): void {
+		// Skip expiration check for already completed payments
+		if (payment.status === KHQR_PAYMENT_STATUS.PAID) {
+			return;
+		}
+
+		// Check if payment has an expiration time set
+		if (payment.expiresAt) {
+			const now = new Date();
+			const expiresAt = new Date(payment.expiresAt);
+
+			if (now > expiresAt) {
+				// Mark payment as expired in database (fire and forget)
+				prisma.kHQRPayment.update({
+					where: { id: payment.id },
+					data: { status: KHQR_PAYMENT_STATUS.EXPIRED },
+				}).catch((error) => {
+					console.error('[PAYMENT] Failed to update expired payment status:', error);
+				});
+
+				throw new Error("Payment QR code has expired");
+			}
+		}
+	}
+
 	/**
 	 * Creates a new KHQR payment with QR code generation and optional deeplink.
 	 *
@@ -37,6 +67,13 @@ class PaymentService {
 				'KHQR configuration incomplete: ' + configValidation.errors.join(', ')
 			);
 		}
+
+		// Calculate QR code expiration time
+		const expirationMinutes = parseInt(
+			process.env.PAYMENT_QR_EXPIRATION_MINUTES || "15",
+			10
+		);
+		const expiresAt = new Date(Date.now() + expirationMinutes * 60 * 1000);
 
 		// Generate KHQR-compliant QR code string using merchant account details
 		const qrString = khqrGenerator.generateQRString({
@@ -81,6 +118,7 @@ class PaymentService {
 				md5Hash: md5Hash,
 				status: KHQR_PAYMENT_STATUS.PENDING,
 				description: request.description,
+				expiresAt: expiresAt, // Set QR code expiration time
 			},
 		});
 
@@ -112,12 +150,15 @@ class PaymentService {
 		});
 
 		if (!payment) {
-			throw new Error(KHQR_ERROR_MESSAGES.PAYMENT_NOT_FOUND);
+			throw new Error("Payment not found");
 		}
 
 		if (payment.status === KHQR_PAYMENT_STATUS.PAID) {
-			throw new Error(KHQR_ERROR_MESSAGES.PAYMENT_ALREADY_VERIFIED);
+			throw new Error("Payment already verified");
 		}
+
+		// Check if payment QR code has expired
+		this.checkPaymentExpiration(payment);
 
 		// Verify transaction details with Bakong API using the transaction hash
 		const transactionResult =
@@ -132,18 +173,18 @@ class PaymentService {
 				data: { status: KHQR_PAYMENT_STATUS.FAILED },
 			});
 
-			throw new Error(KHQR_ERROR_MESSAGES.TRANSACTION_NOT_FOUND);
+			throw new Error("Transaction not found");
 		}
 
 		const transactionData = transactionResult.data;
 
 		// Validate that transaction amount matches the expected payment amount
 		if (Number(transactionData.amount) !== Number(payment.amount)) {
-			throw new Error(KHQR_ERROR_MESSAGES.AMOUNT_MISMATCH);
+			throw new Error("Transaction amount does not match payment amount");
 		}
 
 		if (transactionData.currency !== payment.currency) {
-			throw new Error(KHQR_ERROR_MESSAGES.CURRENCY_MISMATCH);
+			throw new Error("Transaction currency does not match payment currency");
 		}
 
 		// Mark payment as successfully verified and store transaction details
@@ -181,8 +222,11 @@ class PaymentService {
 		});
 
 		if (!payment) {
-			throw new Error(KHQR_ERROR_MESSAGES.PAYMENT_NOT_FOUND);
+			throw new Error("Payment not found");
 		}
+
+		// Check if payment QR code has expired (before checking if paid)
+		this.checkPaymentExpiration(payment);
 
 		// Return cached transaction data if payment is already verified
 		if (payment.status === KHQR_PAYMENT_STATUS.PAID) {
@@ -215,18 +259,18 @@ class PaymentService {
 
 		// Transaction not found indicates payment is still pending (user hasn't completed payment yet)
 		if (transactionResult.responseCode !== 0 || !transactionResult.data) {
-			throw new Error(KHQR_ERROR_MESSAGES.TRANSACTION_NOT_FOUND);
+			throw new Error("Transaction not found");
 		}
 
 		const transactionData = transactionResult.data;
 
 		// Validate transaction integrity by comparing amount and currency
 		if (Number(transactionData.amount) !== Number(payment.amount)) {
-			throw new Error(KHQR_ERROR_MESSAGES.AMOUNT_MISMATCH);
+			throw new Error("Transaction amount does not match payment amount");
 		}
 
 		if (transactionData.currency !== payment.currency) {
-			throw new Error(KHQR_ERROR_MESSAGES.CURRENCY_MISMATCH);
+			throw new Error("Transaction currency does not match payment currency");
 		}
 
 		// Mark payment as verified and persist transaction details
@@ -262,7 +306,22 @@ class PaymentService {
 		});
 
 		if (!payment) {
-			throw new Error(KHQR_ERROR_MESSAGES.PAYMENT_NOT_FOUND);
+			throw new Error("Payment not found");
+		}
+
+		// Check and update expiration status (but don't throw error, just return the payment)
+		if (payment.expiresAt && payment.status === KHQR_PAYMENT_STATUS.PENDING) {
+			const now = new Date();
+			const expiresAt = new Date(payment.expiresAt);
+
+			if (now > expiresAt && payment.status !== KHQR_PAYMENT_STATUS.EXPIRED) {
+				// Update status to expired
+				await prisma.kHQRPayment.update({
+					where: { id: payment.id },
+					data: { status: KHQR_PAYMENT_STATUS.EXPIRED },
+				});
+				payment.status = KHQR_PAYMENT_STATUS.EXPIRED;
+			}
 		}
 
 		return payment;

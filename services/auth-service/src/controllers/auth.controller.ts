@@ -10,10 +10,7 @@ import {
 } from "../services/email.service.js";
 import { generateOTP, getOTPExpiry, getResetOTPExpiry } from "../utils/otp.js";
 import { sendSuccess, sendError } from "../utils/response.js";
-import constants from "../utils/constants.js";
 import { AuthRequest } from "../types/index.js";
-
-const { ERRORS, SUCCESS } = constants;
 
 /**
  * @swagger
@@ -56,7 +53,7 @@ class AuthController {
 
             const existingUser = await UserModel.findByEmail(email);
             if (existingUser) {
-                return sendError(res, 400, ERRORS.EMAIL_ALREADY_EXISTS);
+                return sendError(res, 400, "Email already registered");
             }
 
             const passwordHash = await bcrypt.hash(password, 10);
@@ -84,7 +81,7 @@ class AuthController {
 
             console.log(`[AUTH] New user registered: ${email}`);
 
-            return sendSuccess(res, 201, SUCCESS.REGISTRATION, {
+            return sendSuccess(res, 201, "Registration successful. Please check your email for the verification code.", {
                 user: {
                     id: user.id,
                     firstName: user.firstName,
@@ -94,7 +91,7 @@ class AuthController {
             });
         } catch (error) {
             console.error("[AUTH] Registration error:", error);
-            return sendError(res, 500, ERRORS.SERVER_ERROR, error.message);
+            return sendError(res, 500, "Internal server error", error.message);
         }
     }
 
@@ -138,11 +135,11 @@ class AuthController {
 
             const user = await UserModel.findByEmail(email);
             if (!user) {
-                return sendError(res, 401, ERRORS.INVALID_CREDENTIALS);
+                return sendError(res, 401, "Invalid email or password");
             }
 
             if (!user.isVerified) {
-                return sendError(res, 403, ERRORS.EMAIL_NOT_VERIFIED);
+                return sendError(res, 403, "Please verify your email before logging in");
             }
 
             const isValidPassword = await bcrypt.compare(
@@ -150,7 +147,7 @@ class AuthController {
                 user.passwordHash
             );
             if (!isValidPassword) {
-                return sendError(res, 401, ERRORS.INVALID_CREDENTIALS);
+                return sendError(res, 401, "Invalid email or password");
             }
 
             const token = generateAccessToken(
@@ -160,7 +157,7 @@ class AuthController {
                 user.lastName
             );
 
-            return sendSuccess(res, 200, SUCCESS.LOGIN, {
+            return sendSuccess(res, 200, "Login successful", {
                 token,
                 user: {
                     id: user.id,
@@ -171,7 +168,7 @@ class AuthController {
             });
         } catch (error) {
             console.error("[AUTH] Login error:", error);
-            return sendError(res, 500, ERRORS.SERVER_ERROR, error.message);
+            return sendError(res, 500, "Internal server error", error.message);
         }
     }
 
@@ -224,10 +221,10 @@ class AuthController {
 
             console.log(`[AUTH] Email verified: ${user.email}`);
 
-            return sendSuccess(res, 200, SUCCESS.EMAIL_VERIFIED);
+            return sendSuccess(res, 200, "Email verified successfully. You can now login.");
         } catch (error) {
             console.error("[AUTH] OTP verification error:", error);
-            return sendError(res, 500, ERRORS.SERVER_ERROR, error.message);
+            return sendError(res, 500, "Internal server error", error.message);
         }
     }
 
@@ -263,7 +260,7 @@ class AuthController {
 
             const user = await UserModel.findByEmail(email);
             if (!user) {
-                return sendError(res, 404, ERRORS.USER_NOT_FOUND);
+                return sendError(res, 404, "User not found");
             }
 
             if (user.isVerified) {
@@ -282,10 +279,10 @@ class AuthController {
 
             console.log(`[AUTH] Verification OTP resent to: ${email}`);
 
-            return sendSuccess(res, 200, SUCCESS.VERIFICATION_SENT);
+            return sendSuccess(res, 200, "Verification code sent successfully");
         } catch (error) {
             console.error("[AUTH] Resend verification error:", error);
-            return sendError(res, 500, ERRORS.SERVER_ERROR, error.message);
+            return sendError(res, 500, "Internal server error", error.message);
         }
     }
 
@@ -317,7 +314,7 @@ class AuthController {
 
             const user = await UserModel.findByEmail(email);
             if (!user) {
-                return sendSuccess(res, 200, SUCCESS.PASSWORD_RESET_SENT);
+                return sendSuccess(res, 200, "Password reset code sent to your email");
             }
 
             const resetOtp = generateOTP();
@@ -327,10 +324,10 @@ class AuthController {
 
             await sendPasswordResetOTP(email, resetOtp);
 
-            return sendSuccess(res, 200, SUCCESS.PASSWORD_RESET_SENT);
+            return sendSuccess(res, 200, "Password reset code sent to your email");
         } catch (error) {
             console.error("[AUTH] Forgot password error:", error);
-            return sendError(res, 500, ERRORS.SERVER_ERROR, error.message);
+            return sendError(res, 500, "Internal server error", error.message);
         }
     }
 
@@ -379,7 +376,7 @@ class AuthController {
             );
         } catch (error) {
             console.error("[AUTH] Verify reset OTP error:", error);
-            return sendError(res, 500, ERRORS.SERVER_ERROR, error.message);
+            return sendError(res, 500, "Internal server error", error.message);
         }
     }
 
@@ -412,7 +409,7 @@ class AuthController {
 
             const user = await UserModel.findByEmail(email);
             if (!user) {
-                return sendError(res, 404, ERRORS.USER_NOT_FOUND);
+                return sendError(res, 404, "User not found");
             }
 
             if (!user.resetOtp || !user.resetOtpExpiry) {
@@ -431,10 +428,10 @@ class AuthController {
 
             await UserModel.updatePassword(user.id, passwordHash);
 
-            return sendSuccess(res, 200, SUCCESS.PASSWORD_RESET);
+            return sendSuccess(res, 200, "Password reset successful. You can now login with your new password.");
         } catch (error) {
             console.error("[AUTH] Reset password error:", error);
-            return sendError(res, 500, ERRORS.SERVER_ERROR, error.message);
+            return sendError(res, 500, "Internal server error", error.message);
         }
     }
 
@@ -458,7 +455,7 @@ class AuthController {
 
             const user = await UserModel.findById(userId);
             if (!user) {
-                return sendError(res, 404, ERRORS.USER_NOT_FOUND);
+                return sendError(res, 404, "User not found");
             }
 
             return sendSuccess(res, 200, "User retrieved successfully", {
@@ -466,7 +463,7 @@ class AuthController {
             });
         } catch (error) {
             console.error("[AUTH] Get user error:", error);
-            return sendError(res, 500, ERRORS.SERVER_ERROR, error.message);
+            return sendError(res, 500, "Internal server error", error.message);
         }
     }
 
@@ -506,7 +503,7 @@ class AuthController {
                 process.env.JWT_SECRET as string,
                 (err: any, decoded: any) => {
                     if (err) {
-                        return sendError(res, 401, ERRORS.INVALID_TOKEN);
+                        return sendError(res, 401, "Invalid or expired token");
                     }
                     return sendSuccess(res, 200, "Token is valid", {
                         user: decoded,
@@ -514,7 +511,7 @@ class AuthController {
                 }
             );
         } catch (error) {
-            return sendError(res, 401, ERRORS.INVALID_TOKEN);
+            return sendError(res, 401, "Invalid or expired token");
         }
     }
 
@@ -543,7 +540,7 @@ class AuthController {
 
             const user = await UserModel.findById(userId);
             if (!user) {
-                return sendError(res, 404, ERRORS.USER_NOT_FOUND);
+                return sendError(res, 404, "User not found");
             }
 
             return sendSuccess(res, 200, "User retrieved successfully", {
@@ -551,7 +548,7 @@ class AuthController {
             });
         } catch (error) {
             console.error("[AUTH] Get user by ID error:", error);
-            return sendError(res, 500, ERRORS.SERVER_ERROR, error.message);
+            return sendError(res, 500, "Internal server error", error.message);
         }
     }
 }

@@ -1,7 +1,6 @@
 import type { Request, Response, NextFunction } from 'express';
 import jwt from 'jsonwebtoken';
 import { errorResponse } from '../utils/response.js';
-import { HTTP_STATUS } from '../utils/constants.js';
 
 /**
  * JWT payload structure for authenticated requests.
@@ -38,7 +37,7 @@ export const authMiddleware = async (
     const authHeader = req.headers.authorization;
 
     if (!authHeader || !authHeader.startsWith('Bearer ')) {
-      res.status(HTTP_STATUS.UNAUTHORIZED).json(
+      res.status(401).json(
         errorResponse('No token provided', 'UNAUTHORIZED')
       );
       return;
@@ -55,13 +54,13 @@ export const authMiddleware = async (
       req.user = decoded;
       next();
     } catch (jwtError) {
-      res.status(HTTP_STATUS.UNAUTHORIZED).json(
+      res.status(401).json(
         errorResponse('Invalid or expired token', 'UNAUTHORIZED')
       );
       return;
     }
   } catch (error: any) {
-    res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).json(
+    res.status(500).json(
       errorResponse('Authentication failed', error.message)
     );
   }

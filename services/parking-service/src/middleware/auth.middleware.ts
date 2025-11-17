@@ -1,6 +1,5 @@
 import { Response, NextFunction } from "express";
 import { sendError } from "../utils/response.js";
-import { ERRORS } from "../utils/constants.js";
 import { AuthRequest } from "../types/index.js";
 import authServiceClient from "../services/authService.client.js";
 
@@ -17,14 +16,14 @@ export const authenticateToken = async (
 		const token = authHeader && authHeader.split(" ")[1]; // Bearer TOKEN
 
 		if (!token) {
-			return sendError(res, 401, ERRORS.UNAUTHORIZED);
+			return sendError(res, 401, "Unauthorized access");
 		}
 
 		// Verify token with auth-service
 		const result = await authServiceClient.verifyToken(token);
 
 		if (!result.success || !result.data) {
-			return sendError(res, 403, ERRORS.INVALID_TOKEN);
+			return sendError(res, 403, "Invalid or expired token");
 		}
 
 		// Attach user info to request
@@ -32,6 +31,6 @@ export const authenticateToken = async (
 		next();
 	} catch (error: any) {
 		console.error("Auth middleware error:", error.message);
-		return sendError(res, 500, ERRORS.SERVER_ERROR);
+		return sendError(res, 500, "Internal server error");
 	}
 };

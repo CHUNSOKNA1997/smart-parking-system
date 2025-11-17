@@ -1,10 +1,7 @@
 import jwt from 'jsonwebtoken';
 import { Response, NextFunction } from 'express';
 import { sendError } from '../utils/response.js';
-import constants from '../utils/constants.js';
 import { AuthRequest } from '../types/index.js';
-
-const { ERRORS } = constants;
 
 /**
  * Middleware to authenticate and verify JWT tokens.
@@ -23,13 +20,13 @@ export const authenticateToken = (req: AuthRequest, res: Response, next: NextFun
     const token = authHeader && authHeader.split(' ')[1];
 
     if (!token) {
-      return sendError(res, 401, ERRORS.UNAUTHORIZED);
+      return sendError(res, 401, "Unauthorized access");
     }
 
     // Verify token signature and decode payload
     jwt.verify(token, process.env.JWT_SECRET as string, (err, decoded: any) => {
       if (err) {
-        return sendError(res, 403, ERRORS.INVALID_TOKEN);
+        return sendError(res, 403, "Invalid or expired token");
       }
 
       // Attach decoded user information to request for downstream middleware/handlers
@@ -37,6 +34,6 @@ export const authenticateToken = (req: AuthRequest, res: Response, next: NextFun
       next();
     });
   } catch (error) {
-    return sendError(res, 500, ERRORS.SERVER_ERROR);
+    return sendError(res, 500, "Internal server error");
   }
 };

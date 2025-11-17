@@ -1,7 +1,6 @@
 import type { Request, Response } from "express";
 import { paymentService } from "../services/payment.service.js";
 import { successResponse, errorResponse } from "../utils/response.js";
-import { HTTP_STATUS } from "../utils/constants.js";
 
 export class PaymentController {
 	/**
@@ -16,7 +15,7 @@ export class PaymentController {
 			const userId = req.user?.userId;
 
 			if (!userId) {
-				res.status(HTTP_STATUS.UNAUTHORIZED).json(
+				res.status(401).json(
 					errorResponse("User not authenticated")
 				);
 				return;
@@ -30,12 +29,12 @@ export class PaymentController {
 				description,
 			});
 
-			res.status(HTTP_STATUS.CREATED).json(
+			res.status(201).json(
 				successResponse("Payment created successfully", payment)
 			);
 		} catch (error: any) {
 			console.error("[PAYMENT] Create payment error:", error);
-			res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).json(
+			res.status(500).json(
 				errorResponse("Failed to create payment", error.message)
 			);
 		}
@@ -52,12 +51,12 @@ export class PaymentController {
 
 			const payment = await paymentService.getPaymentById(id);
 
-			res.status(HTTP_STATUS.OK).json(
+			res.status(200).json(
 				successResponse("Payment retrieved successfully", payment)
 			);
 		} catch (error: any) {
 			console.error("[PAYMENT] Get payment error:", error);
-			res.status(HTTP_STATUS.NOT_FOUND).json(
+			res.status(404).json(
 				errorResponse("Payment not found", error.message)
 			);
 		}
@@ -78,12 +77,12 @@ export class PaymentController {
 				transactionHash,
 			});
 
-			res.status(HTTP_STATUS.OK).json(
+			res.status(200).json(
 				successResponse("Payment verified successfully", result)
 			);
 		} catch (error: any) {
 			console.error("[PAYMENT] Verify payment error:", error);
-			res.status(HTTP_STATUS.BAD_REQUEST).json(
+			res.status(400).json(
 				errorResponse("Payment verification failed", error.message)
 			);
 		}
@@ -100,7 +99,7 @@ export class PaymentController {
 			const { md5 } = req.body;
 
 			if (!md5) {
-				res.status(HTTP_STATUS.BAD_REQUEST).json(
+				res.status(400).json(
 					errorResponse("MD5 hash is required")
 				);
 				return;
@@ -108,14 +107,14 @@ export class PaymentController {
 
 			const result = await paymentService.checkPaymentByMD5(md5);
 
-			res.status(HTTP_STATUS.OK).json(
+			res.status(200).json(
 				successResponse("Payment confirmed", result)
 			);
 		} catch (error: any) {
 			console.error("[PAYMENT] Check payment error:", error);
 			// Return 400 for pending payments during polling (not an error condition)
 			// Payment may not be completed yet by the user
-			res.status(HTTP_STATUS.BAD_REQUEST).json(
+			res.status(400).json(
 				errorResponse("Payment not found or not completed", error.message)
 			);
 		}
@@ -132,12 +131,12 @@ export class PaymentController {
 
 			const payments = await paymentService.getPaymentsByUserId(userId);
 
-			res.status(HTTP_STATUS.OK).json(
+			res.status(200).json(
 				successResponse("Payments retrieved successfully", payments)
 			);
 		} catch (error: any) {
 			console.error("[PAYMENT] Get user payments error:", error);
-			res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).json(
+			res.status(500).json(
 				errorResponse("Failed to retrieve payments", error.message)
 			);
 		}
@@ -156,12 +155,12 @@ export class PaymentController {
 				bookingId
 			);
 
-			res.status(HTTP_STATUS.OK).json(
+			res.status(200).json(
 				successResponse("Payments retrieved successfully", payments)
 			);
 		} catch (error: any) {
 			console.error("[PAYMENT] Get booking payments error:", error);
-			res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).json(
+			res.status(500).json(
 				errorResponse("Failed to retrieve payments", error.message)
 			);
 		}
@@ -178,12 +177,12 @@ export class PaymentController {
 
 			const qrImage = await paymentService.generateQRImage(id);
 
-			res.status(HTTP_STATUS.OK).json(
+			res.status(200).json(
 				successResponse("QR image generated successfully", { qrImage })
 			);
 		} catch (error: any) {
 			console.error("[PAYMENT] Get QR image error:", error);
-			res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).json(
+			res.status(500).json(
 				errorResponse("Failed to generate QR image", error.message)
 			);
 		}
