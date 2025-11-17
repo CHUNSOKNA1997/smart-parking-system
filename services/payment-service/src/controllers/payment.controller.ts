@@ -61,32 +61,6 @@ export class PaymentController {
     }
 
     /**
-     * Verifies a payment using the transaction hash from Bakong.
-     *
-     * @route POST /api/v1/payments/:id/verify
-     */
-    async verifyPayment(req: Request, res: Response): Promise<void> {
-        try {
-            const { id } = req.params;
-            const { transactionHash } = req.body;
-
-            const result = await paymentService.verifyPayment({
-                paymentId: id,
-                transactionHash,
-            });
-
-            res.status(200).json(
-                successResponse("Payment verified successfully", result)
-            );
-        } catch (error: any) {
-            console.error("[PAYMENT] Verify payment error:", error);
-            res.status(400).json(
-                errorResponse("Payment verification failed", error.message)
-            );
-        }
-    }
-
-    /**
      * Checks payment status using MD5 hash for automatic polling.
      * This endpoint is used by clients to poll for payment completion without manual hash entry.
      *

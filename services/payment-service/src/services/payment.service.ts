@@ -9,7 +9,6 @@ import { khqrGenerator } from "./khqr-generator.service.js";
 import type {
     CreatePaymentRequest,
     CreatePaymentResponse,
-    VerifyPaymentRequest,
     VerifyPaymentResponse,
     KHQRCurrency,
 } from "../types/index.js";
@@ -136,81 +135,6 @@ class PaymentService {
             currency: payment.currency,
             status: payment.status,
             createdAt: payment.createdAt,
-        };
-    }
-
-    /**
-     * Verifies a payment by validating the transaction hash with Bakong API.
-     *
-     * @param request - Payment ID and transaction hash
-     * @returns Verification response with transaction details
-     * @throws Error if payment not found, already verified, or verification fails
-     */
-    async verifyPayment(
-        request: VerifyPaymentRequest
-    ): Promise<VerifyPaymentResponse> {
-        // Retrieve payment record from database
-        const payment = await prisma.kHQRPayment.findUnique({
-            where: { id: request.paymentId },
-        });
-
-        if (!payment) {
-            throw new Error("Payment not found");
-        }
-
-        if (payment.status === PaymentStatus.PAID) {
-            throw new Error("Payment already verified");
-        }
-
-        // Check if payment QR code has expired
-        this.checkPaymentExpiration(payment);
-
-        // Verify transaction details with Bakong API using the transaction hash
-        const transactionResult =
-            await khqrBakongService.checkTransactionByHash({
-                hash: request.transactionHash,
-            });
-
-        if (transactionResult.responseCode !== 0 || !transactionResult.data) {
-            // Mark payment as failed if transaction not found in Bakong system
-            await prisma.kHQRPayment.update({
-                where: { id: request.paymentId },
-                data: { status: PaymentStatus.FAILED },
-            });
-
-            throw new Error("Transaction not found");
-        }
-
-        const transactionData = transactionResult.data;
-
-        // Validate that transaction amount matches the expected payment amount
-        if (Number(transactionData.amount) !== Number(payment.amount)) {
-            throw new Error("Transaction amount does not match payment amount");
-        }
-
-        if (transactionData.currency !== payment.currency) {
-            throw new Error(
-                "Transaction currency does not match payment currency"
-            );
-        }
-
-        // Mark payment as successfully verified and store transaction details
-        const updatedPayment = await prisma.kHQRPayment.update({
-            where: { id: request.paymentId },
-            data: {
-                status: PaymentStatus.PAID,
-                transactionHash: request.transactionHash,
-                fromAccountId: transactionData.fromAccountId,
-                toAccountId: transactionData.toAccountId,
-                paidAt: new Date(),
-            },
-        });
-
-        return {
-            paymentId: updatedPayment.id,
-            status: updatedPayment.status as any,
-            transactionData,
-            verifiedAt: updatedPayment.paidAt || new Date(),
         };
     }
 

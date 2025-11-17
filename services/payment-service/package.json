@@ -43,6 +43,8 @@
     "uuid": "^9.0.1"
   },
   "devDependencies": {
+    "@types/express-list-endpoints": "^6.0.3",
+    "express-list-endpoints": "^7.1.1",
     "prisma": "^5.7.1",
     "tsx": "^4.20.6",
     "typescript": "^5.9.3"

@@ -34,11 +34,6 @@ router.get("/:id/qr-image", (req, res) =>
     paymentController.getQRImage(req, res)
 );
 
-// Verify payment (manual with transaction hash)
-router.post("/:id/verify", (req, res) =>
-    paymentController.verifyPayment(req, res)
-);
-
 // Get payment by ID
 // IMPORTANT: Keep this LAST among GET routes with params
 router.get("/:id", (req, res) => paymentController.getPaymentById(req, res));
