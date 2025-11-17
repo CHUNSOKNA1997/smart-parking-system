@@ -2,24 +2,24 @@
 import { PrismaClient } from "@prisma/client";
 
 const prisma = new PrismaClient({
-	log:
-		process.env.NODE_ENV === "development"
-			? ["error", "warn"]  // Removed "query" to reduce noise
-			: ["error"],
+    log:
+        process.env.NODE_ENV === "development"
+            ? ["error", "warn"] // Removed "query" to reduce noise
+            : ["error"],
 });
 
 // Handle connection
 prisma
-	.$connect()
-	.then(() => console.log("✅ Prisma connected to database"))
-	.catch((err) => {
-		console.error("❌ Prisma connection failed:", err);
-		process.exit(1);
-	});
+    .$connect()
+    .then(() => console.log("✅ Prisma connected to database"))
+    .catch((err) => {
+        console.error("❌ Prisma connection failed:", err);
+        process.exit(1);
+    });
 
 // Graceful shutdown
 process.on("beforeExit", async () => {
-	await prisma.$disconnect();
+    await prisma.$disconnect();
 });
 
 export default prisma;

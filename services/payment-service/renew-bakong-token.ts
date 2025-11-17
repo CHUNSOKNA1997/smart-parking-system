@@ -15,7 +15,9 @@ async function renewToken() {
     const email = process.env.BAKONG_REGISTRATION_EMAIL || "";
 
     if (!email) {
-        console.error("❌ Error: BAKONG_REGISTRATION_EMAIL not set in .env file");
+        console.error(
+            "❌ Error: BAKONG_REGISTRATION_EMAIL not set in .env file"
+        );
         console.log("\nPlease add to your .env file:");
         console.log("BAKONG_REGISTRATION_EMAIL=your_email@example.com");
         return;
@@ -27,7 +29,7 @@ async function renewToken() {
     try {
         // Step 1: Request token renewal
         const renewResult = await khqrBakongService.renewToken({
-            email: email
+            email: email,
         });
 
         console.log("✅ Renewal request sent!");
@@ -42,7 +44,9 @@ async function renewToken() {
             console.log("3. Enter the code when prompted");
         } else {
             console.error("\n❌ Renewal request failed");
-            console.log("You may need to register again using request-bakong-token.ts");
+            console.log(
+                "You may need to register again using request-bakong-token.ts"
+            );
         }
     } catch (error: any) {
         console.error("\n❌ Error:", error.message);
@@ -50,7 +54,9 @@ async function renewToken() {
         console.log("1. The email is not registered with Bakong API");
         console.log("2. Network connectivity issues");
         console.log("3. Bakong API is down");
-        console.log("\nTry registering from scratch with request-bakong-token.ts");
+        console.log(
+            "\nTry registering from scratch with request-bakong-token.ts"
+        );
     }
 
     console.log("\n========================================\n");

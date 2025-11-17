@@ -4,7 +4,7 @@
  * @returns 6-digit numeric string
  */
 export const generateOTP = (): string => {
-	return Math.floor(100000 + Math.random() * 900000).toString();
+    return Math.floor(100000 + Math.random() * 900000).toString();
 };
 
 /**
@@ -13,9 +13,9 @@ export const generateOTP = (): string => {
  * @returns Date object set to 5 minutes from current time
  */
 export const getOTPExpiry = (): Date => {
-	const expiry = new Date();
-	expiry.setMinutes(expiry.getMinutes() + 5);
-	return expiry;
+    const expiry = new Date();
+    expiry.setMinutes(expiry.getMinutes() + 5);
+    return expiry;
 };
 
 /**
@@ -24,9 +24,9 @@ export const getOTPExpiry = (): Date => {
  * @returns Date object set to 10 minutes from current time
  */
 export const getResetOTPExpiry = (): Date => {
-	const expiry = new Date();
-	expiry.setMinutes(expiry.getMinutes() + 10);
-	return expiry;
+    const expiry = new Date();
+    expiry.setMinutes(expiry.getMinutes() + 10);
+    return expiry;
 };
 
 /**
@@ -36,5 +36,5 @@ export const getResetOTPExpiry = (): Date => {
  * @returns True if OTP is expired, false otherwise
  */
 export const isOTPExpired = (expiry: Date): boolean => {
-	return new Date() > expiry;
+    return new Date() > expiry;
 };

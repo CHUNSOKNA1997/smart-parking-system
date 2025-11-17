@@ -8,15 +8,15 @@
 // ============================================================================
 
 export interface KHQRBaseResponse<T = any> {
-	data: T | null;
-	errorCode: number | null;
-	responseCode: 0 | 1;
-	responseMessage: string;
+    data: T | null;
+    errorCode: number | null;
+    responseCode: 0 | 1;
+    responseMessage: string;
 }
 
 export interface KHQRErrorResponse extends KHQRBaseResponse<null> {
-	errorCode: number;
-	responseCode: 1;
+    errorCode: number;
+    responseCode: 1;
 }
 
 // ============================================================================
@@ -24,18 +24,18 @@ export interface KHQRErrorResponse extends KHQRBaseResponse<null> {
 // ============================================================================
 
 export enum KHQRErrorCode {
-	SUCCESS = 0,
-	TRANSACTION_NOT_FOUND = 1,
-	STATIC_QR_NOT_SUPPORTED = 2,
-	TRANSACTION_FAILED = 3,
-	DEEPLINK_ERROR = 4,
-	MISSING_FIELDS = 5,
-	UNAUTHORIZED = 6,
-	EMAIL_SERVER_DOWN = 7,
-	EMAIL_ALREADY_REGISTERED = 8,
-	CANNOT_CONNECT = 9,
-	NOT_REGISTERED = 10,
-	ACCOUNT_NOT_FOUND = 11,
+    SUCCESS = 0,
+    TRANSACTION_NOT_FOUND = 1,
+    STATIC_QR_NOT_SUPPORTED = 2,
+    TRANSACTION_FAILED = 3,
+    DEEPLINK_ERROR = 4,
+    MISSING_FIELDS = 5,
+    UNAUTHORIZED = 6,
+    EMAIL_SERVER_DOWN = 7,
+    EMAIL_ALREADY_REGISTERED = 8,
+    CANNOT_CONNECT = 9,
+    NOT_REGISTERED = 10,
+    ACCOUNT_NOT_FOUND = 11,
 }
 
 // ============================================================================
@@ -43,37 +43,37 @@ export enum KHQRErrorCode {
 // ============================================================================
 
 export interface KHQRRequestTokenRequest {
-	email: string;
-	organization: string;
-	project: string;
+    email: string;
+    organization: string;
+    project: string;
 }
 
 export interface KHQRRequestTokenResponse extends KHQRBaseResponse<null> {
-	responseMessage: "Email has been sent";
+    responseMessage: "Email has been sent";
 }
 
 export interface KHQRVerifyTokenRequest {
-	code: string;
+    code: string;
 }
 
 export interface KHQRTokenData {
-	token: string;
+    token: string;
 }
 
 export interface KHQRVerifyTokenResponse
-	extends KHQRBaseResponse<KHQRTokenData> {
-	data: KHQRTokenData;
-	responseMessage: "Token has been issued";
+    extends KHQRBaseResponse<KHQRTokenData> {
+    data: KHQRTokenData;
+    responseMessage: "Token has been issued";
 }
 
 export interface KHQRRenewTokenRequest {
-	email: string;
+    email: string;
 }
 
 export interface KHQRRenewTokenResponse
-	extends KHQRBaseResponse<KHQRTokenData> {
-	data: KHQRTokenData;
-	responseMessage: "Token has been issued";
+    extends KHQRBaseResponse<KHQRTokenData> {
+    data: KHQRTokenData;
+    responseMessage: "Token has been issued";
 }
 
 // ============================================================================
@@ -81,24 +81,24 @@ export interface KHQRRenewTokenResponse
 // ============================================================================
 
 export interface KHQRSourceInfo {
-	appIconUrl: string;
-	appName: string;
-	appDeepLinkCallback: string;
+    appIconUrl: string;
+    appName: string;
+    appDeepLinkCallback: string;
 }
 
 export interface KHQRGenerateDeeplinkRequest {
-	qr: string;
-	sourceInfo: KHQRSourceInfo;
+    qr: string;
+    sourceInfo: KHQRSourceInfo;
 }
 
 export interface KHQRDeeplinkData {
-	shortLink: string;
+    shortLink: string;
 }
 
 export interface KHQRGenerateDeeplinkResponse
-	extends KHQRBaseResponse<KHQRDeeplinkData> {
-	data: KHQRDeeplinkData;
-	responseMessage: "Getting deep link successfully";
+    extends KHQRBaseResponse<KHQRDeeplinkData> {
+    data: KHQRDeeplinkData;
+    responseMessage: "Getting deep link successfully";
 }
 
 // ============================================================================
@@ -106,35 +106,35 @@ export interface KHQRGenerateDeeplinkResponse
 // ============================================================================
 
 export interface KHQRCheckTransactionByMD5Request {
-	md5: string;
+    md5: string;
 }
 
 export interface KHQRCheckTransactionByHashRequest {
-	hash: string;
+    hash: string;
 }
 
 export interface KHQRCheckTransactionByShortHashRequest {
-	hash: string;
-	amount: number;
-	currency: "USD" | "KHR";
+    hash: string;
+    amount: number;
+    currency: "USD" | "KHR";
 }
 
 export interface KHQRTransactionData {
-	hash: string;
-	fromAccountId: string;
-	toAccountId: string;
-	currency: string;
-	amount: number;
-	description?: string;
+    hash: string;
+    fromAccountId: string;
+    toAccountId: string;
+    currency: string;
+    amount: number;
+    description?: string;
 }
 
 export interface KHQRCheckTransactionResponse
-	extends KHQRBaseResponse<KHQRTransactionData> {
-	data: KHQRTransactionData | null;
-	responseMessage:
-		| "Getting transaction successfully."
-		| "Transaction failed."
-		| "Transaction could not be found. Please check and try again.";
+    extends KHQRBaseResponse<KHQRTransactionData> {
+    data: KHQRTransactionData | null;
+    responseMessage:
+        | "Getting transaction successfully."
+        | "Transaction failed."
+        | "Transaction could not be found. Please check and try again.";
 }
 
 // ============================================================================
@@ -142,14 +142,14 @@ export interface KHQRCheckTransactionResponse
 // ============================================================================
 
 export interface KHQRCheckAccountRequest {
-	accountId: string;
+    accountId: string;
 }
 
 export interface KHQRCheckAccountResponse extends KHQRBaseResponse<null> {
-	responseCode: 0 | 1;
-	responseMessage: "Account ID exists" | "Account ID not found";
-	errorCode: null | 11;
-	data: null;
+    responseCode: 0 | 1;
+    responseMessage: "Account ID exists" | "Account ID not found";
+    errorCode: null | 11;
+    data: null;
 }
 
 // ============================================================================
@@ -159,45 +159,45 @@ export interface KHQRCheckAccountResponse extends KHQRBaseResponse<null> {
 export type KHQRCurrency = "USD" | "KHR";
 
 export type KHQRPaymentStatus =
-	| "pending"
-	| "paid"
-	| "failed"
-	| "cancelled"
-	| "refunded";
+    | "pending"
+    | "paid"
+    | "failed"
+    | "cancelled"
+    | "refunded";
 
 export interface CreatePaymentRequest {
-	bookingId?: string;
-	userId: string;
-	amount: number;
-	currency: KHQRCurrency;
-	description?: string;
+    bookingId?: string;
+    userId: string;
+    amount: number;
+    currency: KHQRCurrency;
+    description?: string;
 }
 
 export interface CreatePaymentResponse {
-	paymentId: string;
-	qrString: string;
-	deeplinkUrl: string;
-	md5: string;
-	amount: number;
-	currency: string;
-	status: string;
-	createdAt: Date;
+    paymentId: string;
+    qrString: string;
+    deeplinkUrl: string;
+    md5: string;
+    amount: number;
+    currency: string;
+    status: string;
+    createdAt: Date;
 }
 
 export interface VerifyPaymentRequest {
-	paymentId: string;
-	transactionHash: string;
+    paymentId: string;
+    transactionHash: string;
 }
 
 export interface VerifyPaymentResponse {
-	paymentId: string;
-	status: KHQRPaymentStatus;
-	transactionData: KHQRTransactionData;
-	verifiedAt: Date;
+    paymentId: string;
+    status: KHQRPaymentStatus;
+    transactionData: KHQRTransactionData;
+    verifiedAt: Date;
 }
 
 export interface CheckPaymentRequest {
-	md5: string;
+    md5: string;
 }
 
 // ============================================================================
@@ -205,17 +205,17 @@ export interface CheckPaymentRequest {
 // ============================================================================
 
 export interface ApiResponse<T = any> {
-	success: boolean;
-	message: string;
-	data?: T;
-	error?: string;
+    success: boolean;
+    message: string;
+    data?: T;
+    error?: string;
 }
 
 export interface PaginatedResponse<T> extends ApiResponse<T[]> {
-	pagination: {
-		page: number;
-		limit: number;
-		total: number;
-		totalPages: number;
-	};
+    pagination: {
+        page: number;
+        limit: number;
+        total: number;
+        totalPages: number;
+    };
 }

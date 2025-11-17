@@ -13,30 +13,30 @@ router.post("/", (req, res) => paymentController.createPayment(req, res));
 // Check payment (auto-verification with MD5 polling)
 // IMPORTANT: Must be before /:id routes to avoid conflict
 router.post("/check-payment", (req, res) =>
-	paymentController.checkPayment(req, res)
+    paymentController.checkPayment(req, res)
 );
 
 // Get user payments
 // IMPORTANT: Must be before /:id routes to avoid conflict
 router.get("/user/:userId", (req, res) =>
-	paymentController.getUserPayments(req, res)
+    paymentController.getUserPayments(req, res)
 );
 
 // Get booking payments
 // IMPORTANT: Must be before /:id routes to avoid conflict
 router.get("/booking/:bookingId", (req, res) =>
-	paymentController.getBookingPayments(req, res)
+    paymentController.getBookingPayments(req, res)
 );
 
 // Get QR code image
 // IMPORTANT: Must be before /:id route to avoid conflict
 router.get("/:id/qr-image", (req, res) =>
-	paymentController.getQRImage(req, res)
+    paymentController.getQRImage(req, res)
 );
 
 // Verify payment (manual with transaction hash)
 router.post("/:id/verify", (req, res) =>
-	paymentController.verifyPayment(req, res)
+    paymentController.verifyPayment(req, res)
 );
 
 // Get payment by ID

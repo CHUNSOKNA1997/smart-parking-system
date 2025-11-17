@@ -11,21 +11,21 @@ import { v4 as uuidv4 } from "uuid";
  * @returns Signed JWT token with configured expiration
  */
 export const generateAccessToken = (
-	userId: string,
-	email: string,
-	firstName?: string,
-	lastName?: string
+    userId: string,
+    email: string,
+    firstName?: string,
+    lastName?: string
 ): string => {
-	const payload = {
-		userId,
-		email,
-		firstName,
-		lastName,
-	};
+    const payload = {
+        userId,
+        email,
+        firstName,
+        lastName,
+    };
 
-	return jwt.sign(payload, process.env.JWT_SECRET!, {
-		expiresIn: (process.env.JWT_EXPIRE || "7d") as any,
-	});
+    return jwt.sign(payload, process.env.JWT_SECRET!, {
+        expiresIn: (process.env.JWT_EXPIRE || "7d") as any,
+    });
 };
 
 /**
@@ -34,7 +34,7 @@ export const generateAccessToken = (
  * @returns UUID string for email verification
  */
 export const generateVerificationToken = (): string => {
-	return uuidv4();
+    return uuidv4();
 };
 
 /**
@@ -43,7 +43,7 @@ export const generateVerificationToken = (): string => {
  * @returns UUID string for password reset
  */
 export const generateResetToken = (): string => {
-	return uuidv4();
+    return uuidv4();
 };
 
 /**
@@ -53,9 +53,9 @@ export const generateResetToken = (): string => {
  * @returns Decoded token payload if valid, null if invalid
  */
 export const verifyToken = (token: string): any | null => {
-	try {
-		return jwt.verify(token, process.env.JWT_SECRET as string);
-	} catch (error) {
-		return null;
-	}
+    try {
+        return jwt.verify(token, process.env.JWT_SECRET as string);
+    } catch (error) {
+        return null;
+    }
 };

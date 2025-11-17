@@ -14,8 +14,8 @@ app.use(helmet());
 
 // CORS configuration
 const corsOptions = {
-	origin: process.env.CORS_ORIGIN ? process.env.CORS_ORIGIN.split(",") : "*",
-	credentials: true,
+    origin: process.env.CORS_ORIGIN ? process.env.CORS_ORIGIN.split(",") : "*",
+    credentials: true,
 };
 app.use(cors(corsOptions));
 
@@ -25,8 +25,8 @@ app.use(express.urlencoded({ extended: true }));
 
 // Request logging (simple)
 app.use((req: Request, res: Response, next: NextFunction) => {
-	console.log(`${req.method} ${req.path}`);
-	next();
+    console.log(`${req.method} ${req.path}`);
+    next();
 });
 
 // API v1 routes

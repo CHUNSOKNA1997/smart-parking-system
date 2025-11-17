@@ -8,7 +8,7 @@ import crypto from "crypto";
  * @returns MD5 hash as 32-character hexadecimal string
  */
 export function generateMD5(input: string): string {
-	return crypto.createHash("md5").update(input).digest("hex");
+    return crypto.createHash("md5").update(input).digest("hex");
 }
 
 /**
@@ -18,5 +18,5 @@ export function generateMD5(input: string): string {
  * @returns True if the string is a valid MD5 format (32 hexadecimal characters)
  */
 export function isValidMD5(hash: string): boolean {
-	return /^[a-f0-9]{32}$/i.test(hash);
+    return /^[a-f0-9]{32}$/i.test(hash);
 }

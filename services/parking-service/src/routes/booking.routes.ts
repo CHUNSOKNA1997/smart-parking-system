@@ -3,8 +3,8 @@ import BookingController from "../controllers/booking.controller.js";
 import { authenticateToken } from "../middleware/auth.middleware.js";
 import { validate } from "../middleware/validation.middleware.js";
 import {
-	createBookingSchema,
-	updateBookingStatusSchema,
+    createBookingSchema,
+    updateBookingStatusSchema,
 } from "../validators/booking.validator.js";
 
 const router = express.Router();
@@ -12,10 +12,10 @@ const router = express.Router();
 // All booking routes require authentication
 // Create new booking
 router.post(
-	"/",
-	authenticateToken,
-	validate(createBookingSchema),
-	BookingController.createBooking
+    "/",
+    authenticateToken,
+    validate(createBookingSchema),
+    BookingController.createBooking
 );
 
 // Get current user's bookings
@@ -29,10 +29,10 @@ router.get("/:bookingId", authenticateToken, BookingController.getBookingById);
 
 // Update booking (including status changes)
 router.patch(
-	"/:bookingId",
-	authenticateToken,
-	validate(updateBookingStatusSchema),
-	BookingController.updateBookingStatus
+    "/:bookingId",
+    authenticateToken,
+    validate(updateBookingStatusSchema),
+    BookingController.updateBookingStatus
 );
 
 export default router;

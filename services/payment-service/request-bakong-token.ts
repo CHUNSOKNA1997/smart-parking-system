@@ -13,12 +13,14 @@ async function requestToken() {
 
     // Registration details
     const registrationData = {
-        email: "your_email@example.com",        // Change this
-        organization: "Smart Parking System",    // Change this
-        project: "Parking Payment Service"      // Change this
+        email: "your_email@example.com", // Change this
+        organization: "Smart Parking System", // Change this
+        project: "Parking Payment Service", // Change this
     };
 
-    console.log("⚠️  IMPORTANT: Update the registration details in this file first!");
+    console.log(
+        "⚠️  IMPORTANT: Update the registration details in this file first!"
+    );
     console.log("\nRegistration details:");
     console.log("- Email:", registrationData.email);
     console.log("- Organization:", registrationData.organization);
@@ -26,9 +28,13 @@ async function requestToken() {
     console.log("");
 
     if (registrationData.email === "your_email@example.com") {
-        console.error("❌ Please update the email address in request-bakong-token.ts");
+        console.error(
+            "❌ Please update the email address in request-bakong-token.ts"
+        );
         console.log("\nEdit the file and change:");
-        console.log('  email: "your_email@example.com"  →  email: "your_actual_email@example.com"');
+        console.log(
+            '  email: "your_email@example.com"  →  email: "your_actual_email@example.com"'
+        );
         return;
     }
 
@@ -42,7 +48,10 @@ async function requestToken() {
         console.log("Response Message:", result.responseMessage);
 
         if (result.responseCode === 0) {
-            console.log("\n📧 Verification code sent to:", registrationData.email);
+            console.log(
+                "\n📧 Verification code sent to:",
+                registrationData.email
+            );
             console.log("\nNext steps:");
             console.log("1. Check your email inbox");
             console.log("2. Copy the verification code");

@@ -13,7 +13,7 @@ async function verifyToken() {
 
     const rl = readline.createInterface({
         input: process.stdin,
-        output: process.stdout
+        output: process.stdout,
     });
 
     const askQuestion = (question: string): Promise<string> => {
@@ -25,7 +25,9 @@ async function verifyToken() {
     };
 
     try {
-        const code = await askQuestion("Enter the verification code from your email: ");
+        const code = await askQuestion(
+            "Enter the verification code from your email: "
+        );
 
         if (!code || code.trim() === "") {
             console.error("\n❌ No code entered");
@@ -36,7 +38,7 @@ async function verifyToken() {
         console.log("\nVerifying code...\n");
 
         const result = await khqrBakongService.verifyToken({
-            code: code.trim()
+            code: code.trim(),
         });
 
         console.log("Response Code:", result.responseCode);
@@ -52,7 +54,9 @@ async function verifyToken() {
 
             console.log("\n📝 Update your .env file:");
             console.log("\n1. Open services/payment-service/.env");
-            console.log("2. Replace the BAKONG_ACCESS_TOKEN value with the token above");
+            console.log(
+                "2. Replace the BAKONG_ACCESS_TOKEN value with the token above"
+            );
             console.log("3. Save the file");
             console.log("4. Restart your payment service\n");
 
@@ -62,8 +66,12 @@ async function verifyToken() {
         } else {
             console.error("\n❌ Verification failed");
             console.log("- Check if the code is correct");
-            console.log("- The code may have expired (usually valid for 10-15 minutes)");
-            console.log("- Try requesting a new code with renew-bakong-token.ts");
+            console.log(
+                "- The code may have expired (usually valid for 10-15 minutes)"
+            );
+            console.log(
+                "- Try requesting a new code with renew-bakong-token.ts"
+            );
         }
     } catch (error: any) {
         console.error("\n❌ Error:", error.message);

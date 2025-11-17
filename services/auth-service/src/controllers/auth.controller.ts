@@ -81,14 +81,19 @@ class AuthController {
 
             console.log(`[AUTH] New user registered: ${email}`);
 
-            return sendSuccess(res, 201, "Registration successful. Please check your email for the verification code.", {
-                user: {
-                    id: user.id,
-                    firstName: user.firstName,
-                    lastName: user.lastName,
-                    email: user.email,
-                },
-            });
+            return sendSuccess(
+                res,
+                201,
+                "Registration successful. Please check your email for the verification code.",
+                {
+                    user: {
+                        id: user.id,
+                        firstName: user.firstName,
+                        lastName: user.lastName,
+                        email: user.email,
+                    },
+                }
+            );
         } catch (error) {
             console.error("[AUTH] Registration error:", error);
             return sendError(res, 500, "Internal server error", error.message);
@@ -139,7 +144,11 @@ class AuthController {
             }
 
             if (!user.isVerified) {
-                return sendError(res, 403, "Please verify your email before logging in");
+                return sendError(
+                    res,
+                    403,
+                    "Please verify your email before logging in"
+                );
             }
 
             const isValidPassword = await bcrypt.compare(
@@ -221,7 +230,11 @@ class AuthController {
 
             console.log(`[AUTH] Email verified: ${user.email}`);
 
-            return sendSuccess(res, 200, "Email verified successfully. You can now login.");
+            return sendSuccess(
+                res,
+                200,
+                "Email verified successfully. You can now login."
+            );
         } catch (error) {
             console.error("[AUTH] OTP verification error:", error);
             return sendError(res, 500, "Internal server error", error.message);
@@ -314,7 +327,11 @@ class AuthController {
 
             const user = await UserModel.findByEmail(email);
             if (!user) {
-                return sendSuccess(res, 200, "Password reset code sent to your email");
+                return sendSuccess(
+                    res,
+                    200,
+                    "Password reset code sent to your email"
+                );
             }
 
             const resetOtp = generateOTP();
@@ -324,7 +341,11 @@ class AuthController {
 
             await sendPasswordResetOTP(email, resetOtp);
 
-            return sendSuccess(res, 200, "Password reset code sent to your email");
+            return sendSuccess(
+                res,
+                200,
+                "Password reset code sent to your email"
+            );
         } catch (error) {
             console.error("[AUTH] Forgot password error:", error);
             return sendError(res, 500, "Internal server error", error.message);
@@ -428,7 +449,11 @@ class AuthController {
 
             await UserModel.updatePassword(user.id, passwordHash);
 
-            return sendSuccess(res, 200, "Password reset successful. You can now login with your new password.");
+            return sendSuccess(
+                res,
+                200,
+                "Password reset successful. You can now login with your new password."
+            );
         } catch (error) {
             console.error("[AUTH] Reset password error:", error);
             return sendError(res, 500, "Internal server error", error.message);
