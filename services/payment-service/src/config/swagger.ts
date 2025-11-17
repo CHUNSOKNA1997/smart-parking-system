@@ -6,14 +6,14 @@ const options = {
     definition: {
         openapi: "3.0.0",
         info: {
-            title: "Parking Service API",
+            title: "Payment Service API",
             version: "1.0.0",
             description:
-                "Parking microservice for managing parking spots, bookings, and transactions",
+                "Payment microservice with KHQR (Bakong QR) integration for Smart Parking System",
         },
         servers: [
             {
-                url: "http://localhost:3002",
+                url: "http://localhost:3003",
                 description: "Development server",
             },
         ],
@@ -26,62 +26,7 @@ const options = {
                 },
             },
             schemas: {
-                ParkingSpot: {
-                    type: "object",
-                    properties: {
-                        id: {
-                            type: "string",
-                            format: "uuid",
-                        },
-                        spotNumber: {
-                            type: "string",
-                        },
-                        level: {
-                            type: "string",
-                        },
-                        section: {
-                            type: "string",
-                        },
-                        spotType: {
-                            type: "string",
-                            enum: ["CAR", "MOTORCYCLE"],
-                        },
-                        isAvailable: {
-                            type: "boolean",
-                        },
-                    },
-                },
-                Booking: {
-                    type: "object",
-                    properties: {
-                        id: {
-                            type: "string",
-                            format: "uuid",
-                        },
-                        userId: {
-                            type: "string",
-                            format: "uuid",
-                        },
-                        spotId: {
-                            type: "string",
-                            format: "uuid",
-                        },
-                        status: {
-                            type: "string",
-                            enum: ["RESERVED", "ACTIVE", "COMPLETED", "CANCELLED"],
-                        },
-                        startTime: {
-                            type: "string",
-                            format: "date-time",
-                        },
-                        endTime: {
-                            type: "string",
-                            format: "date-time",
-                            nullable: true,
-                        },
-                    },
-                },
-                Transaction: {
+                Payment: {
                     type: "object",
                     properties: {
                         id: {
@@ -100,17 +45,68 @@ const options = {
                             type: "number",
                             format: "decimal",
                         },
-                        paymentMethod: {
+                        currency: {
                             type: "string",
-                            enum: ["CASH", "KHQR", "CARD"],
+                            enum: ["USD", "KHR"],
                         },
                         status: {
                             type: "string",
-                            enum: ["PENDING", "COMPLETED", "FAILED", "REFUNDED"],
+                            enum: [
+                                "PENDING",
+                                "PAID",
+                                "FAILED",
+                                "CANCELLED",
+                                "REFUNDED",
+                                "EXPIRED",
+                            ],
                         },
-                        transactionDate: {
+                        qrCode: {
+                            type: "string",
+                        },
+                        md5Hash: {
+                            type: "string",
+                        },
+                        deeplink: {
+                            type: "string",
+                            nullable: true,
+                        },
+                        expiresAt: {
                             type: "string",
                             format: "date-time",
+                            nullable: true,
+                        },
+                        createdAt: {
+                            type: "string",
+                            format: "date-time",
+                        },
+                    },
+                },
+                ApiResponse: {
+                    type: "object",
+                    properties: {
+                        success: {
+                            type: "boolean",
+                        },
+                        message: {
+                            type: "string",
+                        },
+                        data: {
+                            type: "object",
+                        },
+                    },
+                },
+                Error: {
+                    type: "object",
+                    properties: {
+                        success: {
+                            type: "boolean",
+                            example: false,
+                        },
+                        message: {
+                            type: "string",
+                        },
+                        error: {
+                            type: "string",
                         },
                     },
                 },

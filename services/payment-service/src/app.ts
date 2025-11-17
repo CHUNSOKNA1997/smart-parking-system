@@ -8,6 +8,7 @@ import helmet from "helmet";
 import dotenv from "dotenv";
 import paymentRoutes from "./routes/payment.routes.js";
 import { errorMiddleware } from "./middleware/error.middleware.js";
+import { setupSwagger } from "./config/swagger.js";
 
 dotenv.config();
 
@@ -23,6 +24,9 @@ app.use(
 );
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
+
+// Swagger Documentation
+setupSwagger(app);
 
 // API Routes (v1)
 app.use("/api/v1/payments", paymentRoutes);
