@@ -82,7 +82,7 @@ Copy the UUID values and paste them into the `SPOT_IDS` array in the same order.
 // LCD Configuration
 LiquidCrystal_I2C lcd(0x27, 16, 2);
 
-// CONFIGURATION (MODIFY THESE)
+//  CONFIGURATION (MODIFY THESE)
 
 // Number of parking spots to monitor
 const int NUM_SENSORS = 6;  // Change this to add more sensors
@@ -108,14 +108,14 @@ const char* SPOT_IDS[NUM_SENSORS] = {
     "spot-uuid-6"
 };
 
-// STATE TRACKING (DO NOT MODIFY)
+//  STATE TRACKING (DO NOT MODIFY)
 
 int lastStates[NUM_SENSORS] = {0};           // Track last sensor states
 unsigned long lastUpdates[NUM_SENSORS] = {0}; // Track last update times
 
 const unsigned long DEBOUNCE_DELAY = 2000;    // 2 seconds debounce
 
-// SETUP
+//  SETUP
 
 void setup() {
     Serial.begin(115200);
@@ -152,7 +152,7 @@ void setup() {
     Serial.println(" parking spots");
 }
 
-// WIFI CONNECTION
+//  WIFI CONNECTION
 
 void connectWiFi() {
     Serial.print("Connecting to WiFi");
@@ -235,7 +235,7 @@ void updateSpotStatus(const char* spotId, bool isOccupied) {
     http.end();
 }
 
-// LCD DISPLAY
+//  LCD DISPLAY
 
 void updateLCD() {
     int occupied = 0;
@@ -263,7 +263,7 @@ void updateLCD() {
     lcd.print(" ");
 }
 
-// MAIN LOOP
+//  MAIN LOOP
 
 void loop() {
     // Check WiFi connection
@@ -403,91 +403,6 @@ const char* SPOT_IDS[NUM_SENSORS] = {
 
 Done! The rest of the code automatically adapts.
 
-## Backend Implementation
-
-The backend IoT endpoints have been implemented in `parking-service`:
-
-### Files Created
-
-1. **IoT Authentication Middleware** (`src/middleware/iot-auth.middleware.ts`)
-   - Validates X-API-Key header
-   - Compares with IOT_API_KEY from .env
-   - Returns 401 for invalid/missing keys
-
-2. **IoT Routes** (`src/routes/iot.routes.ts`)
-   - PATCH `/api/v1/iot/spots/:spotId/status`
-   - Requires X-API-Key authentication
-   - Swagger documentation included
-
-3. **Controller Method** (`src/controllers/parking.controller.ts`)
-   - `updateSpotStatus()` method
-   - Validates spotId exists
-   - Updates isAvailable field
-   - Logs status changes
-
-### Configuration
-
-Add to `services/parking-service/.env`:
-```
-IOT_API_KEY=esp32-parking-iot-secret-key-2024
-```
-
-**IMPORTANT**: Use the same API key in both:
-- Backend `.env` file
-- ESP32 Arduino code (`API_KEY` constant)
-
-### Testing Backend Endpoint
-
-```bash
-# Get a spot ID from database
-psql -U postgres -d parking_db -c "SELECT id FROM \"ParkingSpot\" LIMIT 1;"
-
-# Test endpoint with curl (replace SPOT_ID with actual UUID)
-curl -X PATCH http://localhost:3002/api/v1/iot/spots/SPOT_ID/status \
-  -H "Content-Type: application/json" \
-  -H "X-API-Key: esp32-parking-iot-secret-key-2024" \
-  -d '{"isAvailable": false}'
-
-# Expected response:
-# {
-#   "success": true,
-#   "message": "Spot status updated successfully",
-#   "data": { "spot": { ... } }
-# }
-```
-
-### Error Responses
-
-**Missing API Key:**
-```json
-{
-  "success": false,
-  "message": "API key is required",
-  "errorCode": "MISSING_API_KEY"
-}
-```
-
-**Invalid API Key:**
-```json
-{
-  "success": false,
-  "message": "Invalid API key",
-  "errorCode": "INVALID_API_KEY"
-}
-```
-
-**Spot Not Found:**
-```json
-{
-  "success": false,
-  "message": "Parking spot not found"
-}
-```
-
-### Swagger Documentation
-
-Visit `http://localhost:3002/api-docs` to see IoT endpoint documentation in Swagger UI.
-
 ## Future Enhancements
 
 -   Add MQTT support for real-time bidirectional communication
@@ -496,6 +411,3 @@ Visit `http://localhost:3002/api-docs` to see IoT endpoint documentation in Swag
 -   Use sensor multiplexer for 16+ spots on one ESP32
 -   Battery backup with deep sleep mode
 -   Web-based configuration interface
--   Per-device authentication tokens (instead of shared API key)
--   Rate limiting for IoT endpoints
--   IoT device registration and management dashboard
