@@ -4,6 +4,9 @@ package-lock.json
 
 # Environment variables
 .env
+.env.docker
+.env.local
+.env.*.local
 
 # Prisma
 node_modules/.prisma/

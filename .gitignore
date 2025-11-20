@@ -2,18 +2,11 @@
 node_modules/
 package-lock.json
 
-# Environment variables
+# Environment variables (NEVER commit these!)
 .env
 .env.docker
 .env.local
 .env.*.local
-
-# Prisma
-node_modules/.prisma/
-
-# TypeScript build output
-dist/
-*.tsbuildinfo
 
 # Logs
 logs/
@@ -31,5 +24,9 @@ Thumbs.db
 *.swo
 
 # Build
+dist/
 build/
-.env
+*.tsbuildinfo
+
+# Docker
+docker-compose.override.yml

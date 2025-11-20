@@ -1,0 +1,166 @@
+version: '3.8'
+
+services:
+  # ==========================================
+  # PostgreSQL Databases
+  # ==========================================
+
+  postgres-auth:
+    image: postgres:16-alpine
+    container_name: smart-parking-postgres-auth
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: 12345678
+      POSTGRES_DB: auth_db
+    ports:
+      - "5433:5432"  # Exposed on host port 5433 to avoid conflicts
+    volumes:
+      - postgres-auth-data:/var/lib/postgresql/data
+    networks:
+      - parking-network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d auth_db"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  postgres-parking:
+    image: postgres:16-alpine
+    container_name: smart-parking-postgres-parking
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: 12345678
+      POSTGRES_DB: parking_db
+    ports:
+      - "5434:5432"  # Exposed on host port 5434
+    volumes:
+      - postgres-parking-data:/var/lib/postgresql/data
+    networks:
+      - parking-network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d parking_db"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  postgres-payment:
+    image: postgres:16-alpine
+    container_name: smart-parking-postgres-payment
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: 12345678
+      POSTGRES_DB: payment_db
+    ports:
+      - "5435:5432"  # Exposed on host port 5435
+    volumes:
+      - postgres-payment-data:/var/lib/postgresql/data
+    networks:
+      - parking-network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d payment_db"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # ==========================================
+  # Microservices
+  # ==========================================
+
+  auth-service:
+    build:
+      context: ./services/auth-service
+      dockerfile: Dockerfile
+    container_name: smart-parking-auth-service
+    env_file:
+      - ./services/auth-service/.env.docker
+    ports:
+      - "3001:3001"
+    depends_on:
+      postgres-auth:
+        condition: service_healthy
+    networks:
+      - parking-network
+    restart: unless-stopped
+    volumes:
+      - ./services/auth-service/src:/app/src:ro  # Read-only mount for hot reload (optional)
+
+  parking-service:
+    build:
+      context: ./services/parking-service
+      dockerfile: Dockerfile
+    container_name: smart-parking-parking-service
+    env_file:
+      - ./services/parking-service/.env.docker
+    ports:
+      - "3002:3002"
+    depends_on:
+      postgres-parking:
+        condition: service_healthy
+      auth-service:
+        condition: service_started
+    networks:
+      - parking-network
+    restart: unless-stopped
+    volumes:
+      - ./services/parking-service/src:/app/src:ro  # Read-only mount for hot reload (optional)
+
+  payment-service:
+    build:
+      context: ./services/payment-service
+      dockerfile: Dockerfile
+    container_name: smart-parking-payment-service
+    env_file:
+      - ./services/payment-service/.env.docker
+    ports:
+      - "3003:3003"
+    depends_on:
+      postgres-payment:
+        condition: service_healthy
+      auth-service:
+        condition: service_started
+    networks:
+      - parking-network
+    restart: unless-stopped
+    volumes:
+      - ./services/payment-service/src:/app/src:ro  # Read-only mount for hot reload (optional)
+
+  gateway:
+    build:
+      context: .
+      dockerfile: ./aggregator/Dockerfile
+    container_name: smart-parking-gateway
+    env_file:
+      - ./aggregator/.env.docker
+    ports:
+      - "3000:3000"
+    depends_on:
+      - auth-service
+      - parking-service
+      - payment-service
+    networks:
+      - parking-network
+    restart: unless-stopped
+
+# ==========================================
+# Networks
+# ==========================================
+
+networks:
+  parking-network:
+    driver: bridge
+    name: smart-parking-network
+
+# ==========================================
+# Volumes (Persistent Data)
+# ==========================================
+
+volumes:
+  postgres-auth-data:
+    name: smart-parking-auth-db-data
+  postgres-parking-data:
+    name: smart-parking-parking-db-data
+  postgres-payment-data:
+    name: smart-parking-payment-db-data
