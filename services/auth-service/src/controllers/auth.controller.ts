@@ -14,7 +14,9 @@ import { AuthRequest } from "../types/index.js";
 
 /**
  * @swagger
- * tags:
+ * tags:This assignment focuses on developing my understanding of Present Simple tense, Wh-questions, and adverbs of frequency, as well as improving my writing skills. In the writing section, I am required to describe a job that I am interested in. The description includes several key points such as responsibilities, work schedules, advantages, disadvantages, education, and training. By completing this assignment, I hope to strengthen my grammar skills and learn how to present information about a job in a clear and organized way.
+
+
  *   - name: Auth
  *     description: Authentication endpoints
  */
