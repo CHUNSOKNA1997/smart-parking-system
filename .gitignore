@@ -30,3 +30,5 @@ build/
 
 # Docker
 docker-compose.override.yml
+*.backup
+.env.backup
