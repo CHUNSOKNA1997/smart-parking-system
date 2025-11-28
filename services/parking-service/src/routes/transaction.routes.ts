@@ -4,8 +4,6 @@ import { authenticateToken } from "../middleware/auth.middleware.js";
 
 const router = express.Router();
 
-// All transaction routes require authentication
-
 /**
  * @swagger
  * /api/v1/transactions/me:
@@ -14,17 +12,22 @@ const router = express.Router();
  *     tags: [Transactions]
  *     security:
  *       - bearerAuth: []
+ *     parameters:
+ *       - in: query
+ *         name: limit
+ *         schema:
+ *           type: integer
+ *           default: 20
+ *         description: Maximum number of transactions to return
  *     responses:
  *       200:
- *         description: List of user transactions
+ *         description: List of user's transactions
  *       401:
  *         description: Unauthorized
+ *       500:
+ *         description: Server error
  */
-router.get(
-	"/me",
-	authenticateToken,
-	TransactionController.getUserTransactions
-);
+router.get("/me", authenticateToken, TransactionController.getUserTransactions);
 
 /**
  * @swagger
@@ -36,27 +39,33 @@ router.get(
  *       - bearerAuth: []
  *     responses:
  *       200:
- *         description: Transaction summary
+ *         description: Transaction summary (total spent, transaction count, completed count)
  *       401:
  *         description: Unauthorized
+ *       500:
+ *         description: Server error
  */
-router.get("/me/summary", authenticateToken, TransactionController.getUserSummary);
+router.get(
+    "/me/summary",
+    authenticateToken,
+    TransactionController.getUserSummary
+);
 
 /**
  * @swagger
  * /api/v1/transactions/{transactionId}:
  *   get:
- *     summary: Get transaction by ID
+ *     summary: Get specific transaction by ID
  *     tags: [Transactions]
  *     security:
  *       - bearerAuth: []
  *     parameters:
  *       - in: path
  *         name: transactionId
+ *         required: true
  *         schema:
  *           type: string
- *         required: true
- *         description: ID of the transaction
+ *           format: uuid
  *     responses:
  *       200:
  *         description: Transaction details
@@ -64,11 +73,13 @@ router.get("/me/summary", authenticateToken, TransactionController.getUserSummar
  *         description: Transaction not found
  *       401:
  *         description: Unauthorized
+ *       500:
+ *         description: Server error
  */
 router.get(
-	"/:transactionId",
-	authenticateToken,
-	TransactionController.getTransactionById
+    "/:transactionId",
+    authenticateToken,
+    TransactionController.getTransactionById
 );
 
 export default router;

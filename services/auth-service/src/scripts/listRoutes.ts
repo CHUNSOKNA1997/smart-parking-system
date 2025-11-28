@@ -10,11 +10,11 @@ console.log("===========================================\n");
 
 // Display routes in a table-like format
 routes.forEach((route, index) => {
-	const methods = route.methods.join(", ");
-	console.log(`${index + 1}. [${methods}] ${route.path}`);
-	if (route.middlewares && route.middlewares.length > 0) {
-		console.log(`   Middlewares: ${route.middlewares.join(", ")}`);
-	}
+    const methods = route.methods.join(", ");
+    console.log(`${index + 1}. [${methods}] ${route.path}`);
+    if (route.middlewares && route.middlewares.length > 0) {
+        console.log(`   Middlewares: ${route.middlewares.join(", ")}`);
+    }
 });
 
 console.log("\n===========================================");

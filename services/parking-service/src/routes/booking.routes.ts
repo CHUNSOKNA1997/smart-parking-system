@@ -3,19 +3,17 @@ import BookingController from "../controllers/booking.controller.js";
 import { authenticateToken } from "../middleware/auth.middleware.js";
 import { validate } from "../middleware/validation.middleware.js";
 import {
-	createBookingSchema,
-	updateBookingStatusSchema,
+    createBookingSchema,
+    updateBookingStatusSchema,
 } from "../validators/booking.validator.js";
 
 const router = express.Router();
-
-// All booking routes require authentication
 
 /**
  * @swagger
  * /api/v1/bookings:
  *   post:
- *     summary: Create a new booking
+ *     summary: Create a new parking booking
  *     tags: [Bookings]
  *     security:
  *       - bearerAuth: []
@@ -28,10 +26,10 @@ const router = express.Router();
  *             required:
  *               - spotId
  *               - startTime
- *               - endTime
  *             properties:
  *               spotId:
  *                 type: string
+ *                 format: uuid
  *               startTime:
  *                 type: string
  *                 format: date-time
@@ -42,15 +40,15 @@ const router = express.Router();
  *       201:
  *         description: Booking created successfully
  *       400:
- *         description: Validation error
+ *         description: Invalid input or spot unavailable
  *       401:
  *         description: Unauthorized
  */
 router.post(
-	"/",
-	authenticateToken,
-	validate(createBookingSchema),
-	BookingController.createBooking
+    "/",
+    authenticateToken,
+    validate(createBookingSchema),
+    BookingController.createBooking
 );
 
 /**
@@ -63,7 +61,7 @@ router.post(
  *       - bearerAuth: []
  *     responses:
  *       200:
- *         description: List of user bookings
+ *         description: List of user's bookings
  *       401:
  *         description: Unauthorized
  */
@@ -91,17 +89,17 @@ router.get("/me/active", authenticateToken, BookingController.getActiveBooking);
  * @swagger
  * /api/v1/bookings/{bookingId}:
  *   get:
- *     summary: Get booking by ID
+ *     summary: Get specific booking by ID
  *     tags: [Bookings]
  *     security:
  *       - bearerAuth: []
  *     parameters:
  *       - in: path
  *         name: bookingId
+ *         required: true
  *         schema:
  *           type: string
- *         required: true
- *         description: ID of the booking
+ *           format: uuid
  *     responses:
  *       200:
  *         description: Booking details
@@ -123,33 +121,35 @@ router.get("/:bookingId", authenticateToken, BookingController.getBookingById);
  *     parameters:
  *       - in: path
  *         name: bookingId
+ *         required: true
  *         schema:
  *           type: string
- *         required: true
- *         description: ID of the booking
+ *           format: uuid
  *     requestBody:
  *       required: true
  *       content:
  *         application/json:
  *           schema:
  *             type: object
- *             required:
- *               - status
  *             properties:
  *               status:
  *                 type: string
- *                 enum: [PENDING, CONFIRMED, CANCELLED, COMPLETED]
+ *                 enum: [RESERVED, ACTIVE, COMPLETED, CANCELLED]
  *     responses:
  *       200:
  *         description: Booking updated successfully
+ *       400:
+ *         description: Invalid status
+ *       404:
+ *         description: Booking not found
  *       401:
  *         description: Unauthorized
  */
 router.patch(
-	"/:bookingId",
-	authenticateToken,
-	validate(updateBookingStatusSchema),
-	BookingController.updateBookingStatus
+    "/:bookingId",
+    authenticateToken,
+    validate(updateBookingStatusSchema),
+    BookingController.updateBookingStatus
 );
 
 export default router;

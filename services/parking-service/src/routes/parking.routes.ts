@@ -3,8 +3,6 @@ import ParkingController from "../controllers/parking.controller.js";
 
 const router = express.Router();
 
-// Public routes (no auth required)
-
 /**
  * @swagger
  * /api/v1/parking/spots:
@@ -14,6 +12,8 @@ const router = express.Router();
  *     responses:
  *       200:
  *         description: List of all parking spots
+ *       500:
+ *         description: Server error
  */
 router.get("/spots", ParkingController.getAllSpots);
 
@@ -21,11 +21,13 @@ router.get("/spots", ParkingController.getAllSpots);
  * @swagger
  * /api/v1/parking/spots/available:
  *   get:
- *     summary: Get available parking spots
+ *     summary: Get all available parking spots
  *     tags: [Parking]
  *     responses:
  *       200:
  *         description: List of available parking spots
+ *       500:
+ *         description: Server error
  */
 router.get("/spots/available", ParkingController.getAvailableSpots);
 
@@ -33,19 +35,22 @@ router.get("/spots/available", ParkingController.getAvailableSpots);
  * @swagger
  * /api/v1/parking/spots/type/{type}:
  *   get:
- *     summary: Get spots by type
+ *     summary: Get parking spots by type
  *     tags: [Parking]
  *     parameters:
  *       - in: path
  *         name: type
+ *         required: true
  *         schema:
  *           type: string
- *           enum: [car, motorcycle]
- *         required: true
- *         description: Type of parking spot
+ *           enum: [CAR, MOTORCYCLE]
  *     responses:
  *       200:
- *         description: List of spots by type
+ *         description: List of parking spots by type
+ *       400:
+ *         description: Invalid spot type
+ *       500:
+ *         description: Server error
  */
 router.get("/spots/type/:type", ParkingController.getSpotsByType);
 
@@ -53,20 +58,22 @@ router.get("/spots/type/:type", ParkingController.getSpotsByType);
  * @swagger
  * /api/v1/parking/spots/{spotId}:
  *   get:
- *     summary: Get spot by ID
+ *     summary: Get parking spot by ID
  *     tags: [Parking]
  *     parameters:
  *       - in: path
  *         name: spotId
+ *         required: true
  *         schema:
  *           type: string
- *         required: true
- *         description: ID of the parking spot
+ *           format: uuid
  *     responses:
  *       200:
  *         description: Parking spot details
  *       404:
  *         description: Spot not found
+ *       500:
+ *         description: Server error
  */
 router.get("/spots/:spotId", ParkingController.getSpotById);
 
@@ -78,7 +85,9 @@ router.get("/spots/:spotId", ParkingController.getSpotById);
  *     tags: [Parking]
  *     responses:
  *       200:
- *         description: Parking statistics
+ *         description: Parking statistics (total spots, available, occupied)
+ *       500:
+ *         description: Server error
  */
 router.get("/statistics", ParkingController.getStatistics);
 
