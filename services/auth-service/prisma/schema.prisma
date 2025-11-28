@@ -18,6 +18,7 @@ model User {
   email              String    @unique @db.VarChar(100)
   passwordHash       String    @map("password_hash") @db.VarChar(255)
   isVerified         Boolean   @default(false) @map("is_verified")
+  phone              String?   @db.VarChar(20)
   verificationOtp    String?   @map("verification_otp") @db.VarChar(6)
   otpExpiry          DateTime? @map("otp_expiry")
   resetOtp           String?   @map("reset_otp") @db.VarChar(6)

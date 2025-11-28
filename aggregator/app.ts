@@ -3,6 +3,7 @@ import express, { Request, Response, NextFunction } from "express";
 import swaggerUi from "swagger-ui-express";
 import axios from "axios";
 import _ from "lodash";
+import cors from "cors";
 
 const app = express();
 const PORT = 3000;
@@ -11,14 +12,34 @@ const PORT = 3000;
 const AUTH_SERVICE_URL = process.env.AUTH_SERVICE_URL || "http://localhost:3001";
 const PARKING_SERVICE_URL = process.env.PARKING_SERVICE_URL || "http://localhost:3002";
 
+// Improved Swagger Types
+interface SwaggerInfo {
+  title: string;
+  version: string;
+  description?: string;
+}
+
+interface SwaggerServer {
+  url: string;
+  description?: string;
+}
+
 interface SwaggerSpec {
   openapi: string;
-  info: { title: string; version: string };
+  info: SwaggerInfo;
+  servers?: SwaggerServer[];
   paths: Record<string, any>;
-  components?: Record<string, any>;
+  components?: {
+    schemas?: Record<string, any>;
+    securitySchemes?: Record<string, any>;
+    [key: string]: any;
+  };
+  tags?: any[];
+  [key: string]: any;
 }
 
 // Middleware
+app.use(cors());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
@@ -34,10 +55,11 @@ const proxyRequest = async (
       url: targetUrl,
       data: req.body,
       headers: {
-        ...req.headers,
+        ..._.omit(req.headers, ["content-length", "host"]),
         host: new URL(targetUrl).host,
       },
       params: req.query,
+      timeout: 30000, // 30 seconds timeout
     });
 
     res.status(response.status).json(response.data);
@@ -109,6 +131,12 @@ app.get("/swagger.json", async (req: Request, res: Response) => {
         service1.data.components,
         service2.data.components
       ),
+      servers: [
+        {
+          url: `http://localhost:${PORT}`,
+          description: "API Gateway",
+        },
+      ],
     };
 
     res.json(mergedSwagger);

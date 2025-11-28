@@ -21,7 +21,7 @@
   "author": "",
   "license": "MIT",
   "dependencies": {
-    "@prisma/client": "^5.7.1",
+    "@prisma/client": "^6.18.0",
     "bcrypt": "^5.1.1",
     "cors": "^2.8.5",
     "dotenv": "^16.3.1",
@@ -44,7 +44,7 @@
     "@types/nodemailer": "^6.4.20",
     "@types/swagger-ui-express": "^4.1.8",
     "@types/uuid": "^9.0.8",
-    "prisma": "^5.7.1",
+    "prisma": "^6.18.0",
     "tsx": "^4.20.6",
     "typescript": "^5.9.3"
   }

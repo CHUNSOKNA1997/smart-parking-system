@@ -16,7 +16,7 @@ const options = {
       },
     ],
   },
-  apis: ["./routes/*.ts", "./controllers/*.ts"], // Files containing JSDoc comments
+  apis: ["./src/routes/*.ts", "./src/controllers/*.ts"], // Files containing JSDoc comments
 };
 
 const swaggerSpec = swaggerJsDoc(options);
