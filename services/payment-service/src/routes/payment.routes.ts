@@ -1,6 +1,18 @@
 import { Router } from "express";
 import { paymentController } from "../controllers/payment.controller.js";
 import { authMiddleware } from "../middleware/auth.middleware.js";
+import { validate } from "../middleware/validation.middleware.js";
+import {
+    paymentCreationLimiter,
+    paymentVerificationLimiter,
+} from "../middleware/rate-limit.middleware.js";
+import {
+    createPaymentSchema,
+    verifyPaymentSchema,
+    paymentIdSchema,
+    userIdSchema,
+    bookingIdSchema,
+} from "../validators/payment.validator.js";
 
 const router = Router();
 
@@ -44,7 +56,7 @@ router.use(authMiddleware);
  *       500:
  *         description: Server error
  */
-router.post("/", (req, res) => paymentController.createPayment(req, res));
+router.post("/", paymentCreationLimiter, validate(createPaymentSchema), (req, res) => paymentController.createPayment(req, res));
 
 /**
  * @swagger
@@ -72,7 +84,7 @@ router.post("/", (req, res) => paymentController.createPayment(req, res));
  *       400:
  *         description: Payment not found or not completed
  */
-router.post("/verifications", (req, res) =>
+router.post("/verifications", paymentVerificationLimiter, validate(verifyPaymentSchema), (req, res) =>
     paymentController.verifyPayment(req, res)
 );
 
@@ -97,7 +109,7 @@ router.post("/verifications", (req, res) =>
  *       500:
  *         description: Server error
  */
-router.get("/users/:userId", (req, res) =>
+router.get("/users/:userId", validate(userIdSchema, "params"), (req, res) =>
     paymentController.getUserPayments(req, res)
 );
 
@@ -122,7 +134,7 @@ router.get("/users/:userId", (req, res) =>
  *       500:
  *         description: Server error
  */
-router.get("/bookings/:bookingId", (req, res) =>
+router.get("/bookings/:bookingId", validate(bookingIdSchema, "params"), (req, res) =>
     paymentController.getBookingPayments(req, res)
 );
 
@@ -147,7 +159,7 @@ router.get("/bookings/:bookingId", (req, res) =>
  *       500:
  *         description: Server error
  */
-router.get("/:paymentId/qr-image", (req, res) =>
+router.get("/:paymentId/qr-image", validate(paymentIdSchema, "params"), (req, res) =>
     paymentController.getQRImage(req, res)
 );
 
@@ -172,6 +184,6 @@ router.get("/:paymentId/qr-image", (req, res) =>
  *       404:
  *         description: Payment not found
  */
-router.get("/:paymentId", (req, res) => paymentController.getPaymentById(req, res));
+router.get("/:paymentId", validate(paymentIdSchema, "params"), (req, res) => paymentController.getPaymentById(req, res));
 
 export default router;

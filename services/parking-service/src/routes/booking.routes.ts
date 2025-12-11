@@ -2,6 +2,7 @@ import express from "express";
 import BookingController from "../controllers/booking.controller.js";
 import { authenticateToken } from "../middleware/auth.middleware.js";
 import { validate } from "../middleware/validation.middleware.js";
+import { bookingCreationLimiter } from "../middleware/rate-limit.middleware.js";
 import {
     createBookingSchema,
     updateBookingStatusSchema,
@@ -47,6 +48,7 @@ const router = express.Router();
 router.post(
     "/",
     authenticateToken,
+    bookingCreationLimiter,
     validate(createBookingSchema),
     BookingController.createBooking
 );
