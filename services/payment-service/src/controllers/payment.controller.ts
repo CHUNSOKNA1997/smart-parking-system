@@ -41,13 +41,13 @@ export class PaymentController {
     /**
      * Retrieves payment details by payment ID.
      *
-     * @route GET /api/v1/payments/:id
+     * @route GET /api/v1/payments/:paymentId
      */
     async getPaymentById(req: Request, res: Response): Promise<void> {
         try {
-            const { id } = req.params;
+            const { paymentId } = req.params;
 
-            const payment = await paymentService.getPaymentById(id);
+            const payment = await paymentService.getPaymentById(paymentId);
 
             res.status(200).json(
                 successResponse("Payment retrieved successfully", payment)
@@ -61,12 +61,12 @@ export class PaymentController {
     }
 
     /**
-     * Checks payment status using MD5 hash for automatic polling.
-     * This endpoint is used by clients to poll for payment completion without manual hash entry.
+     * Verifies payment status using MD5 hash for automatic polling.
+     * This endpoint is used by clients to poll for payment completion.
      *
-     * @route POST /api/v1/payments/check
+     * @route POST /api/v1/payments/verifications
      */
-    async checkPayment(req: Request, res: Response): Promise<void> {
+    async verifyPayment(req: Request, res: Response): Promise<void> {
         try {
             const { md5 } = req.body;
 
@@ -77,9 +77,9 @@ export class PaymentController {
 
             const result = await paymentService.checkPaymentByMD5(md5);
 
-            res.status(200).json(successResponse("Payment confirmed", result));
+            res.status(200).json(successResponse("Payment verified successfully", result));
         } catch (error: any) {
-            console.error("[PAYMENT] Check payment error:", error);
+            console.error("[PAYMENT] Verify payment error:", error);
             // Return 400 for pending payments during polling (not an error condition)
             // Payment may not be completed yet by the user
             res.status(400).json(
@@ -94,7 +94,7 @@ export class PaymentController {
     /**
      * Retrieves all payments for a specific user.
      *
-     * @route GET /api/v1/payments/user/:userId
+     * @route GET /api/v1/payments/users/:userId
      */
     async getUserPayments(req: Request, res: Response): Promise<void> {
         try {
@@ -116,7 +116,7 @@ export class PaymentController {
     /**
      * Retrieves all payments for a specific booking.
      *
-     * @route GET /api/v1/payments/booking/:bookingId
+     * @route GET /api/v1/payments/bookings/:bookingId
      */
     async getBookingPayments(req: Request, res: Response): Promise<void> {
         try {
@@ -139,13 +139,13 @@ export class PaymentController {
     /**
      * Generates a QR code image for a payment.
      *
-     * @route GET /api/v1/payments/:id/qr
+     * @route GET /api/v1/payments/:paymentId/qr-image
      */
     async getQRImage(req: Request, res: Response): Promise<void> {
         try {
-            const { id } = req.params;
+            const { paymentId } = req.params;
 
-            const qrImage = await paymentService.generateQRImage(id);
+            const qrImage = await paymentService.generateQRImage(paymentId);
 
             res.status(200).json(
                 successResponse("QR image generated successfully", { qrImage })

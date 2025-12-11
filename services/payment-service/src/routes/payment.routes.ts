@@ -48,9 +48,9 @@ router.post("/", (req, res) => paymentController.createPayment(req, res));
 
 /**
  * @swagger
- * /api/v1/payments/check-payment:
+ * /api/v1/payments/verifications:
  *   post:
- *     summary: Check payment status using MD5 hash (automatic polling)
+ *     summary: Verify payment status using MD5 hash (automatic polling)
  *     tags: [Payments]
  *     security:
  *       - bearerAuth: []
@@ -68,17 +68,17 @@ router.post("/", (req, res) => paymentController.createPayment(req, res));
  *                 description: MD5 hash of the QR code string
  *     responses:
  *       200:
- *         description: Payment confirmed
+ *         description: Payment verified successfully
  *       400:
  *         description: Payment not found or not completed
  */
-router.post("/check-payment", (req, res) =>
-    paymentController.checkPayment(req, res)
+router.post("/verifications", (req, res) =>
+    paymentController.verifyPayment(req, res)
 );
 
 /**
  * @swagger
- * /api/v1/payments/user/{userId}:
+ * /api/v1/payments/users/{userId}:
  *   get:
  *     summary: Get all payments for a specific user
  *     tags: [Payments]
@@ -97,13 +97,13 @@ router.post("/check-payment", (req, res) =>
  *       500:
  *         description: Server error
  */
-router.get("/user/:userId", (req, res) =>
+router.get("/users/:userId", (req, res) =>
     paymentController.getUserPayments(req, res)
 );
 
 /**
  * @swagger
- * /api/v1/payments/booking/{bookingId}:
+ * /api/v1/payments/bookings/{bookingId}:
  *   get:
  *     summary: Get all payments for a specific booking
  *     tags: [Payments]
@@ -122,13 +122,13 @@ router.get("/user/:userId", (req, res) =>
  *       500:
  *         description: Server error
  */
-router.get("/booking/:bookingId", (req, res) =>
+router.get("/bookings/:bookingId", (req, res) =>
     paymentController.getBookingPayments(req, res)
 );
 
 /**
  * @swagger
- * /api/v1/payments/{id}/qr-image:
+ * /api/v1/payments/{paymentId}/qr-image:
  *   get:
  *     summary: Generate QR code image for a payment
  *     tags: [Payments]
@@ -136,7 +136,7 @@ router.get("/booking/:bookingId", (req, res) =>
  *       - bearerAuth: []
  *     parameters:
  *       - in: path
- *         name: id
+ *         name: paymentId
  *         required: true
  *         schema:
  *           type: string
@@ -147,13 +147,13 @@ router.get("/booking/:bookingId", (req, res) =>
  *       500:
  *         description: Server error
  */
-router.get("/:id/qr-image", (req, res) =>
+router.get("/:paymentId/qr-image", (req, res) =>
     paymentController.getQRImage(req, res)
 );
 
 /**
  * @swagger
- * /api/v1/payments/{id}:
+ * /api/v1/payments/{paymentId}:
  *   get:
  *     summary: Get payment details by ID
  *     tags: [Payments]
@@ -161,7 +161,7 @@ router.get("/:id/qr-image", (req, res) =>
  *       - bearerAuth: []
  *     parameters:
  *       - in: path
- *         name: id
+ *         name: paymentId
  *         required: true
  *         schema:
  *           type: string
@@ -172,6 +172,6 @@ router.get("/:id/qr-image", (req, res) =>
  *       404:
  *         description: Payment not found
  */
-router.get("/:id", (req, res) => paymentController.getPaymentById(req, res));
+router.get("/:paymentId", (req, res) => paymentController.getPaymentById(req, res));
 
 export default router;
