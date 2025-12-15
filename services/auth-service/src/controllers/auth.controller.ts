@@ -1,6 +1,7 @@
 import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
 import { Request, Response } from "express";
+import fs from "fs";
 import UserModel from "../models/User.model.js";
 import { generateAccessToken } from "../services/token.service.js";
 import {
@@ -494,6 +495,55 @@ class AuthController {
 
     /**
      * @swagger
+     * /api/v1/auth/me:
+     *   put:
+     *     summary: Update current user profile
+     *     tags: [Auth - User]
+     *     security:
+     *       - bearerAuth: []
+     *     requestBody:
+     *       required: true
+     *       content:
+     *         application/json:
+     *           schema:
+     *             type: object
+     *             properties:
+     *               firstName:
+     *                 type: string
+     *               lastName:
+     *                 type: string
+     *               phone:
+     *                 type: string
+     *     responses:
+     *       200:
+     *         description: Profile updated successfully
+     *       400:
+     *         description: Invalid input
+     *       401:
+     *         description: Unauthorized
+     */
+    static async updateMe(req: AuthRequest, res: Response): Promise<Response> {
+        try {
+            const userId = req.user!.userId;
+            const { firstName, lastName, phone } = req.body;
+
+            const updatedUser = await UserModel.updateProfile(userId, {
+                firstName,
+                lastName,
+                phone,
+            });
+
+            return sendSuccess(res, 200, "Profile updated successfully", {
+                user: updatedUser,
+            });
+        } catch (error) {
+            console.error("[AUTH] Update profile error:", error);
+            return sendError(res, 500, "Internal server error", error.message);
+        }
+    }
+
+    /**
+     * @swagger
      * /api/v1/auth/token/verify:
      *   post:
      *     summary: Verify JWT token for microservices
@@ -528,6 +578,7 @@ class AuthController {
                 process.env.JWT_SECRET as string,
                 (err: any, decoded: any) => {
                     if (err) {
+                        console.error("[AUTH] Token verification failed:", err.message);
                         return sendError(res, 401, "Invalid or expired token");
                     }
                     return sendSuccess(res, 200, "Token is valid", {
@@ -540,39 +591,168 @@ class AuthController {
         }
     }
 
+
     /**
      * @swagger
-     * /api/v1/auth/users/{userId}:
-     *   get:
-     *     summary: Get user by ID (for microservices)
-     *     tags: [Auth - Microservices]
-     *     parameters:
-     *       - in: path
-     *         name: userId
-     *         schema:
-     *           type: string
-     *         required: true
-     *         description: User ID
+     * /api/v1/auth/me/profile-image:
+     *   post:
+     *     summary: Upload profile image
+     *     tags: [Auth - User]
+     *     security:
+     *       - bearerAuth: []
+     *     requestBody:
+     *       required: true
+     *       content:
+     *         multipart/form-data:
+     *           schema:
+     *             type: object
+     *             properties:
+     *               image:
+     *                 type: string
+     *                 format: binary
      *     responses:
      *       200:
-     *         description: User data
-     *       404:
-     *         description: User not found
+     *         description: Profile image uploaded successfully
+     *       400:
+     *         description: No file uploaded
+     *       401:
+     *         description: Unauthorized
+     *       500:
+     *         description: Internal server error
      */
-    static async getUserById(req: Request, res: Response): Promise<Response> {
+    static async uploadProfileImage(req: AuthRequest, res: Response): Promise<Response> {
         try {
-            const { userId } = req.params;
+            const userId = req.user!.userId;
 
-            const user = await UserModel.findById(userId);
-            if (!user) {
-                return sendError(res, 404, "User not found");
+            if (!req.file) {
+                return sendError(res, 400, "No file uploaded");
             }
 
-            return sendSuccess(res, 200, "User retrieved successfully", {
-                user,
+            // Construct full URL or relative path
+            // For now, we'll store the relative path. 
+            // In a real app, you'd construct a full URL based on the server address or upload to S3.
+            const profileImagePath = req.file.path.replace(/\\/g, "/"); // normalize path
+
+            const updatedUser = await UserModel.updateProfile(userId, {
+                profileImage: profileImagePath,
+            });
+
+            return sendSuccess(res, 200, "Profile image uploaded successfully", {
+                user: updatedUser,
             });
         } catch (error) {
-            console.error("[AUTH] Get user by ID error:", error);
+            console.error("[AUTH] Upload profile image error:", error);
+            // If database update fails, we might want to delete the uploaded file
+            // fs.unlinkSync(req.file.path);
+            return sendError(res, 500, "Internal server error", error.message);
+        }
+    }
+
+    /**
+     * @swagger
+     * /api/v1/auth/me/profile-image-base64:
+     *   put:
+     *     summary: Upload profile image as base64
+     *     tags: [Auth - User]
+     *     security:
+     *       - bearerAuth: []
+     *     requestBody:
+     *       required: true
+     *       content:
+     *         application/json:
+     *           schema:
+     *             type: object
+     *             required:
+     *               - image
+     *             properties:
+     *               image:
+     *                 type: string
+     *                 description: Base64 encoded image data (with or without data URL prefix)
+     *                 example: "data:image/png;base64,iVBORw0KGgo..."
+     *     responses:
+     *       200:
+     *         description: Profile image uploaded successfully
+     *       400:
+     *         description: Invalid base64 data
+     *       401:
+     *         description: Unauthorized
+     *       500:
+     *         description: Internal server error
+     */
+    static async uploadProfileImageBase64(req: AuthRequest, res: Response): Promise<Response> {
+        try {
+            const userId = req.user!.userId;
+            const { image } = req.body;
+
+            if (!image || typeof image !== 'string') {
+                return sendError(res, 400, "Image data is required");
+            }
+
+            // Remove data URL prefix if present (e.g., "data:image/png;base64,")
+            const base64Data = image.replace(/^data:image\/\w+;base64,/, '');
+
+            // Validate base64
+            if (!base64Data || base64Data.length === 0) {
+                return sendError(res, 400, "Invalid image data");
+            }
+
+            // Create buffer from base64
+            let imageBuffer: Buffer;
+            try {
+                imageBuffer = Buffer.from(base64Data, 'base64');
+            } catch (error) {
+                return sendError(res, 400, "Invalid base64 encoding");
+            }
+
+            // Check file size (max 5MB)
+            const maxSize = 5 * 1024 * 1024;
+            if (imageBuffer.length > maxSize) {
+                return sendError(res, 400, "Image too large. Maximum size is 5MB");
+            }
+
+            // Ensure uploads directory exists
+            const uploadDir = "uploads/profiles";
+            if (!fs.existsSync(uploadDir)) {
+                fs.mkdirSync(uploadDir, { recursive: true });
+            }
+
+            // Generate unique filename
+            const uniqueSuffix = Date.now() + "-" + Math.round(Math.random() * 1e9);
+
+            // Detect image type from base64 header or default to jpg
+            let extension = 'jpg';
+            if (image.startsWith('data:image/png')) {
+                extension = 'png';
+            } else if (image.startsWith('data:image/jpeg') || image.startsWith('data:image/jpg')) {
+                extension = 'jpg';
+            } else if (image.startsWith('data:image/gif')) {
+                extension = 'gif';
+            } else if (image.startsWith('data:image/webp')) {
+                extension = 'webp';
+            }
+
+            const filename = `profile-${uniqueSuffix}.${extension}`;
+            const filepath = `${uploadDir}/${filename}`;
+
+            // Write file to disk
+            fs.writeFileSync(filepath, imageBuffer);
+
+            // Normalize path for storage
+            const normalizedPath = filepath.replace(/\\/g, "/");
+
+            // Update user profile
+            const updatedUser = await UserModel.updateProfile(userId, {
+                profileImage: normalizedPath,
+            });
+
+            return sendSuccess(res, 200, "Profile image uploaded successfully", {
+                user: updatedUser,
+                imagePath: normalizedPath,
+                imageUrl: `http://localhost:${process.env.PORT || 3001}/${normalizedPath}`
+            });
+
+        } catch (error) {
+            console.error("[AUTH] Upload base64 image error:", error);
             return sendError(res, 500, "Internal server error", error.message);
         }
     }

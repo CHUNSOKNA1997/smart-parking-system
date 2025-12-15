@@ -2,9 +2,11 @@ import { Response } from "../types/index.js";
 import BookingModel from "../models/Booking.model.js";
 import ParkingSpotModel from "../models/ParkingSpot.model.js";
 import TransactionModel from "../models/Transaction.model.js";
-import { generateQRCode } from "../services/qr.service.js";
+import prisma from "../config/prisma.js";
+import { generateQRCode, generateQRFromString } from "../services/qr.service.js";
 import { sendSuccess, sendError } from "../utils/response.js";
 import { BookingStatus, PaymentMethod } from "@prisma/client";
+import axios from "axios";
 
 import { AuthRequest } from "../types/index.js";
 
@@ -20,8 +22,53 @@ class BookingController {
         res: Response
     ): Promise<Response> {
         try {
-            const { spotId, durationHours } = req.body;
+            let { spotId, durationHours, startTime, endTime, paymentMethod, currency } = req.body;
             const userId = req.user!.userId;
+
+            // Calculate duration if not provided
+            if (!durationHours) {
+                if (!startTime || !endTime) {
+                    return sendError(
+                        res,
+                        400,
+                        "Either durationHours or startTime/endTime must be provided"
+                    );
+                }
+                const start = new Date(startTime);
+                const end = new Date(endTime);
+                const diffMs = end.getTime() - start.getTime();
+                durationHours = diffMs / (1000 * 60 * 60);
+
+                if (durationHours <= 0) {
+                    return sendError(
+                        res,
+                        400,
+                        "End time must be after start time"
+                    );
+                }
+            }
+
+            // Prevent users from creating multiple active bookings simultaneously
+            const activeBooking = await BookingModel.findActiveByUserId(userId);
+            if (activeBooking) {
+                if (activeBooking.status === BookingStatus.ACTIVE) {
+                    return sendError(
+                        res,
+                        400,
+                        "You already have an active booking"
+                    );
+                }
+
+                // If status is RESERVED, we cancel it to allow the new booking (e.g. user changing payment method)
+                // This must happen BEFORE checking spot availability to avoid "spot taken" error
+                if (activeBooking.status === BookingStatus.RESERVED) {
+                    console.log(`[BOOKING] Auto-cancelling existing RESERVED booking ${activeBooking.id}`);
+                    await BookingModel.updateStatus(activeBooking.id, BookingStatus.CANCELLED, new Date());
+                    await ParkingSpotModel.updateAvailability(activeBooking.spotId, true);
+                }
+            }
+
+
 
             // Validate that the parking spot exists and is available for booking
             const spot = await ParkingSpotModel.findById(spotId);
@@ -33,69 +80,136 @@ class BookingController {
                 return sendError(res, 400, "Parking spot is not available");
             }
 
-            // Prevent users from creating multiple active bookings simultaneously
-            const activeBooking = await BookingModel.findActiveByUserId(userId);
-            if (activeBooking) {
-                return sendError(
-                    res,
-                    400,
-                    "You already have an active booking"
-                );
-            }
-
             // Calculate total booking cost based on hourly rate and duration
             const totalPrice =
                 Number(spot.pricePerHour) * Number(durationHours);
 
-            // Prepare QR code data payload for booking verification
-            const qrCodeData = {
-                bookingId: "temp", // Will be replaced with actual ID
-                spotId,
-                userId,
-                startTime: new Date().toISOString(),
-            };
+            // Create booking record with transaction for atomicity
+            const booking = await prisma.$transaction(async (tx) => {
+                // Create booking
+                const newBooking = await tx.booking.create({
+                    data: {
+                        userId,
+                        spotId,
+                        durationHours,
+                        totalPrice,
+                        status: BookingStatus.RESERVED,
+                    },
+                });
 
-            // Create initial booking record in database
-            const booking = await BookingModel.create({
-                userId,
-                spotId,
-                durationHours,
-                totalPrice,
-                qrCode: null, // Will be generated after booking ID is assigned
+                // Reserve the parking spot
+                await tx.parkingSpot.update({
+                    where: { id: spotId },
+                    data: { isAvailable: false },
+                });
+
+                // Create transaction record for payment tracking
+                await tx.transaction.create({
+                    data: {
+                        bookingId: newBooking.id,
+                        userId,
+                        amount: totalPrice,
+                        paymentMethod: paymentMethod === 'aba' ? PaymentMethod.ABA : (paymentMethod === 'khqr' ? PaymentMethod.KHQR : PaymentMethod.CASH),
+                        description: `Parking booking for spot ${spotId}`,
+                    },
+                });
+
+                return newBooking;
             });
 
-            // Update QR code data with the actual booking ID
-            qrCodeData.bookingId = booking.id;
-            const qrCode = await generateQRCode(qrCodeData);
+            console.log(`[BOOKING] Booking created in transaction: ${booking.id}`);
 
-            // Update booking status to reserved
-            const updatedBooking = await BookingModel.updateStatus(
-                booking.id,
-                BookingStatus.RESERVED
-            );
-            updatedBooking.qrCode = qrCode;
+            // Initiate Payment via Payment Service
+            let paymentData = null;
+            try {
+                const paymentServiceUrl = process.env.PAYMENT_SERVICE_URL || "http://localhost:3003";
+                console.log(`[BOOKING] Initiating payment at ${paymentServiceUrl}`);
 
-            // Mark the parking spot as unavailable
-            await ParkingSpotModel.updateAvailability(spotId, false);
+                // Convert to KHR if necessary (Assuming spot price is in USD)
+                const targetCurrency = currency || "KHR";
+                const EXCHANGE_RATE = 4100;
+                const paymentAmount = targetCurrency === "KHR"
+                    ? totalPrice * EXCHANGE_RATE
+                    : totalPrice;
 
-            // Create transaction record for payment tracking
-            await TransactionModel.create({
-                bookingId: booking.id,
-                userId,
-                amount: totalPrice,
-                paymentMethod: PaymentMethod.CASH,
-                description: `Parking booking for spot ${spotId}`,
-            });
+                const paymentResponse = await axios.post(
+                    `${paymentServiceUrl}/api/v1/payments`,
+                    {
+                        bookingId: booking.id,
+                        amount: paymentAmount,
+                        userId,
+                        paymentMethod: paymentMethod || "khqr",
+                        currency: targetCurrency,
+                        description: `Payment for booking ${booking.id}`,
+                    },
+                    {
+                        headers: {
+                            Authorization: req.headers.authorization,
+                        },
+                    }
+                );
+
+                if (paymentResponse.data && paymentResponse.data.data) {
+                    paymentData = paymentResponse.data.data;
+                    console.log(`[BOOKING] Payment initiated: ${paymentData.paymentId}`);
+                }
+            } catch (paymentError: any) {
+                console.error(
+                    "[BOOKING] Failed to initiate payment, rolling back:",
+                    paymentError.response?.data || paymentError.message
+                );
+
+                // Rollback: Release the parking spot
+                await ParkingSpotModel.updateAvailability(spotId, true);
+
+                // Rollback: Delete the transaction
+                await prisma.transaction.deleteMany({
+                    where: { bookingId: booking.id }
+                });
+
+                // Rollback: Delete the booking
+                await BookingModel.delete(booking.id);
+
+                return sendError(
+                    res,
+                    500,
+                    "Failed to initiate payment. Booking not created.",
+                    paymentError.response?.data?.error || paymentError.message
+                );
+            }
+
+            // Generate payment QR image if KHQR string is available
+            let paymentQR = null;
+            if (paymentData?.qrString) {
+                paymentQR = await generateQRFromString(paymentData.qrString);
+            }
 
             console.log(
                 `[BOOKING] Booking created: ${booking.id} for user: ${userId}`
             );
 
+            // Return separated booking and payment data
             return sendSuccess(res, 201, "Booking created successfully", {
                 booking: {
-                    ...updatedBooking,
-                    qrCode,
+                    id: booking.id,
+                    userId: booking.userId,
+                    spotId: booking.spotId,
+                    durationHours: booking.durationHours,
+                    totalPrice: booking.totalPrice,
+                    status: booking.status,
+                    createdAt: booking.createdAt,
                 },
+                payment: paymentData ? {
+                    paymentId: paymentData.paymentId,
+                    qrImage: paymentQR,
+                    qrString: paymentData.qrString,
+                    md5: paymentData.md5,
+                    deeplinkUrl: paymentData.deeplinkUrl,
+                    amount: paymentData.amount,
+                    currency: paymentData.currency,
+                    status: paymentData.status,
+                    createdAt: paymentData.createdAt,
+                } : null,
             });
         } catch (error) {
             console.error("[BOOKING] Create booking error:", error);
@@ -109,10 +223,10 @@ class BookingController {
     }
 
     /**
-     * Retrieves all bookings for the authenticated user.
-     * Optionally filters by booking status.
+     * Retrieves all bookings for the authenticated user with pagination.
+     * Uses POST method to accept pagination parameters in request body.
      *
-     * @route GET /api/v1/bookings
+     * @route POST /api/v1/bookings/me
      */
     static async getUserBookings(
         req: AuthRequest,
@@ -120,14 +234,34 @@ class BookingController {
     ): Promise<Response> {
         try {
             const userId = req.user!.userId;
-            const { status } = req.query;
+            const {
+                status,
+                page = 1,
+                limit = 20,
+                sortField = 'createdAt',
+                sortOrder = 'desc'
+            } = req.body;
 
-            const bookings = await BookingModel.findByUserId(userId, status);
+            // Validate pagination parameters
+            const validPage = Math.max(1, parseInt(page as string) || 1);
+            const validLimit = Math.min(100, Math.max(1, parseInt(limit as string) || 20));
 
-            return sendSuccess(res, 200, "Bookings retrieved successfully", {
-                bookings,
-                count: bookings.length,
+            // Validate sort field
+            const allowedSortFields = ['createdAt', 'totalPrice', 'status', 'durationHours'];
+            const validSortField = allowedSortFields.includes(sortField) ? sortField : 'createdAt';
+
+            // Validate sort order
+            const validSortOrder = sortOrder?.toLowerCase() === 'asc' ? 'asc' : 'desc';
+
+            const result = await BookingModel.findByUserId(userId, {
+                status,
+                page: validPage,
+                limit: validLimit,
+                sortField: validSortField,
+                sortOrder: validSortOrder
             });
+
+            return sendSuccess(res, 200, "Bookings retrieved successfully", result);
         } catch (error) {
             console.error("[BOOKING] Get user bookings error:", error);
             return sendError(
@@ -276,6 +410,92 @@ class BookingController {
                 res,
                 500,
                 "Failed to update booking status",
+                error.message
+            );
+        }
+    }
+
+    /**
+     * Confirms payment for a booking and updates its status to ACTIVE.
+     * Called by the payment service after successful payment.
+     *
+     * @route POST /api/v1/bookings/:bookingId/confirm-payment
+     */
+    static async confirmPayment(
+        req: AuthRequest,
+        res: Response
+    ): Promise<Response> {
+        try {
+            const { bookingId } = req.params;
+            const { paymentId, transactionId, amount } = req.body;
+
+            console.log(`[BOOKING] Confirming payment for booking ${bookingId}`);
+
+            const booking = await BookingModel.findById(bookingId);
+
+            if (!booking) {
+                return sendError(res, 404, "Booking not found");
+            }
+
+            // Validate booking is in correct state
+            if (booking.status !== BookingStatus.RESERVED) {
+                return sendError(
+                    res,
+                    400,
+                    `Cannot confirm payment for booking with status: ${booking.status}`
+                );
+            }
+
+            // Validate payment amount matches booking total
+            if (amount && Number(amount).toFixed(2) !== Number(booking.totalPrice).toFixed(2)) {
+                console.warn(
+                    `[BOOKING] Payment amount mismatch. Expected: ${booking.totalPrice}, Received: ${amount}`
+                );
+                // Continue anyway - log the discrepancy but don't block
+            }
+
+            // Update booking status to ACTIVE
+            const updatedBooking = await BookingModel.updateStatus(
+                bookingId,
+                BookingStatus.ACTIVE
+            );
+
+            // Update transaction record if exists
+            if (paymentId) {
+                try {
+                    await prisma.transaction.updateMany({
+                        where: {
+                            bookingId,
+                        },
+                        data: {
+                            status: "COMPLETED",
+                        },
+                    });
+                } catch (txError) {
+                    console.error(
+                        "[BOOKING] Failed to update transaction:",
+                        txError
+                    );
+                    // Don't fail the request if transaction update fails
+                }
+            }
+
+            console.log(
+                `[BOOKING] Payment confirmed for booking ${bookingId}. Status updated to ACTIVE`
+            );
+
+            return sendSuccess(
+                res,
+                200,
+                "Payment confirmed and booking activated",
+                { booking: updatedBooking }
+            );
+        } catch (error) {
+            console.error("[BOOKING] Confirm payment error:", error);
+            return sendError(
+                res,
+                500,
+                "Failed to confirm payment",
                 error.message
             );
         }

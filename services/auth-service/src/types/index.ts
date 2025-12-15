@@ -33,6 +33,7 @@ export interface UserCreateData {
 export interface UserUpdateData {
     firstName?: string;
     lastName?: string;
+    phone?: string;
 }
 
 // Email service types

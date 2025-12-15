@@ -132,9 +132,9 @@ export interface KHQRCheckTransactionResponse
     extends KHQRBaseResponse<KHQRTransactionData> {
     data: KHQRTransactionData | null;
     responseMessage:
-        | "Getting transaction successfully."
-        | "Transaction failed."
-        | "Transaction could not be found. Please check and try again.";
+    | "Getting transaction successfully."
+    | "Transaction failed."
+    | "Transaction could not be found. Please check and try again.";
 }
 
 // ============================================================================
@@ -171,6 +171,7 @@ export interface CreatePaymentRequest {
     amount: number;
     currency: KHQRCurrency;
     description?: string;
+    paymentMethod?: "khqr" | "aba";
 }
 
 export interface CreatePaymentResponse {

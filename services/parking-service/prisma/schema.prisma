@@ -27,6 +27,7 @@ enum SpotType {
 enum PaymentMethod {
   CASH
   KHQR
+  ABA
   CARD
 }
 

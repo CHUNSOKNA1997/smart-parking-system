@@ -36,6 +36,12 @@ const router = express.Router();
  *               endTime:
  *                 type: string
  *                 format: date-time
+ *               paymentMethod:
+ *                 type: string
+ *                 enum: [aba, khqr]
+ *               currency:
+ *                 type: string
+ *                 enum: [USD, KHR]
  *     responses:
  *       201:
  *         description: Booking created successfully
@@ -54,18 +60,71 @@ router.post(
 /**
  * @swagger
  * /api/v1/bookings/me:
- *   get:
- *     summary: Get current user's bookings
+ *   post:
+ *     summary: Get current user's bookings with pagination
  *     tags: [Bookings]
  *     security:
  *       - bearerAuth: []
+ *     requestBody:
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               page:
+ *                 type: integer
+ *                 default: 1
+ *                 minimum: 1
+ *               limit:
+ *                 type: integer
+ *                 default: 20
+ *                 minimum: 1
+ *                 maximum: 100
+ *               status:
+ *                 type: string
+ *                 enum: [RESERVED, ACTIVE, COMPLETED, CANCELLED]
+ *               sortField:
+ *                 type: string
+ *                 enum: [createdAt, totalPrice, status, durationHours]
+ *                 default: createdAt
+ *               sortOrder:
+ *                 type: string
+ *                 enum: [asc, desc]
+ *                 default: desc
  *     responses:
  *       200:
- *         description: List of user's bookings
+ *         description: Paginated list of user's bookings
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                 message:
+ *                   type: string
+ *                 data:
+ *                   type: object
+ *                   properties:
+ *                     bookings:
+ *                       type: array
+ *                     pagination:
+ *                       type: object
+ *                       properties:
+ *                         page:
+ *                           type: integer
+ *                         limit:
+ *                           type: integer
+ *                         total:
+ *                           type: integer
+ *                         totalPages:
+ *                           type: integer
+ *                         hasMore:
+ *                           type: boolean
  *       401:
  *         description: Unauthorized
  */
-router.get("/me", authenticateToken, BookingController.getUserBookings);
+router.post("/me", authenticateToken, BookingController.getUserBookings);
 
 /**
  * @swagger
@@ -150,6 +209,46 @@ router.patch(
     authenticateToken,
     validate(updateBookingStatusSchema),
     BookingController.updateBookingStatus
+);
+
+/**
+ * @swagger
+ * /api/v1/bookings/{bookingId}/confirm-payment:
+ *   post:
+ *     summary: Confirm payment for a booking (Internal use only)
+ *     tags: [Bookings]
+ *     description: Called by payment service after successful payment
+ *     parameters:
+ *       - in: path
+ *         name: bookingId
+ *         required: true
+ *         schema:
+ *           type: string
+ *           format: uuid
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               paymentId:
+ *                 type: string
+ *               transactionId:
+ *                 type: string
+ *               amount:
+ *                 type: number
+ *     responses:
+ *       200:
+ *         description: Payment confirmed successfully
+ *       400:
+ *         description: Invalid booking state
+ *       404:
+ *         description: Booking not found
+ */
+router.post(
+    "/:bookingId/confirm-payment",
+    BookingController.confirmPayment
 );
 
 export default router;

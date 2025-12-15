@@ -1,0 +1,4 @@
+Starting ABA PayWay Test Transaction...
+Transaction ID: TEST-1765642131466
+Transaction Failed!
+Failed to initiate ABA payment

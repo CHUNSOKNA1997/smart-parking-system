@@ -34,6 +34,21 @@ export const generateQRCode = async (
     }
 };
 
+// Generate QR code from arbitrary string (e.g. Payment String)
+export const generateQRFromString = async (text: string): Promise<string> => {
+    try {
+        return await QRCode.toDataURL(text, {
+            errorCorrectionLevel: "H",
+            type: "image/png",
+            width: 300,
+            margin: 1,
+        });
+    } catch (error) {
+        console.error("Error generating QR code from string:", error);
+        throw error;
+    }
+};
+
 // Generate QR code as buffer (for saving to file)
 export const generateQRCodeBuffer = async (
     bookingData: QRCodeData

@@ -33,22 +33,53 @@ class BookingModel {
         });
     }
 
-    // Find bookings by user ID
-    static async findByUserId(userId, status = null) {
+    // Find bookings by user ID with pagination
+    static async findByUserId(userId: string, options: any = {}) {
+        const {
+            status = null,
+            page = 1,
+            limit = 20,
+            sortField = 'createdAt',
+            sortOrder = 'desc'
+        } = options;
+
         const where: any = { userId };
         if (status) {
             where.status = status;
         }
 
-        return await prisma.booking.findMany({
+        // Calculate offset for pagination
+        const skip = (page - 1) * limit;
+
+        // Build orderBy object
+        const orderBy: any = {};
+        orderBy[sortField] = sortOrder;
+
+        // Get total count for pagination metadata
+        const total = await prisma.booking.count({ where });
+
+        // Get paginated results
+        const bookings = await prisma.booking.findMany({
             where,
             include: {
                 spot: true,
+                transactions: true,
             },
-            orderBy: {
-                createdAt: "desc",
-            },
+            orderBy,
+            skip,
+            take: limit,
         });
+
+        return {
+            bookings,
+            pagination: {
+                page,
+                limit,
+                total,
+                totalPages: Math.ceil(total / limit),
+                hasMore: page * limit < total,
+            }
+        };
     }
 
     // Find active booking by user

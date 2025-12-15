@@ -41,6 +41,8 @@ class UserModel {
                 lastName: true,
                 email: true,
                 isVerified: true,
+                phone: true,
+                profileImage: true,
                 createdAt: true,
             },
         });
@@ -74,6 +76,8 @@ class UserModel {
                 lastName: true,
                 email: true,
                 isVerified: true,
+                phone: true,
+                profileImage: true,
                 createdAt: true,
                 updatedAt: true,
             },
@@ -179,20 +183,24 @@ class UserModel {
     }
 
     // Update user profile
-    static async updateProfile(userId: string, updates: UserUpdateData) {
-        const { firstName, lastName } = updates;
+    static async updateProfile(userId: string, updates: UserUpdateData & { profileImage?: string }) {
+        const { firstName, lastName, phone, profileImage } = updates;
 
         return await prisma.user.update({
             where: { id: userId },
             data: {
                 ...(firstName && { firstName }),
                 ...(lastName && { lastName }),
+                ...(phone && { phone }),
+                ...(profileImage && { profileImage }),
             },
             select: {
                 id: true,
                 firstName: true,
                 lastName: true,
                 email: true,
+                phone: true,
+                profileImage: true,
                 updatedAt: true,
             },
         });

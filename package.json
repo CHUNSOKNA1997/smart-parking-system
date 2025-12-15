@@ -1,13 +1,15 @@
 {
-  "dependencies": {
-    "axios": "^1.12.2",
-    "express": "^5.1.0",
-    "express-list-endpoints": "^7.1.1"
+  "name": "smart-parking-root",
+  "version": "1.0.0",
+  "description": "Smart Parking System - Root package for running all services",
+  "scripts": {
+    "dev": "concurrently --kill-others --names \"AUTH,PARKING,PAYMENT,GATEWAY\" -c \"blue,green,yellow,magenta\" \"npm run dev:auth\" \"npm run dev:parking\" \"npm run dev:payment\" \"npm run dev:gateway\"",
+    "dev:auth": "cd services/auth-service && npm run dev",
+    "dev:parking": "cd services/parking-service && npm run dev",
+    "dev:payment": "cd services/payment-service && npm run dev",
+    "dev:gateway": "cd aggregator && npm run dev"
   },
   "devDependencies": {
-    "@types/express": "^5.0.3",
-    "@types/lodash": "^4.17.20",
-    "@types/node": "^24.8.1",
-    "@types/swagger-ui-express": "^4.1.8"
+    "concurrently": "^8.2.2"
   }
 }
