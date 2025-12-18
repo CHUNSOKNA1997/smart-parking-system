@@ -168,6 +168,71 @@ class BookingModel {
             where: { id: bookingId },
         });
     }
+
+    // Release expired reservations
+    static async releaseExpiredReservations(minutes = 2) {
+        const expiredTime = new Date(Date.now() - minutes * 60 * 1000);
+
+        // Find expired RESERVED bookings
+        const expiredBookings = await prisma.booking.findMany({
+            where: {
+                status: BookingStatus.RESERVED,
+                createdAt: {
+                    lt: expiredTime,
+                },
+            },
+        });
+
+        if (expiredBookings.length === 0) {
+            return 0;
+        }
+
+        console.log(`[BOOKING] Found ${expiredBookings.length} expired bookings to release`);
+
+        // Process each expired booking
+        // We do this individually to ensure all related updates (spot, transactions) happen correctly
+        // and to handle any errors for a single booking without stopping the whole batch
+        let releasedCount = 0;
+
+        for (const booking of expiredBookings) {
+            try {
+                await prisma.$transaction(async (tx) => {
+                    // 1. Update booking status to CANCELLED
+                    await tx.booking.update({
+                        where: { id: booking.id },
+                        data: {
+                            status: BookingStatus.CANCELLED,
+                            endTime: new Date()
+                        },
+                    });
+
+                    // 2. Make spot available again
+                    await tx.parkingSpot.update({
+                        where: { id: booking.spotId },
+                        data: { isAvailable: true },
+                    });
+
+                    // 3. Update any associated pending transactions to FAILED
+                    // (Though usually they are COMPLETED immediately upon creation in this system, 
+                    // this covers cases where they might be PENDING if that status is used)
+                    await tx.transaction.updateMany({
+                        where: {
+                            bookingId: booking.id,
+                            status: { not: 'COMPLETED' }
+                        },
+                        data: { status: 'FAILED' }
+                    });
+                });
+
+                releasedCount++;
+                console.log(`[BOOKING] Auto-released expired booking: ${booking.id}`);
+            } catch (error) {
+                console.error(`[BOOKING] Failed to release expired booking ${booking.id}:`, error);
+            }
+        }
+
+        return releasedCount;
+    }
 }
 
 export default BookingModel;
