@@ -32,3 +32,10 @@ build/
 docker-compose.override.yml
 *.backup
 .env.backup
+
+# Environment files with sensitive data
+.env
+services/*/.env.docker
+docs/CONVERSATION-DATASET-README.md
+docs/DATASET-SUMMARY.md
+conversation-dataset.json
