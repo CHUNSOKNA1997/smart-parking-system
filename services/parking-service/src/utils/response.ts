@@ -36,3 +36,7 @@ export const sendError = (
 
     return res.status(statusCode).json(response);
 };
+
+// Export with both names for compatibility
+export const sendSuccessResponse = sendSuccess;
+export const sendErrorResponse = sendError;

@@ -2,6 +2,18 @@ import { Router } from "express";
 import { paymentController } from "../controllers/payment.controller.js";
 import { abaCallbackController } from "../controllers/aba-callback.controller.js";
 import { authMiddleware } from "../middleware/auth.middleware.js";
+import { validate } from "../middleware/validation.middleware.js";
+import {
+    paymentCreationLimiter,
+    paymentVerificationLimiter,
+} from "../middleware/rate-limit.middleware.js";
+import {
+    createPaymentSchema,
+    verifyPaymentSchema,
+    paymentIdSchema,
+    userIdSchema,
+    bookingIdSchema,
+} from "../validators/payment.validator.js";
 
 const router = Router();
 
@@ -84,13 +96,13 @@ router.use(authMiddleware);
  *       500:
  *         description: Server error
  */
-router.post("/", (req, res) => paymentController.createPayment(req, res));
+router.post("/", paymentCreationLimiter, validate(createPaymentSchema), (req, res) => paymentController.createPayment(req, res));
 
 /**
  * @swagger
- * /api/v1/payments/check-payment:
+ * /api/v1/payments/verifications:
  *   post:
- *     summary: Check payment status using MD5 hash (automatic polling)
+ *     summary: Verify payment status using MD5 hash (automatic polling)
  *     tags: [Payments]
  *     security:
  *       - bearerAuth: []
@@ -108,12 +120,12 @@ router.post("/", (req, res) => paymentController.createPayment(req, res));
  *                 description: MD5 hash of the QR code string
  *     responses:
  *       200:
- *         description: Payment confirmed
+ *         description: Payment verified successfully
  *       400:
  *         description: Payment not found or not completed
  */
-router.post("/check-payment", (req, res) =>
-    paymentController.checkPayment(req, res)
+router.post("/verifications", paymentVerificationLimiter, validate(verifyPaymentSchema), (req, res) =>
+    paymentController.verifyPayment(req, res)
 );
 
 /**

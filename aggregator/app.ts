@@ -83,7 +83,7 @@ app.get("/health", (req: Request, res: Response) => {
 });
 
 // Route authentication requests to auth-service
-app.all("/api/v1/auth*", async (req: Request, res: Response) => {
+app.use("/api/v1/auth", async (req: Request, res: Response) => {
   const targetUrl = `${AUTH_SERVICE_URL}${req.path}`;
   await proxyRequest(req, res, targetUrl);
 });

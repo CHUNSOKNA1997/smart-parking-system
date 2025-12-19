@@ -3,6 +3,12 @@ import AuthController from "../controllers/auth.controller.js";
 import { validate } from "../middleware/validation.middleware.js";
 import { authenticateToken } from "../middleware/auth.middleware.js";
 import {
+    loginLimiter,
+    registerLimiter,
+    otpLimiter,
+    passwordResetLimiter,
+} from "../middleware/rate-limit.middleware.js";
+import {
     registerSchema,
     loginSchema,
     emailSchema,
@@ -49,7 +55,7 @@ const router = express.Router();
  *       400:
  *         description: Email already exists or invalid input
  */
-router.post("/register", validate(registerSchema), AuthController.register);
+router.post("/register", registerLimiter, validate(registerSchema), AuthController.register);
 
 /**
  * @swagger
@@ -78,7 +84,7 @@ router.post("/register", validate(registerSchema), AuthController.register);
  *       401:
  *         description: Invalid credentials or email not verified
  */
-router.post("/login", validate(loginSchema), AuthController.login);
+router.post("/login", loginLimiter, validate(loginSchema), AuthController.login);
 
 /**
  * @swagger
@@ -109,6 +115,7 @@ router.post("/login", validate(loginSchema), AuthController.login);
  */
 router.post(
     "/email/verify",
+    otpLimiter,
     validate(otpVerificationSchema),
     AuthController.verifyOTP
 );
@@ -169,6 +176,7 @@ router.post(
  */
 router.post(
     "/password/reset/request",
+    passwordResetLimiter,
     validate(emailSchema),
     AuthController.forgotPassword
 );
@@ -202,6 +210,7 @@ router.post(
  */
 router.post(
     "/password/reset/verify",
+    otpLimiter,
     validate(verifyResetOtpSchema),
     AuthController.verifyResetOTP
 );

@@ -61,7 +61,7 @@ export class PaymentController {
                 return;
             }
 
-            const payment = await paymentService.getPaymentById(id);
+            const payment = await paymentService.getPaymentById(paymentId);
 
             if (!payment) {
                 res.status(404).json(errorResponse("Payment not found"));
@@ -147,12 +147,12 @@ export class PaymentController {
     }
 
     /**
-     * Checks payment status using MD5 hash for automatic polling.
-     * This endpoint is used by clients to poll for payment completion without manual hash entry.
+     * Verifies payment status using MD5 hash for automatic polling.
+     * This endpoint is used by clients to poll for payment completion.
      *
-     * @route POST /api/v1/payments/check
+     * @route POST /api/v1/payments/verifications
      */
-    async checkPayment(req: Request, res: Response): Promise<void> {
+    async verifyPayment(req: Request, res: Response): Promise<void> {
         try {
             const { md5 } = req.body;
 
@@ -163,9 +163,9 @@ export class PaymentController {
 
             const result = await paymentService.checkPaymentByMD5(md5);
 
-            res.status(200).json(successResponse("Payment confirmed", result));
+            res.status(200).json(successResponse("Payment verified successfully", result));
         } catch (error: any) {
-            console.error("[PAYMENT] Check payment error:", error);
+            console.error("[PAYMENT] Verify payment error:", error);
             // Return 400 for pending payments during polling (not an error condition)
             // Payment may not be completed yet by the user
             res.status(400).json(
@@ -180,7 +180,7 @@ export class PaymentController {
     /**
      * Retrieves all payments for a specific user.
      *
-     * @route GET /api/v1/payments/user/:userId
+     * @route GET /api/v1/payments/users/:userId
      */
     async getUserPayments(req: Request, res: Response): Promise<void> {
         try {
