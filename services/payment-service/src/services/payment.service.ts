@@ -62,12 +62,82 @@ class PaymentService {
     async createPayment(
         request: CreatePaymentRequest
     ): Promise<CreatePaymentResponse> {
+        // Handle ABA PayWay and KHQR via ABA
+        if (request.paymentMethod === "aba" || request.paymentMethod === "khqr") {
+            const { abaService } = await import("./aba.service.js");
+
+            // Create a pending payment record first to get an ID
+            // For KHQR via ABA, we still default status to PENDING
+            const payment = await prisma.kHQRPayment.create({
+                data: {
+                    bookingId: request.bookingId,
+                    userId: request.userId,
+                    amount: request.amount,
+                    currency: request.currency as any,
+                    status: PaymentStatus.PENDING,
+                    description: request.description,
+                    paymentMethod: request.paymentMethod, // Keep original method
+                },
+            });
+
+            // Call ABA Service
+            try {
+                let qrString = "";
+                let deeplinkUrl = "";
+                let qrImage = "";
+
+                if (request.paymentMethod === "khqr") {
+                    // Use generate-qr endpoint for KHQR
+                    const abaResult = await abaService.generateQr(request, payment.id);
+                    qrString = abaResult.qrString;
+                    qrImage = abaResult.qrImage;
+                    deeplinkUrl = abaResult.deeplink;
+                } else {
+                    // Use purchase endpoint for ABA
+                    const abaResult = await abaService.createPurchase(request, payment.id);
+                    qrString = abaResult.qrString || "";
+                    deeplinkUrl = abaResult.deeplink || abaResult.checkoutUrl || "";
+                }
+
+                // Update payment with ABA details
+                // Note: If we receive a base64 qrImage for KHQR, we should ideally store it or just return it.
+                // The current schema only has qrString. We will start by ensuring we return it in the response.
+                const updatedPayment = await prisma.kHQRPayment.update({
+                    where: { id: payment.id },
+                    data: {
+                        qrString: qrString,
+                        deeplinkUrl: deeplinkUrl,
+                    },
+                });
+
+                return {
+                    paymentId: updatedPayment.id,
+                    qrString: updatedPayment.qrString || "",
+                    qrImage: qrImage, // Allow passing back the base64 image directly if available
+                    deeplinkUrl: updatedPayment.deeplinkUrl || "",
+                    md5: "", // No MD5 for ABA in this context
+                    amount: Number(updatedPayment.amount),
+                    currency: updatedPayment.currency,
+                    status: updatedPayment.status,
+                    createdAt: updatedPayment.createdAt,
+                } as any; // Cast to any to allow extra field qrImage if needed by frontend
+            } catch (error) {
+                // If ABA fails, mark payment as failed
+                await prisma.kHQRPayment.update({
+                    where: { id: payment.id },
+                    data: { status: PaymentStatus.FAILED },
+                });
+                throw error;
+            }
+        }
+
+        // Default to KHQR
         // Validate that all required KHQR merchant configuration is present
         const configValidation = khqrGenerator.validateConfig();
         if (!configValidation.valid) {
             throw new Error(
                 "KHQR configuration incomplete: " +
-                    configValidation.errors.join(", ")
+                configValidation.errors.join(", ")
             );
         }
 
@@ -123,6 +193,7 @@ class PaymentService {
                 status: PaymentStatus.PENDING,
                 description: request.description,
                 expiresAt: expiresAt, // Set QR code expiration time
+                paymentMethod: "khqr",
             },
         });
 
@@ -242,7 +313,7 @@ class PaymentService {
             const now = new Date();
             const expiresAt = new Date(payment.expiresAt);
 
-            if (now > expiresAt && payment.status !== PaymentStatus.EXPIRED) {
+            if (now > expiresAt) {
                 // Update status to expired
                 await prisma.kHQRPayment.update({
                     where: { id: payment.id },
@@ -268,35 +339,7 @@ class PaymentService {
         });
     }
 
-    /**
-     * Retrieves all payments associated with a specific booking.
-     *
-     * @param bookingId - Booking UUID
-     * @returns Array of payment records ordered by creation date (newest first)
-     */
-    async getPaymentsByBookingId(bookingId: string) {
-        return await prisma.kHQRPayment.findMany({
-            where: { bookingId },
-            orderBy: { createdAt: "desc" },
-        });
-    }
 
-    /**
-     * Generates a QR code image representation of the payment's KHQR string.
-     *
-     * @param paymentId - Payment UUID
-     * @returns Base64-encoded QR code image
-     * @throws Error if payment not found or QR string is missing
-     */
-    async generateQRImage(paymentId: string): Promise<string> {
-        const payment = await this.getPaymentById(paymentId);
-
-        if (!payment.qrString) {
-            throw new Error("Payment does not have a QR string");
-        }
-
-        return await khqrGenerator.generateQRImage(payment.qrString);
-    }
 }
 
 /**

@@ -73,7 +73,12 @@ const options = {
                         },
                         status: {
                             type: "string",
-                            enum: ["RESERVED", "ACTIVE", "COMPLETED", "CANCELLED"],
+                            enum: [
+                                "RESERVED",
+                                "ACTIVE",
+                                "COMPLETED",
+                                "CANCELLED",
+                            ],
                         },
                         startTime: {
                             type: "string",
@@ -111,7 +116,12 @@ const options = {
                         },
                         status: {
                             type: "string",
-                            enum: ["PENDING", "COMPLETED", "FAILED", "REFUNDED"],
+                            enum: [
+                                "PENDING",
+                                "COMPLETED",
+                                "FAILED",
+                                "REFUNDED",
+                            ],
                         },
                         transactionDate: {
                             type: "string",
@@ -127,7 +137,7 @@ const options = {
             },
         ],
     },
-    apis: ["./src/routes/*.ts", "./src/controllers/*.ts"],
+    apis: ["./src/routes/*.ts", "./src/controllers/*.ts"], // Files containing JSDoc comments
 };
 
 const swaggerSpec = swaggerJsDoc(options);

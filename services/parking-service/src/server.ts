@@ -3,12 +3,16 @@ import { Server } from "http";
 import app from "./app.js";
 import prisma from "./config/prisma.js";
 import { seedParkingSpots } from "./config/seedParkingSpots.js";
+import CronService from "./services/cron.service.js";
 
 const PORT: number = parseInt(process.env.PORT || "3002", 10);
 const SERVICE_NAME: string = "parking-service";
 
 // Seed parking spots on startup
 await seedParkingSpots();
+
+// Start background cron jobs
+CronService.start();
 
 // Start server
 const server: Server = app.listen(PORT, () => {

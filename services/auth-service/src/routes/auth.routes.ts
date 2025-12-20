@@ -15,7 +15,9 @@ import {
     verifyResetOtpSchema,
     resetPasswordSchema,
     otpVerificationSchema,
+    updateUserSchema,
 } from "../validators/auth.validator.js";
+import { uploadProfile, handleUploadError } from "../middleware/upload.middleware.js";
 
 const router = express.Router();
 
@@ -268,6 +270,65 @@ router.get("/me", authenticateToken, AuthController.getMe);
 
 /**
  * @swagger
+ * /api/v1/auth/me:
+ *   put:
+ *     summary: Update current user profile
+ *     tags: [User]
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               firstName:
+ *                 type: string
+ *               lastName:
+ *                 type: string
+ *               phone:
+ *                 type: string
+ *     responses:
+ *       200:
+ *         description: Profile updated successfully
+ *       400:
+ *         description: Invalid input
+ *       401:
+ *         description: Unauthorized
+ */
+router.put(
+    "/me",
+    authenticateToken,
+    validate(updateUserSchema),
+    AuthController.updateMe
+);
+
+router.post(
+    "/me/profile-image",
+    authenticateToken,
+    (req, res, next) => {
+        // Debug logging
+        console.log('[UPLOAD] Headers:', req.headers);
+        console.log('[UPLOAD] Content-Type:', req.headers['content-type']);
+        console.log('[UPLOAD] Content-Length:', req.headers['content-length']);
+        next();
+    },
+    uploadProfile.single("image"),
+    handleUploadError,
+    AuthController.uploadProfileImage
+);
+
+// Base64 upload endpoint (simpler for mobile apps)
+router.put(
+    "/me/profile-image-base64",
+    authenticateToken,
+    AuthController.uploadProfileImageBase64
+);
+
+
+/**
+ * @swagger
  * /api/v1/auth/token/verify:
  *   post:
  *     summary: Verify JWT token (for microservices)
@@ -291,25 +352,5 @@ router.get("/me", authenticateToken, AuthController.getMe);
  */
 router.post("/token/verify", AuthController.verifyToken);
 
-/**
- * @swagger
- * /api/v1/auth/users/{userId}:
- *   get:
- *     summary: Get user by ID (for microservices)
- *     tags: [User]
- *     parameters:
- *       - in: path
- *         name: userId
- *         required: true
- *         schema:
- *           type: string
- *           format: uuid
- *     responses:
- *       200:
- *         description: User details
- *       404:
- *         description: User not found
- */
-router.get("/users/:userId", AuthController.getUserById);
 
 export default router;

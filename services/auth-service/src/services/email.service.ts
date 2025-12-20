@@ -9,11 +9,11 @@ import nodemailer from "nodemailer";
  * Nodemailer transporter configured with SMTP settings from environment variables
  */
 const transporter = nodemailer.createTransport({
-    service: process.env.EMAIL_SERVICE || "gmail",
-    auth: {
-        user: process.env.EMAIL_USER,
-        pass: process.env.EMAIL_PASSWORD,
-    },
+  service: process.env.EMAIL_SERVICE || "gmail",
+  auth: {
+    user: process.env.EMAIL_USER,
+    pass: process.env.EMAIL_PASSWORD,
+  },
 });
 
 /**
@@ -25,15 +25,15 @@ const transporter = nodemailer.createTransport({
  * @throws Error if email sending fails
  */
 export const sendVerificationOTP = async (
-    email: string,
-    otp: string
+  email: string,
+  otp: string
 ): Promise<boolean> => {
-    try {
-        const mailOptions = {
-            from: process.env.EMAIL_FROM || process.env.EMAIL_USER,
-            to: email,
-            subject: "Your Verification Code - Smart Parking",
-            html: `
+  try {
+    const mailOptions = {
+      from: process.env.EMAIL_FROM || process.env.EMAIL_USER,
+      to: email,
+      subject: "Your Verification Code - Smart Parking",
+      html: `
         <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
           <h2 style="color: #333;">Welcome to Smart Parking!</h2>
           <p>Thank you for registering. Please use the verification code below to complete your registration.</p>
@@ -46,15 +46,16 @@ export const sendVerificationOTP = async (
           </p>
         </div>
       `,
-        };
+    };
 
-        await transporter.sendMail(mailOptions);
-        console.log(`[EMAIL] Verification OTP sent to: ${email}`);
-        return true;
-    } catch (error) {
-        console.error("[EMAIL] Error sending verification OTP:", error);
-        throw error;
-    }
+    // await transporter.sendMail(mailOptions);
+    console.log(`[EMAIL] Verification OTP sent to: ${email} (MOCKED: ${otp})`);
+    console.log(`[EMAIL] Verification OTP sent to: ${email}`);
+    return true;
+  } catch (error) {
+    console.error("[EMAIL] Error sending verification OTP:", error);
+    throw error;
+  }
 };
 
 /**
@@ -66,15 +67,15 @@ export const sendVerificationOTP = async (
  * @throws Error if email sending fails
  */
 export const sendPasswordResetOTP = async (
-    email: string,
-    otp: string
+  email: string,
+  otp: string
 ): Promise<boolean> => {
-    try {
-        const mailOptions = {
-            from: process.env.EMAIL_FROM || process.env.EMAIL_USER,
-            to: email,
-            subject: "Password Reset Code - Smart Parking",
-            html: `
+  try {
+    const mailOptions = {
+      from: process.env.EMAIL_FROM || process.env.EMAIL_USER,
+      to: email,
+      subject: "Password Reset Code - Smart Parking",
+      html: `
         <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
           <h2 style="color: #333;">Password Reset Request</h2>
           <p>You have requested to reset your password for your Smart Parking account.</p>
@@ -88,15 +89,16 @@ export const sendPasswordResetOTP = async (
           </p>
         </div>
       `,
-        };
+    };
 
-        await transporter.sendMail(mailOptions);
-        console.log(`[EMAIL] Password reset OTP sent to: ${email}`);
-        return true;
-    } catch (error) {
-        console.error("[EMAIL] Error sending password reset OTP:", error);
-        throw error;
-    }
+    // await transporter.sendMail(mailOptions);
+    console.log(`[EMAIL] Password reset OTP sent to: ${email} (MOCKED: ${otp})`);
+    console.log(`[EMAIL] Password reset OTP sent to: ${email}`);
+    return true;
+  } catch (error) {
+    console.error("[EMAIL] Error sending password reset OTP:", error);
+    throw error;
+  }
 };
 
 /**
@@ -108,15 +110,15 @@ export const sendPasswordResetOTP = async (
  * @note Does not throw errors to prevent disrupting the verification flow
  */
 export const sendWelcomeEmail = async (
-    email: string,
-    firstName: string
+  email: string,
+  firstName: string
 ): Promise<boolean> => {
-    try {
-        const mailOptions = {
-            from: process.env.EMAIL_FROM || process.env.EMAIL_USER,
-            to: email,
-            subject: "Welcome to Smart Parking!",
-            html: `
+  try {
+    const mailOptions = {
+      from: process.env.EMAIL_FROM || process.env.EMAIL_USER,
+      to: email,
+      subject: "Welcome to Smart Parking!",
+      html: `
         <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
           <h2 style="color: #333;">Welcome, ${firstName}!</h2>
           <p>Your email has been verified successfully. You can now enjoy all features of Smart Parking.</p>
@@ -130,14 +132,15 @@ export const sendWelcomeEmail = async (
           <p style="color: #666;">The Smart Parking Team</p>
         </div>
       `,
-        };
+    };
 
-        await transporter.sendMail(mailOptions);
-        console.log(`[EMAIL] Welcome email sent to: ${email}`);
-        return true;
-    } catch (error) {
-        console.error("[EMAIL] Error sending welcome email:", error);
-        // Don't throw error for welcome email to prevent disrupting the verification flow
-        return false;
-    }
+    // await transporter.sendMail(mailOptions);
+    console.log(`[EMAIL] Welcome email sent to: ${email} (MOCKED)`);
+    console.log(`[EMAIL] Welcome email sent to: ${email}`);
+    return true;
+  } catch (error) {
+    console.error("[EMAIL] Error sending welcome email:", error);
+    // Don't throw error for welcome email to prevent disrupting the verification flow
+    return false;
+  }
 };

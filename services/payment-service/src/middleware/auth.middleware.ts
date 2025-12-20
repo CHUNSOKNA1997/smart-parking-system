@@ -1,6 +1,6 @@
 import type { Request, Response, NextFunction } from "express";
-import jwt from "jsonwebtoken";
 import { errorResponse } from "../utils/response.js";
+import jwt from "jsonwebtoken";
 
 /**
  * JWT payload structure for authenticated requests.

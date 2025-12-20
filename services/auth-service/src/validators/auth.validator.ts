@@ -85,6 +85,27 @@ const resetPasswordSchema = Joi.object({
         }),
 });
 
+// Update user validation schema
+const updateUserSchema = Joi.object({
+    firstName: Joi.string().min(2).max(50).messages({
+        "string.min": "First name must be at least 2 characters",
+        "string.max": "First name must not exceed 50 characters",
+    }),
+
+    lastName: Joi.string().min(2).max(50).messages({
+        "string.min": "Last name must be at least 2 characters",
+        "string.max": "Last name must not exceed 50 characters",
+    }),
+
+    phone: Joi.string().min(9).max(15).pattern(/^[0-9+]+$/).messages({
+        "string.min": "Phone number must be at least 9 characters",
+        "string.max": "Phone number must not exceed 15 characters",
+        "string.pattern.base": "Phone number must contain only numbers and +",
+    }),
+}).min(1).messages({
+    "object.min": "At least one field (firstName, lastName, phone) is required for update",
+});
+
 // OTP verification schema
 const otpVerificationSchema = Joi.object({
     email: Joi.string().email().required().messages({
@@ -110,4 +131,5 @@ export {
     verifyResetOtpSchema,
     resetPasswordSchema,
     otpVerificationSchema,
+    updateUserSchema,
 };

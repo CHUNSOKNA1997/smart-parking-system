@@ -89,7 +89,7 @@ class AuthServiceClient {
         return this.retryWithBackoff(async () => {
             try {
                 const response = await this.client.post<TokenVerifyResponse>(
-                    "/api/v1/auth/verify-token",
+                    "/api/v1/auth/token/verify",
                     { token }
                 );
 

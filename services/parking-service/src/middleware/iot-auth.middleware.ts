@@ -1,5 +1,5 @@
 import { Request, Response, NextFunction } from "express";
-import { sendErrorResponse } from "../utils/response.js";
+import { sendError } from "../utils/response.js";
 
 export const authenticateIoT = (
     req: Request,
@@ -10,10 +10,10 @@ export const authenticateIoT = (
         const apiKey = req.headers["x-api-key"];
 
         if (!apiKey) {
-            return sendErrorResponse(
+            return sendError(
                 res,
-                "API key is required",
                 401,
+                "API key is required",
                 "MISSING_API_KEY"
             );
         }
@@ -22,19 +22,19 @@ export const authenticateIoT = (
 
         if (!validApiKey) {
             console.error("IOT_API_KEY not configured in environment");
-            return sendErrorResponse(
+            return sendError(
                 res,
-                "IoT authentication not configured",
                 500,
+                "IoT authentication not configured",
                 "CONFIG_ERROR"
             );
         }
 
         if (apiKey !== validApiKey) {
-            return sendErrorResponse(
+            return sendError(
                 res,
-                "Invalid API key",
                 401,
+                "Invalid API key",
                 "INVALID_API_KEY"
             );
         }
@@ -42,10 +42,10 @@ export const authenticateIoT = (
         next();
     } catch (error) {
         console.error("IoT authentication error:", error);
-        return sendErrorResponse(
+        return sendError(
             res,
-            "Authentication failed",
             500,
+            "Authentication failed",
             "AUTH_ERROR"
         );
     }
