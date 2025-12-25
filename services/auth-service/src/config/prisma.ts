@@ -1,12 +1,7 @@
 // Prisma Client Instance
 import { PrismaClient } from "@prisma/client";
 
-const prisma = new PrismaClient({
-    log:
-        process.env.NODE_ENV === "development"
-            ? ["error", "warn"] // Removed "query" to reduce noise
-            : ["error"],
-});
+const prisma = new PrismaClient();
 
 // Handle connection
 prisma

@@ -4,7 +4,9 @@
  * @returns 6-digit numeric string
  */
 export const generateOTP = (): string => {
-    return "123456"; // Fixed OTP for testing
+    // Generate a random 6-digit numeric OTP as a zero-padded string
+    const otp = Math.floor(Math.random() * 1000000).toString().padStart(6, "0");
+    return otp;
 };
 
 /**
