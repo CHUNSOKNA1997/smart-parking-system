@@ -328,11 +328,7 @@ class AuthController {
 
             const user = await UserModel.findByEmail(email);
             if (!user) {
-                return sendSuccess(
-                    res,
-                    200,
-                    "Password reset code sent to your email"
-                );
+                return sendError(res, 404, "User not found");
             }
 
             const resetOtp = generateOTP();
