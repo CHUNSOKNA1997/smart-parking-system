@@ -2,6 +2,7 @@ import type { Request, Response } from "express";
 import { paymentService } from "../services/payment.service.js";
 import { successResponse, errorResponse } from "../utils/response.js";
 import prisma from "../config/prisma.js";
+import { khqrGenerator } from "../services/khqr-generator.service.js";
 import { PaymentStatus } from "@prisma/client";
 import axios from "axios";
 
@@ -61,7 +62,7 @@ export class PaymentController {
                 return;
             }
 
-            const payment = await paymentService.getPaymentById(paymentId);
+            const payment = await paymentService.getPaymentById(id);
 
             if (!payment) {
                 res.status(404).json(errorResponse("Payment not found"));
@@ -200,6 +201,35 @@ export class PaymentController {
     }
 
 
+
+    /**
+     * Returns PNG image of the payment QR code.
+     * Route: GET /api/v1/payments/:id/qr-image
+     */
+    async getPaymentQrImage(req: Request, res: Response): Promise<void> {
+        try {
+            const { id } = req.params;
+
+            const payment = await paymentService.getPaymentById(id);
+            if (!payment || !payment.qrString) {
+                res.status(404).json(errorResponse("Payment or QR not found"));
+                return;
+            }
+
+            // Generate PNG buffer from QR string
+            try {
+                const buffer = await khqrGenerator.generateQRBuffer(payment.qrString);
+                res.setHeader("Content-Type", "image/png");
+                res.send(buffer);
+            } catch (genErr: any) {
+                console.error("[PAYMENT] Failed to generate QR image:", genErr?.message || genErr);
+                res.status(500).json(errorResponse("Failed to generate QR image", genErr?.message || genErr));
+            }
+        } catch (error: any) {
+            console.error("[PAYMENT] Get QR image error:", error);
+            res.status(500).json(errorResponse("Failed to retrieve QR image", error.message));
+        }
+    }
 }
 
 /**

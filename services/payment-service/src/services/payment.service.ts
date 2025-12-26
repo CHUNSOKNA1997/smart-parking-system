@@ -180,33 +180,101 @@ class PaymentService {
         // Generate MD5 hash of QR string for automatic payment verification polling
         const md5Hash = generateMD5(qrString);
 
-        // Persist payment record to database
-        const payment = await prisma.kHQRPayment.create({
-            data: {
-                bookingId: request.bookingId,
-                userId: request.userId,
-                amount: request.amount,
-                currency: request.currency as any,
-                qrString: qrString,
-                deeplinkUrl: deeplinkUrl || null, // Null if deeplink generation failed
-                md5Hash: md5Hash,
-                status: PaymentStatus.PENDING,
-                description: request.description,
-                expiresAt: expiresAt, // Set QR code expiration time
-                paymentMethod: "khqr",
-            },
-        });
+        // Generate PNG data URL for immediate client display (optional, best UX)
+        let qrImage = "";
+        try {
+            qrImage = await khqrGenerator.generateQRImage(qrString);
+        } catch (e: any) {
+            console.warn("[PAYMENT] Failed to generate QR image:", e?.message || e);
+            qrImage = "";
+        }
 
-        return {
-            paymentId: payment.id,
-            qrString: payment.qrString || "",
-            deeplinkUrl: payment.deeplinkUrl || "",
-            md5: payment.md5Hash || "",
-            amount: Number(payment.amount),
-            currency: payment.currency,
-            status: payment.status,
-            createdAt: payment.createdAt,
-        };
+        // Persist payment record to database
+        // First try to find an existing payment with same md5Hash (idempotency)
+        const existingPayment = await prisma.kHQRPayment.findUnique({ where: { md5Hash: md5Hash } });
+        if (existingPayment) {
+            // If we didn't generate qrImage above, try to generate from stored qrString for existing payments
+            let existingQrImage = qrImage;
+            if (!existingQrImage && existingPayment.qrString) {
+                try {
+                    existingQrImage = await khqrGenerator.generateQRImage(existingPayment.qrString);
+                } catch (e:any) {
+                    existingQrImage = "";
+                }
+            }
+
+            // Return existing to avoid unique constraint errors
+            return {
+                paymentId: existingPayment.id,
+                qrString: existingPayment.qrString || "",
+                qrImage: existingQrImage,
+                deeplinkUrl: existingPayment.deeplinkUrl || "",
+                md5: existingPayment.md5Hash || "",
+                amount: Number(existingPayment.amount),
+                currency: existingPayment.currency,
+                status: existingPayment.status,
+                createdAt: existingPayment.createdAt,
+            };
+        }
+
+        try {
+            const payment = await prisma.kHQRPayment.create({
+                data: {
+                    bookingId: request.bookingId,
+                    userId: request.userId,
+                    amount: request.amount,
+                    currency: request.currency as any,
+                    qrString: qrString,
+                    deeplinkUrl: deeplinkUrl || null, // Null if deeplink generation failed
+                    md5Hash: md5Hash,
+                    status: PaymentStatus.PENDING,
+                    description: request.description,
+                    expiresAt: expiresAt, // Set QR code expiration time
+                    paymentMethod: "khqr",
+                },
+            });
+
+            return {
+                paymentId: payment.id,
+                qrString: payment.qrString || "",
+                qrImage: qrImage,
+                deeplinkUrl: payment.deeplinkUrl || "",
+                md5: payment.md5Hash || "",
+                amount: Number(payment.amount),
+                currency: payment.currency,
+                status: payment.status,
+                createdAt: payment.createdAt,
+            };
+        } catch (err:any) {
+            // Handle race condition where another request created the same md5 concurrently
+            if (err.code === 'P2002' && err.meta?.target?.includes('md5_hash')) {
+                const existing = await prisma.kHQRPayment.findUnique({ where: { md5Hash: md5Hash } });
+                if (existing) {
+                    let existingQrImage = qrImage;
+                    if (!existingQrImage && existing.qrString) {
+                        try {
+                            existingQrImage = await khqrGenerator.generateQRImage(existing.qrString);
+                        } catch (e:any) {
+                            existingQrImage = "";
+                        }
+                    }
+
+                    return {
+                        paymentId: existing.id,
+                        qrString: existing.qrString || "",
+                        qrImage: existingQrImage,
+                        deeplinkUrl: existing.deeplinkUrl || "",
+                        md5: existing.md5Hash || "",
+                        amount: Number(existing.amount),
+                        currency: existing.currency,
+                        status: existing.status,
+                        createdAt: existing.createdAt,
+                    };
+                }
+            }
+            // Re-throw any other errors
+            throw err;
+        }
     }
 
     /**

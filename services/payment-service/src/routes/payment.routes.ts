@@ -10,9 +10,6 @@ import {
 import {
     createPaymentSchema,
     verifyPaymentSchema,
-    paymentIdSchema,
-    userIdSchema,
-    bookingIdSchema,
 } from "../validators/payment.validator.js";
 
 const router = Router();
@@ -49,8 +46,6 @@ const router = Router();
 router.post("/aba-callback", (req, res) =>
     abaCallbackController.handleCallback(req, res)
 );
-
-
 
 // All routes below require authentication
 router.use(authMiddleware);
@@ -96,7 +91,12 @@ router.use(authMiddleware);
  *       500:
  *         description: Server error
  */
-router.post("/", paymentCreationLimiter, validate(createPaymentSchema), (req, res) => paymentController.createPayment(req, res));
+router.post(
+    "/",
+    paymentCreationLimiter,
+    validate(createPaymentSchema),
+    (req, res) => paymentController.createPayment(req, res)
+);
 
 /**
  * @swagger
@@ -124,8 +124,36 @@ router.post("/", paymentCreationLimiter, validate(createPaymentSchema), (req, re
  *       400:
  *         description: Payment not found or not completed
  */
-router.post("/verifications", paymentVerificationLimiter, validate(verifyPaymentSchema), (req, res) =>
-    paymentController.verifyPayment(req, res)
+router.post(
+    "/verifications",
+    paymentVerificationLimiter,
+    validate(verifyPaymentSchema),
+    (req, res) => paymentController.verifyPayment(req, res)
+);
+
+/**
+ * @swagger
+ * /api/v1/payments/{id}/qr-image:
+ *   get:
+ *     summary: Get QR code PNG image for a payment
+ *     tags: [Payments]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *           format: uuid
+ *     responses:
+ *       200:
+ *         description: Returns image/png
+ *       404:
+ *         description: Payment or QR not found
+ */
+router.get("/:id/qr-image", (req, res) =>
+    paymentController.getPaymentQrImage(req, res)
 );
 
 /**
@@ -180,7 +208,5 @@ router.post("/:id/confirm", (req, res) =>
 router.get("/user/:userId", (req, res) =>
     paymentController.getUserPayments(req, res)
 );
-
-
 
 export default router;

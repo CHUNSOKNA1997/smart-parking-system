@@ -119,76 +119,11 @@ class BookingController {
 
             console.log(`[BOOKING] Booking created in transaction: ${booking.id}`);
 
-            // Initiate Payment via Payment Service
-            let paymentData = null;
-            try {
-                const paymentServiceUrl = process.env.PAYMENT_SERVICE_URL || "http://localhost:3003";
-                console.log(`[BOOKING] Initiating payment at ${paymentServiceUrl}`);
-
-                // Convert to KHR if necessary (Assuming spot price is in USD)
-                const targetCurrency = currency || "KHR";
-                const EXCHANGE_RATE = 4100;
-                const paymentAmount = targetCurrency === "KHR"
-                    ? totalPrice * EXCHANGE_RATE
-                    : totalPrice;
-
-                const paymentResponse = await axios.post(
-                    `${paymentServiceUrl}/api/v1/payments`,
-                    {
-                        bookingId: booking.id,
-                        amount: paymentAmount,
-                        userId,
-                        paymentMethod: paymentMethod || "khqr",
-                        currency: targetCurrency,
-                        description: `Payment for booking ${booking.id}`,
-                    },
-                    {
-                        headers: {
-                            Authorization: req.headers.authorization,
-                        },
-                    }
-                );
-
-                if (paymentResponse.data && paymentResponse.data.data) {
-                    paymentData = paymentResponse.data.data;
-                    console.log(`[BOOKING] Payment initiated: ${paymentData.paymentId}`);
-                }
-            } catch (paymentError: any) {
-                console.error(
-                    "[BOOKING] Failed to initiate payment, rolling back:",
-                    paymentError.response?.data || paymentError.message
-                );
-
-                // Rollback: Release the parking spot
-                await ParkingSpotModel.updateAvailability(spotId, true);
-
-                // Rollback: Delete the transaction
-                await prisma.transaction.deleteMany({
-                    where: { bookingId: booking.id }
-                });
-
-                // Rollback: Delete the booking
-                await BookingModel.delete(booking.id);
-
-                return sendError(
-                    res,
-                    500,
-                    "Failed to initiate payment. Booking not created.",
-                    paymentError.response?.data?.error || paymentError.message
-                );
-            }
-
-            // Generate payment QR image if KHQR string is available
-            let paymentQR = null;
-            if (paymentData?.qrString) {
-                paymentQR = await generateQRFromString(paymentData.qrString);
-            }
-
             console.log(
                 `[BOOKING] Booking created: ${booking.id} for user: ${userId}`
             );
 
-            // Return separated booking and payment data
+            // Return booking only (payment must be created by client via /api/v1/payments)
             return sendSuccess(res, 201, "Booking created successfully", {
                 booking: {
                     id: booking.id,
@@ -198,18 +133,7 @@ class BookingController {
                     totalPrice: booking.totalPrice,
                     status: booking.status,
                     createdAt: booking.createdAt,
-                },
-                payment: paymentData ? {
-                    paymentId: paymentData.paymentId,
-                    qrImage: paymentQR,
-                    qrString: paymentData.qrString,
-                    md5: paymentData.md5,
-                    deeplinkUrl: paymentData.deeplinkUrl,
-                    amount: paymentData.amount,
-                    currency: paymentData.currency,
-                    status: paymentData.status,
-                    createdAt: paymentData.createdAt,
-                } : null,
+                }
             });
         } catch (error) {
             console.error("[BOOKING] Create booking error:", error);

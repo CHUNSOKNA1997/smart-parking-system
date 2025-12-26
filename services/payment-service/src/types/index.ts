@@ -177,6 +177,7 @@ export interface CreatePaymentRequest {
 export interface CreatePaymentResponse {
     paymentId: string;
     qrString: string;
+    qrImage?: string; // base64 data URL (optional)
     deeplinkUrl: string;
     md5: string;
     amount: number;
