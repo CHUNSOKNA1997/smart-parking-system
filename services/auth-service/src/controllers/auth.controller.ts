@@ -423,7 +423,11 @@ class AuthController {
      */
     static async resetPassword(req: Request, res: Response): Promise<Response> {
         try {
-            const { email, newPassword } = req.body;
+            const { email, otp, newPassword } = req.body;
+
+            if (!otp) {
+                return sendError(res, 400, "OTP is required");
+            }
 
             const user = await UserModel.findByEmail(email);
             if (!user) {
@@ -431,7 +435,7 @@ class AuthController {
             }
 
             if (!user.resetOtp || !user.resetOtpExpiry) {
-                return sendError(res, 400, "Please verify OTP first");
+                return sendError(res, 400, "Please request password reset first");
             }
 
             if (user.resetOtpExpiry <= new Date()) {
@@ -442,9 +446,17 @@ class AuthController {
                 );
             }
 
+            // Verify OTP matches
+            if (user.resetOtp !== otp) {
+                return sendError(res, 400, "Invalid OTP");
+            }
+
             const passwordHash = await bcrypt.hash(newPassword, 10);
 
             await UserModel.updatePassword(user.id, passwordHash);
+
+            // Clear reset OTP after successful password reset
+            await UserModel.clearResetOtp(user.id);
 
             return sendSuccess(
                 res,
@@ -569,20 +581,16 @@ class AuthController {
                 return sendError(res, 400, "Token is required");
             }
 
-            jwt.verify(
+            const decoded = jwt.verify(
                 token,
-                process.env.JWT_SECRET as string,
-                (err: any, decoded: any) => {
-                    if (err) {
-                        console.error("[AUTH] Token verification failed:", err.message);
-                        return sendError(res, 401, "Invalid or expired token");
-                    }
-                    return sendSuccess(res, 200, "Token is valid", {
-                        user: decoded,
-                    });
-                }
+                process.env.JWT_SECRET as string
             );
-        } catch (error) {
+            
+            return sendSuccess(res, 200, "Token is valid", {
+                user: decoded,
+            });
+        } catch (error: any) {
+            console.error("[AUTH] Token verification failed:", error.message);
             return sendError(res, 401, "Invalid or expired token");
         }
     }

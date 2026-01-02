@@ -3,9 +3,13 @@ import { Server } from "http";
 import app from "./app.js";
 import prisma from "./config/prisma.js";
 import { initDefaultUser } from "./config/initDefaultUser.js";
+import { validateEnvironment } from "./utils/validateEnv.js";
 
 const PORT: number = parseInt(process.env.PORT || "3001", 10);
 const SERVICE_NAME: string = "auth-service";
+
+// Validate environment variables on startup
+validateEnvironment();
 
 await initDefaultUser();
 

@@ -81,8 +81,13 @@ class BookingController {
             }
 
             // Calculate total booking cost based on hourly rate and duration
-            const totalPrice =
-                Number(spot.pricePerHour) * Number(durationHours);
+            // Apply currency conversion if requested (default to USD)
+            const EXCHANGE_RATE = 4100; // USD to KHR
+            const targetCurrency = currency || "USD";
+            const baseTotalPrice = Number(spot.pricePerHour) * Number(durationHours);
+            const totalPrice = targetCurrency === "KHR" 
+                ? baseTotalPrice * EXCHANGE_RATE 
+                : baseTotalPrice;
 
             // Create booking record with transaction for atomicity
             const booking = await prisma.$transaction(async (tx) => {
@@ -93,6 +98,7 @@ class BookingController {
                         spotId,
                         durationHours,
                         totalPrice,
+                        currency: targetCurrency,
                         status: BookingStatus.RESERVED,
                     },
                 });
@@ -131,6 +137,7 @@ class BookingController {
                     spotId: booking.spotId,
                     durationHours: booking.durationHours,
                     totalPrice: booking.totalPrice,
+                    currency: booking.currency || targetCurrency,
                     status: booking.status,
                     createdAt: booking.createdAt,
                 }

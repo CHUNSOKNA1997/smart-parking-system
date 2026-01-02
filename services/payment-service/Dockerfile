@@ -7,6 +7,7 @@ WORKDIR /app
 
 # Copy package files
 COPY package*.json ./
+COPY .npmrc ./
 
 # Install dependencies
 RUN npm install
@@ -14,8 +15,7 @@ RUN npm install
 # Copy prisma schema
 COPY prisma ./prisma/
 
-# Generate Prisma Client
-RUN npx prisma generate
+
 
 # Copy source code
 COPY . .
@@ -31,6 +31,7 @@ RUN apk add --no-cache dumb-init openssl
 
 # Copy package files
 COPY package*.json ./
+COPY .npmrc ./
 
 # Install only production dependencies
 RUN npm install --only=production && \
@@ -38,7 +39,7 @@ RUN npm install --only=production && \
 
 # Copy prisma schema and generated client from builder
 COPY --from=builder /app/prisma ./prisma/
-COPY --from=builder /app/node_modules/.prisma ./node_modules/.prisma/
+
 
 # Copy source code
 # Copy source code
@@ -58,4 +59,4 @@ EXPOSE 3003
 ENTRYPOINT ["dumb-init", "--"]
 
 # Start the application
-CMD ["sh", "-c", "npx prisma migrate deploy && npx tsx src/server.ts"]
+CMD ["sh", "-c", "npx prisma generate && npx prisma migrate deploy && npx tsx src/server.ts"]

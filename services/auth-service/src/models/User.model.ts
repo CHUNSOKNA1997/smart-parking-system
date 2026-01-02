@@ -182,6 +182,21 @@ class UserModel {
         });
     }
 
+    // Clear reset OTP (after successful password reset or expiry)
+    static async clearResetOtp(userId: string) {
+        return await prisma.user.update({
+            where: { id: userId },
+            data: {
+                resetOtp: null,
+                resetOtpExpiry: null,
+            },
+            select: {
+                id: true,
+                email: true,
+            },
+        });
+    }
+
     // Update user profile
     static async updateProfile(userId: string, updates: UserUpdateData & { profileImage?: string }) {
         const { firstName, lastName, phone, profileImage } = updates;
