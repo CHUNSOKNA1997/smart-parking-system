@@ -9,6 +9,7 @@ generator client {
 
 datasource db {
   provider = "postgresql"
+  url      = env("DATABASE_URL")
 }
 
 // Enums
@@ -65,6 +66,7 @@ model Booking {
   endTime       DateTime?     @map("end_time")
   durationHours Decimal?      @map("duration_hours") @db.Decimal(4, 2)
   totalPrice    Decimal?      @map("total_price") @db.Decimal(10, 2)
+  currency      String?       @default("USD") @db.VarChar(3)
   status        BookingStatus @default(RESERVED)
   qrCode        String?       @map("qr_code") @db.Text
   createdAt     DateTime      @default(now()) @map("created_at")
