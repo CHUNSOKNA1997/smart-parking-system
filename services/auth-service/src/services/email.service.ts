@@ -48,10 +48,7 @@ export const sendVerificationOTP = async (
       `,
         };
 
-        // await transporter.sendMail(mailOptions);
-        console.log(
-            `[EMAIL] Verification OTP sent to: ${email} (MOCKED: ${otp})`
-        );
+        await transporter.sendMail(mailOptions);
         console.log(`[EMAIL] Verification OTP sent to: ${email}`);
         return true;
     } catch (error) {
@@ -138,8 +135,7 @@ export const sendWelcomeEmail = async (
       `,
         };
 
-        // await transporter.sendMail(mailOptions);
-        console.log(`[EMAIL] Welcome email sent to: ${email} (MOCKED)`);
+        await transporter.sendMail(mailOptions);
         console.log(`[EMAIL] Welcome email sent to: ${email}`);
         return true;
     } catch (error) {

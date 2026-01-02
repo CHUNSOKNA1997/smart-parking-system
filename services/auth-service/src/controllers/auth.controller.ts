@@ -82,16 +82,21 @@ class AuthController {
 
             console.log(`[AUTH] New user registered: ${email}`);
 
+            // Generate token for unverified user (allows them to verify email and check status)
+            const token = generateAccessToken(user.id);
+
             return sendSuccess(
                 res,
                 201,
                 "Registration successful. Please check your email for the verification code.",
                 {
+                    token,
                     user: {
                         id: user.id,
                         firstName: user.firstName,
                         lastName: user.lastName,
                         email: user.email,
+                        isVerified: false,
                     },
                 }
             );
