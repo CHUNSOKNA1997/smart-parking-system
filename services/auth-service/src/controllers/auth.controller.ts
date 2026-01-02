@@ -231,10 +231,24 @@ class AuthController {
 
             console.log(`[AUTH] Email verified: ${user.email}`);
 
+            // Generate token for auto-login after verification
+            const token = generateAccessToken(user.id);
+
             return sendSuccess(
                 res,
                 200,
-                "Email verified successfully. You can now login."
+                "Email verified successfully",
+                {
+                    token,
+                    user: {
+                        id: user.id,
+                        firstName: user.firstName,
+                        lastName: user.lastName,
+                        email: user.email,
+                        isVerified: true,
+                        createdAt: user.createdAt,
+                    },
+                }
             );
         } catch (error) {
             console.error("[AUTH] OTP verification error:", error);

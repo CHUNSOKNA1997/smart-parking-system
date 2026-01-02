@@ -44,12 +44,13 @@ export const otpLimiter = rateLimit({
 /**
  * Rate limiter for password reset requests
  * Prevents spam of reset emails
- * 3 requests per hour per IP
+ * Development: 5 requests per 5 minutes (easier testing)
+ * Production: Consider 3 requests per 15 minutes for tighter security
  */
 export const passwordResetLimiter = rateLimit({
-    windowMs: 60 * 60 * 1000, // 1 hour
-    max: 3, // Max 3 password reset requests per hour
-    message: "Too many password reset requests. Please try again after an hour.",
+    windowMs: 5 * 60 * 1000, // 5 minutes (for dev/testing)
+    max: 5, // Max 5 password reset requests per window
+    message: "Too many password reset requests. Please try again after 5 minutes.",
     standardHeaders: true,
     legacyHeaders: false,
 });
