@@ -1,4 +1,3 @@
-
 import { abaService } from "../services/aba.service.js";
 import { CreatePaymentRequest } from "../types/index.js";
 
@@ -7,10 +6,10 @@ async function testABA() {
 
     const request: CreatePaymentRequest = {
         userId: "test-user-id",
-        amount: 1.00,
+        amount: 1.0,
         currency: "USD",
         description: "Test Parking Fee",
-        paymentMethod: "aba"
+        paymentMethod: "aba",
     };
 
     const transactionId = "T" + Date.now();
