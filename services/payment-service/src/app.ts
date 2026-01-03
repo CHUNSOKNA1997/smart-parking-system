@@ -7,6 +7,7 @@ import cors from "cors";
 import helmet from "helmet";
 import dotenv from "dotenv";
 import paymentRoutes from "./routes/payment.routes.js";
+import { payWayRoutes, webhookRoutes } from "./routes/payway.routes.js";
 import { errorMiddleware } from "./middleware/error.middleware.js";
 import { setupSwagger } from "./config/swagger.js";
 
@@ -30,6 +31,10 @@ setupSwagger(app);
 
 // API Routes (v1)
 app.use("/api/v1/payments", paymentRoutes);
+
+// PayWay Routes
+app.use("/api/v1/payments/payway", payWayRoutes); // Protected routes (QR generation, status check)
+app.use("/api/v1/payments", webhookRoutes);       // Public routes (webhook)
 
 // 404 Handler
 app.use((req: Request, res: Response) => {
