@@ -21,7 +21,7 @@ export interface CreatePaymentRequest {
     amount: number;
     currency: PaymentCurrency;
     description?: string;
-    paymentMethod?: "aba";
+    paymentMethod?: "payway";
 }
 
 export interface CreatePaymentResponse {
