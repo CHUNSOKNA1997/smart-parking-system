@@ -21,7 +21,7 @@ declare global {
 }
 
 /**
- * Middleware to authenticate and verify JWT tokens for KHQR service endpoints.
+ * Middleware to authenticate and verify JWT tokens for Payment service endpoints.
  * Validates the Authorization header, verifies the token, and attaches user information to the request.
  *
  * @param req - Express request object

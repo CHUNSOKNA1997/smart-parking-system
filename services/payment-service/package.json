@@ -1,7 +1,7 @@
 {
   "name": "payment-service",
   "version": "1.0.0",
-  "description": "Payment microservice with KHQR (Bakong QR) integration for Smart Parking System",
+  "description": "Payment microservice with ABA PayWay integration for Smart Parking System",
   "main": "dist/server.js",
   "type": "module",
   "scripts": {
@@ -13,10 +13,9 @@
     "prisma:studio": "prisma studio"
   },
   "keywords": [
-    "khqr",
-    "bakong",
+    "aba",
+    "payway",
     "payment",
-    "qr",
     "microservice",
     "typescript"
   ],
@@ -28,7 +27,6 @@
     "@types/express": "^5.0.5",
     "@types/jsonwebtoken": "^9.0.10",
     "@types/node": "^20.19.22",
-    "@types/qrcode": "^1.5.6",
     "@types/swagger-ui-express": "^4.1.8",
     "axios": "^1.6.2",
     "cors": "^2.8.5",
@@ -38,7 +36,6 @@
     "helmet": "^7.1.0",
     "joi": "^17.11.0",
     "jsonwebtoken": "^9.0.2",
-    "qrcode": "^1.5.4",
     "swagger-jsdoc": "^6.2.8",
     "swagger-ui-express": "^5.0.1",
     "uuid": "^9.0.1"

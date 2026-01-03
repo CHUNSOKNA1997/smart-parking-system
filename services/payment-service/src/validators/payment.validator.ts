@@ -28,20 +28,6 @@ export const createPaymentSchema = Joi.object({
 });
 
 /**
- * Validation schema for payment verification by MD5
- */
-export const verifyPaymentSchema = Joi.object({
-    md5: Joi.string()
-        .pattern(/^[a-f0-9]{32}$/i)
-        .required()
-        .messages({
-            "string.empty": "MD5 hash is required",
-            "string.pattern.base": "MD5 hash must be a valid 32-character hexadecimal string",
-            "any.required": "MD5 hash is required",
-        }),
-});
-
-/**
  * Validation schema for payment ID parameter
  */
 export const paymentIdSchema = Joi.object({

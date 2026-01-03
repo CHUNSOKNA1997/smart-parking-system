@@ -52,9 +52,10 @@ AUTH_SERVICE_URL="http://localhost:3001"
 PORT=3003
 DATABASE_URL="postgresql://postgres:password@localhost:5432/payment_db?schema=public"
 JWT_SECRET="super-secret-key"
-# KHQR / Bakong Config (if needed)
-BAKONG_ACCESS_TOKEN=your_token
-KHQR_MERCHANT_ID=your_id
+# ABA PayWay Config
+ABA_PAYWAY_API_URL=https://checkout-sandbox.payway.com.kh/api/payment-gateway/v1/payments/purchase
+ABA_PAYWAY_MERCHANT_ID=your_merchant_id
+ABA_PAYWAY_API_KEY=your_api_key
 ```
 
 ### 3. Run Everything

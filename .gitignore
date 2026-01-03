@@ -41,3 +41,5 @@ docs/DATASET-SUMMARY.md
 conversation-dataset.json
 IoT/
 docs/frontend-kotlin-integration.md
+credentials/credential_info.txt
+docs/payway/PAYWAY_INTEGRATION_GUIDE.md

@@ -5,11 +5,9 @@ import { authMiddleware } from "../middleware/auth.middleware.js";
 import { validate } from "../middleware/validation.middleware.js";
 import {
     paymentCreationLimiter,
-    paymentVerificationLimiter,
 } from "../middleware/rate-limit.middleware.js";
 import {
     createPaymentSchema,
-    verifyPaymentSchema,
 } from "../validators/payment.validator.js";
 
 const router = Router();
@@ -54,7 +52,7 @@ router.use(authMiddleware);
  * @swagger
  * /api/v1/payments:
  *   post:
- *     summary: Create a new KHQR payment
+ *     summary: Create a new payment with ABA PayWay
  *     tags: [Payments]
  *     security:
  *       - bearerAuth: []
@@ -81,8 +79,8 @@ router.use(authMiddleware);
  *                 type: string
  *               paymentMethod:
  *                 type: string
- *                 enum: [khqr, aba, cash, card]
- *                 default: khqr
+ *                 enum: [aba]
+ *                 default: aba
  *     responses:
  *       201:
  *         description: Payment created successfully
@@ -96,64 +94,6 @@ router.post(
     paymentCreationLimiter,
     validate(createPaymentSchema),
     (req, res) => paymentController.createPayment(req, res)
-);
-
-/**
- * @swagger
- * /api/v1/payments/verifications:
- *   post:
- *     summary: Verify payment status using MD5 hash (automatic polling)
- *     tags: [Payments]
- *     security:
- *       - bearerAuth: []
- *     requestBody:
- *       required: true
- *       content:
- *         application/json:
- *           schema:
- *             type: object
- *             required:
- *               - md5
- *             properties:
- *               md5:
- *                 type: string
- *                 description: MD5 hash of the QR code string
- *     responses:
- *       200:
- *         description: Payment verified successfully
- *       400:
- *         description: Payment not found or not completed
- */
-router.post(
-    "/verifications",
-    paymentVerificationLimiter,
-    validate(verifyPaymentSchema),
-    (req, res) => paymentController.verifyPayment(req, res)
-);
-
-/**
- * @swagger
- * /api/v1/payments/{id}/qr-image:
- *   get:
- *     summary: Get QR code PNG image for a payment
- *     tags: [Payments]
- *     security:
- *       - bearerAuth: []
- *     parameters:
- *       - in: path
- *         name: id
- *         required: true
- *         schema:
- *           type: string
- *           format: uuid
- *     responses:
- *       200:
- *         description: Returns image/png
- *       404:
- *         description: Payment or QR not found
- */
-router.get("/:id/qr-image", (req, res) =>
-    paymentController.getPaymentQrImage(req, res)
 );
 
 /**

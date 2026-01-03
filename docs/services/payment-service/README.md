@@ -2,13 +2,13 @@
 
 **Service Name:** payment-service
 **Port:** 3003
-**Status:** ✅ COMPLETE - KHQR integration active
+**Status:** ✅ COMPLETE - ABA PayWay integration active
 
 ---
 
 ## 📊 Overview
 
-The Payment Service handles all payment processing for the Smart Parking System, with primary integration using KHQR (Bakong QR). This service integrates with the Bakong Open API to process parking payments via Cambodia's national QR payment system.
+The Payment Service handles all payment processing for the Smart Parking System, with primary integration using ABA PayWay. This service integrates with the ABA PayWay API to process parking payments via cards, ABA PAY, and other digital payment methods supported by ABA Bank.
 
 ---
 
@@ -22,32 +22,37 @@ The Payment Service handles all payment processing for the Smart Parking System,
 - [x] `.gitignore` - Git ignore rules
 
 ### Database
-- [x] `prisma/schema.prisma` - Database schema (2 tables)
-  - `khqr_payments` - Payment records
-  - `khqr_tokens` - Bakong API token management
+- [x] `prisma/schema.prisma` - Database schema
+  - `khqr_payments` - Payment records (reused for ABA PayWay)
 
 ### Core Services
-- [x] `src/services/bakong.service.ts` - Bakong API integration (all 8 endpoints)
+- [x] `src/services/aba.service.ts` - ABA PayWay API integration
 - [x] `src/services/payment.service.ts` - Payment business logic
+
+### Controllers & Routes
+- [x] `src/controllers/payment.controller.ts` - Payment endpoints
+- [x] `src/controllers/aba-callback.controller.ts` - ABA callback handler
+- [x] `src/routes/payment.routes.ts` - Payment routes
 
 ### Types & Utils
 - [x] `src/types/index.ts` - TypeScript type definitions
 - [x] `src/utils/response.ts` - Response helpers
-- [x] `src/utils/constants.ts` - Constants and error messages
 - [x] `src/config/prisma.ts` - Prisma configuration
+- [x] `src/config/swagger.ts` - Swagger API documentation
+
+### Middleware
+- [x] `src/middleware/auth.middleware.ts` - JWT authentication
+- [x] `src/middleware/validation.middleware.ts` - Request validation
+- [x] `src/middleware/rate-limit.middleware.ts` - Rate limiting
+
+### Validators
+- [x] `src/validators/payment.validator.ts` - Payment validation schemas
+
+### App Setup
+- [x] `src/app.ts` - Express app configuration
+- [x] `src/server.ts` - Server entry point
 
 ---
-
-## 🚧 Files Still Needed
-
-### Controllers
-- [ ] `src/controllers/payment.controller.ts`
-- [ ] `src/controllers/webhook.controller.ts`
-- [ ] `src/controllers/token.controller.ts`
-
-### Routes
-- [ ] `src/routes/payment.routes.ts`
-- [ ] `src/routes/webhook.routes.ts`
 - [ ] `src/routes/token.routes.ts`
 
 ### Middleware

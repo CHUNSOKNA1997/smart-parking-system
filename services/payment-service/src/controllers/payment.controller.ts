@@ -2,14 +2,13 @@ import type { Request, Response } from "express";
 import { paymentService } from "../services/payment.service.js";
 import { successResponse, errorResponse } from "../utils/response.js";
 import prisma from "../config/prisma.js";
-import { khqrGenerator } from "../services/khqr-generator.service.js";
 import { PaymentStatus } from "@prisma/client";
 import axios from "axios";
 
 export class PaymentController {
     /**
-     * Creates a new KHQR payment for a booking.
-     * Generates QR code and optional deeplink for payment processing.
+     * Creates a new payment for a booking.
+     * Generates payment via ABA PayWay.
      *
      * @route POST /api/v1/payments
      */
@@ -148,37 +147,6 @@ export class PaymentController {
     }
 
     /**
-     * Verifies payment status using MD5 hash for automatic polling.
-     * This endpoint is used by clients to poll for payment completion.
-     *
-     * @route POST /api/v1/payments/verifications
-     */
-    async verifyPayment(req: Request, res: Response): Promise<void> {
-        try {
-            const { md5 } = req.body;
-
-            if (!md5) {
-                res.status(400).json(errorResponse("MD5 hash is required"));
-                return;
-            }
-
-            const result = await paymentService.checkPaymentByMD5(md5);
-
-            res.status(200).json(successResponse("Payment verified successfully", result));
-        } catch (error: any) {
-            console.error("[PAYMENT] Verify payment error:", error);
-            // Return 400 for pending payments during polling (not an error condition)
-            // Payment may not be completed yet by the user
-            res.status(400).json(
-                errorResponse(
-                    "Payment not found or not completed",
-                    error.message
-                )
-            );
-        }
-    }
-
-    /**
      * Retrieves all payments for a specific user.
      *
      * @route GET /api/v1/payments/users/:userId
@@ -197,37 +165,6 @@ export class PaymentController {
             res.status(500).json(
                 errorResponse("Failed to retrieve payments", error.message)
             );
-        }
-    }
-
-
-
-    /**
-     * Returns PNG image of the payment QR code.
-     * Route: GET /api/v1/payments/:id/qr-image
-     */
-    async getPaymentQrImage(req: Request, res: Response): Promise<void> {
-        try {
-            const { id } = req.params;
-
-            const payment = await paymentService.getPaymentById(id);
-            if (!payment || !payment.qrString) {
-                res.status(404).json(errorResponse("Payment or QR not found"));
-                return;
-            }
-
-            // Generate PNG buffer from QR string
-            try {
-                const buffer = await khqrGenerator.generateQRBuffer(payment.qrString);
-                res.setHeader("Content-Type", "image/png");
-                res.send(buffer);
-            } catch (genErr: any) {
-                console.error("[PAYMENT] Failed to generate QR image:", genErr?.message || genErr);
-                res.status(500).json(errorResponse("Failed to generate QR image", genErr?.message || genErr));
-            }
-        } catch (error: any) {
-            console.error("[PAYMENT] Get QR image error:", error);
-            res.status(500).json(errorResponse("Failed to retrieve QR image", error.message));
         }
     }
 }

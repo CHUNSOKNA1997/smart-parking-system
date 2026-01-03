@@ -9,7 +9,7 @@ const options = {
             title: "Payment Service API",
             version: "1.0.0",
             description:
-                "Payment microservice with KHQR (Bakong QR) integration for Smart Parking System",
+                "Payment microservice with ABA PayWay integration for Smart Parking System",
         },
         servers: [
             {
@@ -63,16 +63,8 @@ const options = {
                         qrCode: {
                             type: "string",
                         },
-                        md5Hash: {
-                            type: "string",
-                        },
                         deeplink: {
                             type: "string",
-                            nullable: true,
-                        },
-                        expiresAt: {
-                            type: "string",
-                            format: "date-time",
                             nullable: true,
                         },
                         createdAt: {
