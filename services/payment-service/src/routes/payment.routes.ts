@@ -1,6 +1,5 @@
 import { Router } from "express";
 import { paymentController } from "../controllers/payment.controller.js";
-import { abaCallbackController } from "../controllers/aba-callback.controller.js";
 import { authMiddleware } from "../middleware/auth.middleware.js";
 import { validate } from "../middleware/validation.middleware.js";
 import {
@@ -12,47 +11,14 @@ import {
 
 const router = Router();
 
-// ABA Callback routes (NO auth middleware - called by ABA servers)
-/**
- * @swagger
- * /api/v1/payments/aba-callback:
- *   post:
- *     summary: Handle ABA PayWay callback
- *     tags: [Payments, ABA]
- *     description: Webhook endpoint called by ABA PayWay after payment completion
- *     requestBody:
- *       required: true
- *       content:
- *         application/x-www-form-urlencoded:
- *           schema:
- *             type: object
- *             properties:
- *               tran_id:
- *                 type: string
- *               status:
- *                 type: string
- *               amount:
- *                 type: string
- *               hash:
- *                 type: string
- *     responses:
- *       200:
- *         description: Callback processed successfully
- *       400:
- *         description: Invalid hash or bad request
- */
-router.post("/aba-callback", (req, res) =>
-    abaCallbackController.handleCallback(req, res)
-);
-
-// All routes below require authentication
+// All routes require authentication
 router.use(authMiddleware);
 
 /**
  * @swagger
  * /api/v1/payments:
  *   post:
- *     summary: Create a new payment with ABA PayWay
+ *     summary: Create a new payment with PayWay
  *     tags: [Payments]
  *     security:
  *       - bearerAuth: []
@@ -79,8 +45,8 @@ router.use(authMiddleware);
  *                 type: string
  *               paymentMethod:
  *                 type: string
- *                 enum: [aba]
- *                 default: aba
+ *                 enum: [payway]
+ *                 default: payway
  *     responses:
  *       201:
  *         description: Payment created successfully
@@ -104,7 +70,7 @@ router.post(
  *     tags: [Payments]
  *     security:
  *       - bearerAuth: []
- *     description: Called by mobile app after user returns from ABA payment
+ *     description: Called by mobile app after user returns from payment
  *     parameters:
  *       - in: path
  *         name: id
