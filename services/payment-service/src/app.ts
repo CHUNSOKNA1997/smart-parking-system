@@ -34,7 +34,7 @@ app.use("/api/v1/payments", paymentRoutes);
 
 // PayWay Routes
 app.use("/api/v1/payments/payway", payWayRoutes); // Protected routes (QR generation, status check)
-app.use("/api/v1/payments", webhookRoutes);       // Public routes (webhook)
+app.use("/api/v1/payments", webhookRoutes); // Public routes (webhook)
 
 // 404 Handler
 app.use((req: Request, res: Response) => {

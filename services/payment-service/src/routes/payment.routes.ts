@@ -2,12 +2,8 @@ import { Router } from "express";
 import { paymentController } from "../controllers/payment.controller.js";
 import { authMiddleware } from "../middleware/auth.middleware.js";
 import { validate } from "../middleware/validation.middleware.js";
-import {
-    paymentCreationLimiter,
-} from "../middleware/rate-limit.middleware.js";
-import {
-    createPaymentSchema,
-} from "../validators/payment.validator.js";
+import { paymentCreationLimiter } from "../middleware/rate-limit.middleware.js";
+import { createPaymentSchema } from "../validators/payment.validator.js";
 
 const router = Router();
 

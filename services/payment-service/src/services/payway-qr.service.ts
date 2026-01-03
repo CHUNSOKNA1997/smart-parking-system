@@ -1,11 +1,11 @@
 /**
  * PayWay QR Generation Service
- * 
+ *
  * This service handles the core PayWay integration:
  * - Generates QR codes for payments
  * - Calls PayWay Generate QR API
  * - Returns QR image, deep link, and transaction details
- * 
+ *
  * FLOW:
  * 1. Mobile app requests QR code
  * 2. We call PayWay API with payment details
@@ -16,17 +16,18 @@
  */
 
 import axios, { AxiosInstance } from "axios";
+import crypto from "crypto";
 import { PayWayUtils } from "../utils/payway.utils.js";
 
 /**
  * Request parameters for generating QR code
  */
 interface GenerateQRRequest {
-    bookingId: string;      // Parking booking ID
-    amount: number;         // Payment amount (e.g., 5.00)
-    currency: string;       // "USD" or "KHR"
-    description: string;    // What user is buying (e.g., "Parking Spot A1")
-    customerName?: string;  // Optional: User's name
+    bookingId: string; // Parking booking ID
+    amount: number; // Payment amount (e.g., 5.00)
+    currency: string; // "USD" or "KHR"
+    description: string; // What user is buying (e.g., "Parking Spot A1")
+    customerName?: string; // Optional: User's name
     customerPhone?: string; // Optional: User's phone
     customerEmail?: string; // Optional: User's email
 }
@@ -36,11 +37,11 @@ interface GenerateQRRequest {
  */
 interface PayWayQRResponse {
     status: {
-        code: string;      // "0" = success, other = error
-        message: string;   // Status message
+        code: string; // "0" = success, other = error
+        message: string; // Status message
     };
-    qrString: string;      // QR code data string (for scanning)
-    qrImage: string;       // Base64 PNG image (data:image/png;base64,...)
+    qrString: string; // QR code data string (for scanning)
+    qrImage: string; // Base64 PNG image (data:image/png;base64,...)
     abapay_deeplink: string; // Deep link to open ABA PAY app
 }
 
@@ -48,16 +49,16 @@ interface PayWayQRResponse {
  * Our formatted response to return to mobile app
  */
 interface QRCodeResult {
-    tranId: string;        // Transaction ID for tracking
-    qrString: string;      // QR code data
-    qrImage: string;       // Base64 PNG image
-    deeplinkUrl: string;   // Deep link to banking app
-    expiresAt: Date;       // When QR code expires
+    tranId: string; // Transaction ID for tracking
+    qrString: string; // QR code data
+    qrImage: string; // Base64 PNG image
+    deeplinkUrl: string; // Deep link to banking app
+    expiresAt: Date; // When QR code expires
 }
 
 /**
  * PayWay QR Service
- * 
+ *
  * This class handles all interactions with PayWay Generate QR API
  */
 export class PayWayQRService {
@@ -70,10 +71,10 @@ export class PayWayQRService {
         // Load configuration from environment variables
         this.merchantId = process.env.PAYWAY_MERCHANT_ID || "";
         this.apiKey = process.env.PAYWAY_API_KEY || "";
-        
+
         // PayWay Generate QR endpoint
-        this.generateQrUrl = 
-            process.env.PAYWAY_GENERATE_QR_URL || 
+        this.generateQrUrl =
+            process.env.PAYWAY_GENERATE_QR_URL ||
             "https://checkout-sandbox.payway.com.kh/api/payment-gateway/v1/payments/generate-qr";
 
         // Validate configuration
@@ -126,19 +127,19 @@ export class PayWayQRService {
 
     /**
      * Generates QR code for payment
-     * 
+     *
      * WHAT IT DOES:
      * 1. Generates unique transaction ID
      * 2. Calculates HMAC hash for security
      * 3. Calls PayWay Generate QR API
      * 4. Returns QR image and deep link
-     * 
+     *
      * FLOW:
      * Mobile App → generateQR() → PayWay API → QR Code + Deep Link
-     * 
+     *
      * @param request - Payment details
      * @returns QR code, image, and deep link
-     * 
+     *
      * @example
      * const result = await payWayQRService.generateQR({
      *   bookingId: "abc-123",
@@ -189,11 +190,13 @@ export class PayWayQRService {
                 currency: request.currency,
                 payment_option: "abapay_khqr", // KHQR via ABA PAY
                 hash: hash,
-                
+
                 // Optional customer information
                 ...(request.customerName && {
                     first_name: request.customerName.split(" ")[0],
-                    last_name: request.customerName.split(" ").slice(1).join(" ") || "",
+                    last_name:
+                        request.customerName.split(" ").slice(1).join(" ") ||
+                        "",
                 }),
                 ...(request.customerPhone && { phone: request.customerPhone }),
                 ...(request.customerEmail && { email: request.customerEmail }),
@@ -235,37 +238,37 @@ export class PayWayQRService {
         } catch (error: any) {
             // Handle errors
             console.error("[PAYWAY] Generate QR failed:", error.message);
-            
+
             if (error.response?.data) {
                 // PayWay API returned error
                 const apiError = error.response.data;
                 throw new Error(
-                    `PayWay Error: ${apiError.status?.message || JSON.stringify(apiError)}`
+                    `PayWay Error: ${
+                        apiError.status?.message || JSON.stringify(apiError)
+                    }`
                 );
             }
-            
+
             if (error.code === "ECONNABORTED") {
                 // Timeout
                 throw new Error("PayWay API timeout. Please try again.");
             }
-            
+
             // Generic error
-            throw new Error(
-                `Failed to generate QR code: ${error.message}`
-            );
+            throw new Error(`Failed to generate QR code: ${error.message}`);
         }
     }
 
     /**
      * Generates HMAC-SHA512 hash for Generate QR API
-     * 
+     *
      * IMPORTANT: The order of fields in hash calculation matters!
      * PayWay expects specific order for Generate QR endpoint.
-     * 
+     *
      * Hash format for Generate QR:
-     * req_time + merchant_id + tran_id + amount + items + currency + payment_option + 
+     * req_time + merchant_id + tran_id + amount + items + currency + payment_option +
      * first_name + last_name + phone + email
-     * 
+     *
      * @param reqTime - Formatted timestamp
      * @param tranId - Transaction ID
      * @param amount - Amount in dollars/riel
@@ -281,10 +284,13 @@ export class PayWayQRService {
         currency: string
     ): string {
         // Convert amount to smallest unit for hash calculation
-        const amountInSmallestUnit = PayWayUtils.convertAmount(amount, currency);
-        
+        const amountInSmallestUnit = PayWayUtils.convertAmount(
+            amount,
+            currency
+        );
+
         // Build hash string (ORDER IS CRITICAL!)
-        const dataToHash = 
+        const dataToHash =
             reqTime +
             this.merchantId +
             tranId +
@@ -294,18 +300,17 @@ export class PayWayQRService {
             "abapay_khqr"; // payment_option
 
         // Generate HMAC-SHA512
-        const crypto = require("crypto");
         const hmac = crypto.createHmac("sha512", this.apiKey);
         hmac.update(dataToHash);
-        
+
         return hmac.digest("base64");
     }
 
     /**
      * Validates configuration
-     * 
+     *
      * Call this on startup to ensure all required config is present
-     * 
+     *
      * @returns Validation result with errors if any
      */
     validateConfig(): { valid: boolean; errors: string[] } {
@@ -332,7 +337,7 @@ export class PayWayQRService {
 
 /**
  * Singleton instance
- * 
+ *
  * Use this instead of creating new instances:
  * import { payWayQRService } from './payway-qr.service'
  * payWayQRService.generateQR(...)

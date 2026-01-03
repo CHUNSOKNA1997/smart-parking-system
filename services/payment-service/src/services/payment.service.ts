@@ -60,7 +60,9 @@ class PaymentService {
             };
         }
 
-        throw new Error("Unsupported payment method. Only 'payway' is supported.");
+        throw new Error(
+            "Unsupported payment method. Only 'payway' is supported."
+        );
     }
 
     /**

@@ -1,14 +1,14 @@
 /**
  * PayWay Routes
- * 
+ *
  * This file defines all the HTTP endpoints (URLs) for PayWay integration.
  * It connects URLs to controller methods.
- * 
+ *
  * ENDPOINTS:
  * - POST /api/v1/payments/payway/qr         → Generate QR code (protected)
  * - GET /api/v1/payments/:paymentId/status  → Check payment status (protected)
  * - POST /api/v1/payments/webhook/payway    → Receive webhook (public)
- * 
+ *
  * "Protected" means user must be logged in (JWT token required)
  * "Public" means anyone can call it (PayWay doesn't have JWT token!)
  */
@@ -18,9 +18,9 @@ import { payWayController } from "../controllers/payway.controller.js";
 import { authMiddleware } from "../middleware/auth.middleware.js";
 import { validate } from "../middleware/validation.middleware.js";
 import { paymentCreationLimiter } from "../middleware/rate-limit.middleware.js";
-import { 
-    generateQRSchema, 
-    paymentIdSchema 
+import {
+    generateQRSchema,
+    paymentIdSchema,
 } from "../validators/payway.validator.js";
 
 // Create Express router
@@ -30,19 +30,19 @@ const router = Router();
  * =============================================================================
  * PROTECTED ROUTES (Require Authentication)
  * =============================================================================
- * 
+ *
  * All routes below this line require JWT token in Authorization header:
  * Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
- * 
+ *
  * If token is missing or invalid → 401 Unauthorized
  */
 router.use(authMiddleware);
 
 /**
  * Generate QR Code for Payment
- * 
+ *
  * POST /api/v1/payments/payway/qr
- * 
+ *
  * REQUEST:
  * Headers:
  *   Authorization: Bearer <jwt-token>
@@ -54,7 +54,7 @@ router.use(authMiddleware);
  *     "currency": "USD",
  *     "description": "Parking Spot A1 - 2 hours"
  *   }
- * 
+ *
  * RESPONSE (201 Created):
  *   {
  *     "success": true,
@@ -71,7 +71,7 @@ router.use(authMiddleware);
  *       "expiresAt": "2024-01-03T14:45:00Z"
  *     }
  *   }
- * 
+ *
  * SWAGGER DOCUMENTATION:
  * @swagger
  * /api/v1/payments/payway/qr:
@@ -120,22 +120,22 @@ router.use(authMiddleware);
  */
 router.post(
     "/qr",
-    paymentCreationLimiter,  // Prevent spam (max 10 requests per minute)
+    paymentCreationLimiter, // Prevent spam (max 10 requests per minute)
     validate(generateQRSchema), // Validate request body
     (req, res) => payWayController.generateQR(req, res)
 );
 
 /**
  * Check Payment Status (Polling)
- * 
+ *
  * GET /api/v1/payments/:paymentId/status
- * 
+ *
  * REQUEST:
  * Headers:
  *   Authorization: Bearer <jwt-token>
  * Parameters:
  *   paymentId: UUID of the payment
- * 
+ *
  * RESPONSE (200 OK):
  *   {
  *     "success": true,
@@ -150,11 +150,11 @@ router.post(
  *       "expiresAt": "2024-01-03T14:30:00Z"
  *     }
  *   }
- * 
+ *
  * USAGE:
  * Mobile app calls this every 3 seconds to check if payment is completed.
  * Stops polling when status changes to PAID, FAILED, or EXPIRED.
- * 
+ *
  * SWAGGER DOCUMENTATION:
  * @swagger
  * /api/v1/payments/{paymentId}/status:
@@ -193,21 +193,21 @@ router.get(
  * =============================================================================
  * PUBLIC ROUTES (No Authentication Required)
  * =============================================================================
- * 
+ *
  * These routes can be called without JWT token.
  * PayWay calls these endpoints directly from their servers.
  */
 
 /**
  * Webhook - Payment Notification from PayWay
- * 
+ *
  * POST /api/v1/payments/webhook/payway
- * 
+ *
  * ⚠️ IMPORTANT: This is a PUBLIC endpoint!
  * - No authentication required (PayWay doesn't have JWT token)
  * - BUT signature verification is MANDATORY for security
  * - Always returns 200 OK (even on error) to prevent retries
- * 
+ *
  * REQUEST:
  * Headers:
  *   Content-Type: application/json
@@ -222,18 +222,18 @@ router.get(
  *     "payment_option": "abapay_khqr",
  *     "hash": "abc123def456..."
  *   }
- * 
+ *
  * RESPONSE (200 OK):
  *   {
  *     "success": true,
  *     "message": "Webhook processed"
  *   }
- * 
+ *
  * WHEN CALLED:
  * - When user completes payment in banking app
  * - Usually 1-5 seconds after payment
  * - PayWay sends this automatically
- * 
+ *
  * WHAT IT DOES:
  * 1. Verifies HMAC signature (security!)
  * 2. Finds payment by transaction ID
@@ -241,22 +241,22 @@ router.get(
  * 4. Updates booking status to CONFIRMED
  * 5. Updates parking spot to OCCUPIED
  * 6. Returns 200 OK
- * 
+ *
  * SECURITY:
  * - Signature verification prevents fake webhooks
  * - Only PayWay knows the secret key
  * - If signature doesn't match → Reject!
- * 
+ *
  * IDEMPOTENCY:
  * - If webhook is sent twice, only processes once
  * - Checks if payment is already PAID
- * 
+ *
  * TESTING:
  * Use ngrok to expose local server:
  *   ngrok http 3003
  *   Copy URL: https://abc123.ngrok.io
  *   Add to PayWay dashboard: https://abc123.ngrok.io/api/v1/payments/webhook/payway
- * 
+ *
  * SWAGGER DOCUMENTATION:
  * @swagger
  * /api/v1/payments/webhook/payway:
@@ -303,14 +303,13 @@ router.get(
 // Create a new router for webhook (no auth middleware)
 const webhookRouter = Router();
 
-webhookRouter.post(
-    "/webhook/payway",
-    (req, res) => payWayController.handleWebhook(req, res)
+webhookRouter.post("/webhook/payway", (req, res) =>
+    payWayController.handleWebhook(req, res)
 );
 
 /**
  * Export both routers
- * 
+ *
  * Main app will mount them:
  * app.use('/api/v1/payments/payway', router);      // Protected routes
  * app.use('/api/v1/payments', webhookRouter);      // Webhook route
