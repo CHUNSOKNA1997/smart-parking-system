@@ -16,9 +16,18 @@ export type PaymentStatus =
     | "refunded";
 
 export interface CreatePaymentRequest {
+    // Legacy: single booking (kept for backward compatibility)
     bookingId?: string;
+    
+    // New: multiple bookings support
+    bookings?: Array<{
+        bookingId: string;
+        amount: number;
+        description?: string;
+    }>;
+    
     userId: string;
-    amount: number;
+    amount: number; // Total amount
     currency: PaymentCurrency;
     description?: string;
     paymentMethod?: "payway";
@@ -32,6 +41,10 @@ export interface CreatePaymentResponse {
     amount: number;
     currency: string;
     status: string;
+    bookings?: Array<{
+        bookingId: string;
+        amount: number;
+    }>;
     createdAt: Date;
 }
 

@@ -32,7 +32,7 @@ enum Currency {
 // Table maps to "khqr_payments" to avoid migration
 model KHQRPayment {
     id                String         @id @default(uuid()) @map("payment_id") @db.Uuid
-    bookingId         String?        @map("booking_id") @db.Uuid
+    bookingId         String?        @map("booking_id") @db.Uuid // Deprecated: kept for backward compatibility
     userId            String         @map("user_id") @db.Uuid
     amount            Decimal        @db.Decimal(10, 2)
     currency          Currency       @default(USD)
@@ -48,10 +48,47 @@ model KHQRPayment {
     createdAt         DateTime       @default(now()) @map("created_at")
     updatedAt         DateTime       @updatedAt @map("updated_at")
 
+    // Relations
+    bookings          PaymentBooking[]
+
     @@index([userId])
     @@index([bookingId])
     @@index([status])
     @@index([transactionHash])
     @@index([createdAt])
     @@map("khqr_payments")
+}
+
+// Payment-Booking Junction Table
+// Supports multiple bookings per payment (e.g., user books 3 parking spots in one transaction)
+model PaymentBooking {
+    id          String       @id @default(uuid()) @db.Uuid
+    paymentId   String       @map("payment_id") @db.Uuid
+    bookingId   String       @map("booking_id") @db.Uuid
+    amount      Decimal      @db.Decimal(10, 2) // Individual booking amount
+    createdAt   DateTime     @default(now()) @map("created_at")
+
+    // Relations
+    payment     KHQRPayment  @relation(fields: [paymentId], references: [id], onDelete: Cascade)
+
+    @@unique([paymentId, bookingId])
+    @@index([paymentId])
+    @@index([bookingId])
+    @@map("payment_bookings")
+}
+
+// Idempotency Keys table
+// Prevents duplicate payment creation from retry requests
+model IdempotencyKey {
+    id           String   @id @default(uuid()) @db.Uuid
+    key          String   @unique @db.VarChar(255)
+    requestHash  String   @map("request_hash") @db.VarChar(64)
+    response     Json
+    statusCode   Int      @map("status_code")
+    createdAt    DateTime @default(now()) @map("created_at")
+    expiresAt    DateTime @map("expires_at")
+
+    @@index([key])
+    @@index([expiresAt])
+    @@map("idempotency_keys")
 }

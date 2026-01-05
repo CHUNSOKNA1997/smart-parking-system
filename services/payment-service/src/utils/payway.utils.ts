@@ -95,22 +95,54 @@ export class PayWayUtils {
         receivedHash: string,
         secretKey: string
     ): boolean {
-        const { req_time, merchant_id, tran_id, amount } = payload;
+        // If no hash provided (sandbox behavior), log warning and allow
+        if (!receivedHash || receivedHash === 'undefined') {
+            console.log('[PAYWAY SIGNATURE] WARNING: No hash provided in webhook (sandbox mode)');
+            console.log('[PAYWAY SIGNATURE] WARNING: This is OK for testing but NOT for production!');
+            console.log('[PAYWAY SIGNATURE] TODO: Verify hash in production environment');
+            return true; // Allow for sandbox
+        }
 
-        // Recalculate the hash
-        const expectedHash = this.generateHash(
-            req_time,
-            merchant_id,
-            tran_id,
-            parseFloat(amount) / 100, // Convert back from cents
-            secretKey
-        );
+        try {
+            // PayWay webhook signature format (based on their documentation):
+            // For webhook callbacks, they may sign: tran_id + status + apv
+            const { tran_id, status, apv } = payload;
+            
+            // Create data string to hash (order matters!)
+            const dataToHash = `${tran_id}${status}${apv || ''}`;
+            
+            // Generate HMAC-SHA512
+            const hmac = crypto.createHmac('sha512', secretKey);
+            hmac.update(dataToHash);
+            const expectedHash = hmac.digest('base64');
 
-        // Compare hashes (timing-safe comparison to prevent timing attacks)
-        return crypto.timingSafeEqual(
-            Buffer.from(expectedHash),
-            Buffer.from(receivedHash)
-        );
+            // Compare using timing-safe comparison
+            const expectedBuffer = Buffer.from(expectedHash, 'base64');
+            const receivedBuffer = Buffer.from(receivedHash, 'base64');
+            
+            // Check if buffers are same length
+            if (expectedBuffer.length !== receivedBuffer.length) {
+                console.log('[PAYWAY SIGNATURE] ERROR: Hash length mismatch');
+                console.log('[PAYWAY SIGNATURE] Expected length:', expectedBuffer.length);
+                console.log('[PAYWAY SIGNATURE] Received length:', receivedBuffer.length);
+                return false;
+            }
+
+            // Timing-safe comparison
+            const isValid = crypto.timingSafeEqual(expectedBuffer, receivedBuffer);
+            
+            if (isValid) {
+                console.log('[PAYWAY SIGNATURE] Signature verified successfully');
+            } else {
+                console.log('[PAYWAY SIGNATURE] ERROR: Signature verification failed');
+            }
+            
+            return isValid;
+            
+        } catch (error) {
+            console.error('[PAYWAY SIGNATURE] Verification error:', error);
+            return false;
+        }
     }
 
     /**

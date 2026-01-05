@@ -4,6 +4,7 @@ import { successResponse, errorResponse } from "../utils/response.js";
 import prisma from "../config/prisma.js";
 import { PaymentStatus } from "@prisma/client";
 import axios from "axios";
+import { cacheIdempotentResponse } from "../middleware/idempotency.middleware.js";
 
 export class PaymentController {
     /**
@@ -31,9 +32,20 @@ export class PaymentController {
                 paymentMethod,
             });
 
-            res.status(201).json(
-                successResponse("Payment created successfully", payment)
-            );
+            const responseData = successResponse("Payment created successfully", payment);
+
+            // Cache response if idempotency key was provided
+            if (req.shouldCacheResponse && req.idempotencyKey) {
+                const requestHash = (req as any).requestHash;
+                await cacheIdempotentResponse(
+                    req.idempotencyKey,
+                    requestHash,
+                    201,
+                    responseData
+                );
+            }
+
+            res.status(201).json(responseData);
         } catch (error: any) {
             console.error("[PAYMENT] Create payment error:", error);
             res.status(500).json(

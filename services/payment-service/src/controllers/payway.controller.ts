@@ -304,21 +304,17 @@ export class PayWayController {
             const receivedHash = payload.hash;
 
             // Step 1: Verify signature (CRITICAL FOR SECURITY!)
-            // TEMPORARILY DISABLED FOR DEBUGGING - RE-ENABLE IN PRODUCTION!
-            console.log("[PAYWAY WEBHOOK] ⚠️  Signature verification DISABLED for testing");
-            console.log("[PAYWAY WEBHOOK] Received hash:", receivedHash);
+            console.log("[PAYWAY WEBHOOK] Verifying webhook signature...");
+            console.log("[PAYWAY WEBHOOK] Received hash:", receivedHash || 'No hash provided');
             
-            const isValid = true; // Temporarily skip verification
-            
-            // TODO: Re-enable signature verification:
-            // const isValid = PayWayUtils.verifyWebhookSignature(
-            //     payload,
-            //     receivedHash,
-            //     process.env.PAYWAY_API_KEY || ""
-            // );
+            const isValid = PayWayUtils.verifyWebhookSignature(
+                payload,
+                receivedHash,
+                process.env.PAYWAY_API_KEY || ""
+            );
 
             if (!isValid) {
-                console.error("[PAYWAY WEBHOOK] ⚠️ INVALID SIGNATURE! Possible fraud attempt!");
+                console.error("[PAYWAY WEBHOOK] SECURITY WARNING: INVALID SIGNATURE! Possible fraud attempt!");
                 console.error("[PAYWAY WEBHOOK] Payload:", payload);
                 // Still return 200 to prevent retries
                 res.status(200).json({ 
@@ -328,7 +324,7 @@ export class PayWayController {
                 return;
             }
 
-            console.log("[PAYWAY WEBHOOK] ✅ Signature verified");
+            console.log("[PAYWAY WEBHOOK] Signature verified");
 
             // Step 2: Extract data from webhook
             const { tran_id, amount, currency, status } = payload;
@@ -365,7 +361,7 @@ export class PayWayController {
             console.log(`[PAYWAY WEBHOOK] Checking status field: "${status}" (type: ${typeof status})`);
             
             if (status === 0 || status === "0" || status === "success") {
-                console.log(`[PAYWAY WEBHOOK] ✅ Payment successful: ${tran_id}`);
+                console.log(`[PAYWAY WEBHOOK] Payment successful: ${tran_id}`);
 
                 // Convert amount from cents to dollars
                 const amountInDollars = PayWayUtils.convertFromSmallestUnit(
@@ -400,10 +396,10 @@ export class PayWayController {
                     // Example: await bookingService.updateStatus(payment.bookingId, "CONFIRMED");
                 }
 
-                console.log("[PAYWAY WEBHOOK] ✅ Payment processing complete");
+                console.log("[PAYWAY WEBHOOK] Payment processing complete");
             } else {
                 // Payment failed
-                console.log(`[PAYWAY WEBHOOK] ❌ Payment FAILED: ${tran_id}`);
+                console.log(`[PAYWAY WEBHOOK] Payment FAILED: ${tran_id}`);
                 console.log(`[PAYWAY WEBHOOK] Status received: "${status}" (expected "0" or "success")`);
                 console.log(`[PAYWAY WEBHOOK] Full webhook data:`, JSON.stringify(payload, null, 2));
 

@@ -3,6 +3,7 @@ import { paymentController } from "../controllers/payment.controller.js";
 import { authMiddleware } from "../middleware/auth.middleware.js";
 import { validate } from "../middleware/validation.middleware.js";
 import { paymentCreationLimiter } from "../middleware/rate-limit.middleware.js";
+import { idempotencyMiddleware } from "../middleware/idempotency.middleware.js";
 import { createPaymentSchema } from "../validators/payment.validator.js";
 
 const router = Router();
@@ -54,6 +55,7 @@ router.use(authMiddleware);
 router.post(
     "/",
     paymentCreationLimiter,
+    idempotencyMiddleware,
     validate(createPaymentSchema),
     (req, res) => paymentController.createPayment(req, res)
 );

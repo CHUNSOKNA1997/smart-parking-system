@@ -272,12 +272,12 @@ export class PayWayService {
                 );
             }
 
-            console.log(`[PAYWAY] ✅ PayWay Response:`, JSON.stringify(response.data, null, 2));
+            console.log(`[PAYWAY] PayWay Response:`, JSON.stringify(response.data, null, 2));
 
             // Step 10: Calculate expiration time (15 minutes from now)
             const expiresAt = new Date(Date.now() + 15 * 60 * 1000);
 
-            console.log(`[PAYWAY] ✅ Payment created successfully for ${tranId}`);
+            console.log(`[PAYWAY] Payment created successfully for ${tranId}`);
             console.log(`[PAYWAY] QR String: ${response.data.qrString ? 'Present' : 'Missing'}`);
             console.log(`[PAYWAY] QR Image: ${response.data.qrImage ? 'Present' : 'Missing'}`);
             console.log(`[PAYWAY] Deeplink: ${response.data.abapay_deeplink || 'N/A'}`);
