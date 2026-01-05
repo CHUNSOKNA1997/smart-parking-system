@@ -248,16 +248,22 @@ export class PayWayService {
             );
 
             // Step 9: Check response status
-            if (response.data.status.code !== "0") {
+            // PayWay success codes: "0" or "00"
+            const statusCode = response.data.status?.code || '';
+            const isSuccess = statusCode === "0" || statusCode === "00";
+            
+            if (!isSuccess) {
                 throw new Error(
                     `PayWay API Error: ${response.data.status.code} - ${response.data.status.message}`
                 );
             }
 
+            console.log(`[PAYWAY] ✅ PayWay Response:`, JSON.stringify(response.data, null, 2));
+
             // Step 10: Calculate expiration time (15 minutes from now)
             const expiresAt = new Date(Date.now() + 15 * 60 * 1000);
 
-            console.log(`[PAYWAY] Payment created successfully for ${tranId}`);
+            console.log(`[PAYWAY] ✅ Payment created successfully for ${tranId}`);
             console.log(`[PAYWAY] Checkout URL: ${response.data.checkout_url}`);
 
             // Step 11: Return formatted result
