@@ -29,12 +29,15 @@ app.use(express.urlencoded({ extended: true }));
 // Swagger Documentation
 setupSwagger(app);
 
-// API Routes (v1)
+// IMPORTANT: Mount webhook route FIRST (before protected routes)
+// This ensures the webhook is public and not caught by auth middleware
+app.use("/api/v1/payments", webhookRoutes); // Public routes (webhook)
+
+// API Routes (v1) - Protected
 app.use("/api/v1/payments", paymentRoutes);
 
-// PayWay Routes
+// PayWay Routes - Protected
 app.use("/api/v1/payments/payway", payWayRoutes); // Protected routes (QR generation, status check)
-app.use("/api/v1/payments", webhookRoutes); // Public routes (webhook)
 
 // 404 Handler
 app.use((req: Request, res: Response) => {
