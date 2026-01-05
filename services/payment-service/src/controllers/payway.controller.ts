@@ -14,7 +14,7 @@
  */
 
 import type { Request, Response } from "express";
-import { payWayQRService } from "../services/payway-qr.service.js";
+import { payWayQRService } from "../services/payway.service.js";
 import { successResponse, errorResponse } from "../utils/response.js";
 import prisma from "../config/prisma.js";
 import { PaymentStatus } from "@prisma/client";

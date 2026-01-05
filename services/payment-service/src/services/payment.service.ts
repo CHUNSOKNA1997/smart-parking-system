@@ -9,7 +9,7 @@ import type {
     CreatePaymentResponse,
 } from "../types/index.js";
 import { PaymentStatus } from "@prisma/client";
-import { payWayQRService } from "./payway-qr.service.js";
+import { payWayQRService } from "./payway.service.js";
 
 class PaymentService {
     /**
@@ -39,8 +39,7 @@ class PaymentService {
                     userId: request.userId,
                     amount: request.amount,
                     currency: request.currency as any,
-                    qrString: qrResult.qrString,
-                    deeplinkUrl: qrResult.deeplinkUrl,
+                    deeplinkUrl: qrResult.checkoutUrl, // Store checkout URL
                     status: PaymentStatus.PENDING,
                     description: request.description,
                     paymentMethod: "payway",

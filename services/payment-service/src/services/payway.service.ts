@@ -1,17 +1,17 @@
 /**
- * PayWay QR Generation Service
+ * PayWay Payment Service
  *
- * This service handles the core PayWay integration:
- * - Generates QR codes for payments using Purchase API
- * - Returns checkout URL which contains QR code
- * - User can scan or use deep link to pay
+ * This service handles PayWay payment integrations:
+ * - KHQR (QR code payments via ABA Pay, Bakong, etc.)
+ * - Credit Cards (Visa, Mastercard, etc.)
+ * - Alipay, WeChat Pay, etc.
  *
  * FLOW:
  * 1. Mobile app requests payment
  * 2. We call PayWay Purchase API with payment details
  * 3. PayWay returns checkout_url
- * 4. Mobile app displays checkout page (contains QR code)
- * 5. User pays → PayWay sends webhook to us
+ * 4. Mobile app displays checkout page
+ * 5. User completes payment → PayWay sends webhook to us
  */
 
 import axios, { AxiosInstance } from "axios";
@@ -19,9 +19,9 @@ import crypto from "crypto";
 import { PayWayUtils } from "../utils/payway.utils.js";
 
 /**
- * Request parameters for generating QR code
+ * Request parameters for generating payment
  */
-interface GenerateQRRequest {
+interface GeneratePaymentRequest {
     bookingId: string; // Parking booking ID
     amount: number; // Payment amount (e.g., 5.00)
     currency: string; // "USD" or "KHR"
@@ -29,35 +29,36 @@ interface GenerateQRRequest {
     customerName?: string; // Optional: User's name
     customerPhone?: string; // Optional: User's phone
     customerEmail?: string; // Optional: User's email
+    paymentOption?: string; // "abapay", "cards", "alipay", "wechat", etc.
 }
 
 /**
  * Response from PayWay Purchase API
  */
-interface PayWayQRResponse {
+interface PayWayResponse {
     status: {
         code: string; // "0" = success, other = error
         message: string; // Status message
     };
-    checkout_url: string; // URL to PayWay checkout page (contains QR code)
+    checkout_url: string; // URL to PayWay checkout page
     tran_id: string; // Transaction ID
 }
 
 /**
  * Our formatted response to return to mobile app
  */
-interface QRCodeResult {
+interface PaymentResult {
     tranId: string; // Transaction ID for tracking
     checkoutUrl: string; // URL to PayWay checkout page
     expiresAt: Date; // When payment expires
 }
 
 /**
- * PayWay QR Service
+ * PayWay Service
  *
- * This class handles all interactions with PayWay Generate QR API
+ * Handles all PayWay payment methods (KHQR, Cards, Alipay, etc.)
  */
-export class PayWayQRService {
+export class PayWayService {
     private axiosInstance: AxiosInstance;
     private merchantId: string;
     private apiKey: string;
@@ -149,14 +150,14 @@ export class PayWayQRService {
      * });
      * // Returns: { tranId, qrString, qrImage, deeplinkUrl, expiresAt }
      */
-    async generateQR(request: GenerateQRRequest): Promise<QRCodeResult> {
+    async generateQR(request: GeneratePaymentRequest): Promise<PaymentResult> {
         try {
             // Step 1: Generate unique transaction ID
             const tranId = PayWayUtils.generateTransactionId(request.bookingId);
             console.log(`[PAYWAY] Generating QR for transaction: ${tranId}`);
 
-            // Step 2: Format timestamp (Cambodia timezone)
-            const reqTime = PayWayUtils.formatReqTime();
+            // Step 2: Get Unix timestamp (NOT formatted string!)
+            const reqTime = Math.floor(Date.now() / 1000); // Unix timestamp
 
             // Step 3: Convert amount to smallest unit (cents for USD)
             const amountInSmallestUnit = PayWayUtils.convertAmount(
@@ -170,72 +171,96 @@ export class PayWayQRService {
                 amountInSmallestUnit
             );
 
-            // Step 5: Define return URLs
-            const returnUrl = "https://your-app.com/payment/success";
-            const continueSuccessUrl = "https://your-app.com/payment/success";
-            const cancelUrl = "https://your-app.com/payment/cancel";
+            // Step 5: Define all required fields
+            const shipping = "0";
+            const firstName = request.customerName?.split(" ")[0] || "";
+            const lastName = request.customerName?.split(" ").slice(1).join(" ") || "";
+            const email = request.customerEmail || "";
+            const phone = request.customerPhone || "";
+            const type = "purchase";
+            const paymentOption = "abapay";
+            const returnUrl = "https://your-app.com/api/payway/webhook"; // Webhook URL
+            const cancelUrl = "";
+            const continueUrl = "https://your-app.com/payment/success";
+            const returnDeeplink = "";
+            const currency = request.currency;
+            const customFields = "";
+            const returnParams = ""; // Can encode booking info here if needed
 
-            // Step 6: Generate HMAC-SHA512 hash for security
-            // Hash and payload MUST use same amount format
+            // Step 6: Generate HMAC-SHA512 hash with ALL fields
             const hash = this.generateQRHash(
                 reqTime,
                 tranId,
-                amountInSmallestUnit.toString() // Use cents: "500"
+                amountInSmallestUnit.toString(),
+                items,
+                shipping,
+                firstName,
+                lastName,
+                email,
+                phone,
+                type,
+                paymentOption,
+                returnUrl,
+                cancelUrl,
+                continueUrl,
+                returnDeeplink,
+                currency,
+                customFields,
+                returnParams
             );
 
-            // Step 7: Prepare request payload for Purchase API
+            // Step 7: Prepare request payload for Purchase API (FORM DATA FORMAT)
             const payload = {
-                req_time: reqTime,
+                req_time: reqTime.toString(),
                 merchant_id: this.merchantId,
                 tran_id: tranId,
                 amount: amountInSmallestUnit.toString(),
                 items: items,
+                shipping: shipping,
+                firstname: firstName,
+                lastname: lastName,
+                email: email,
+                phone: phone,
+                payment_option: paymentOption,
+                type: type,
                 return_url: returnUrl,
-                continue_success_url: continueSuccessUrl,
                 cancel_url: cancelUrl,
-                currency: request.currency,
-                payment_option: "abapay", // or "cards" for credit card
+                continue_success_url: continueUrl,
+                return_deeplink: returnDeeplink,
+                currency: currency,
+                custom_fields: customFields,
+                return_params: returnParams,
                 hash: hash,
-
-                // Optional customer information
-                ...(request.customerName && {
-                    first_name: request.customerName.split(" ")[0],
-                    last_name:
-                        request.customerName.split(" ").slice(1).join(" ") ||
-                        "",
-                }),
-                ...(request.customerPhone && { phone: request.customerPhone }),
-                ...(request.customerEmail && { email: request.customerEmail }),
             };
 
             console.log("[PAYWAY] Calling Purchase API...");
             console.log("[PAYWAY] Payload:", JSON.stringify(payload, null, 2));
 
-            // Step 7: Call PayWay Purchase API
-            const response = await this.axiosInstance.post<PayWayQRResponse>(
+            // Step 8: Call PayWay Purchase API with FORM DATA (not JSON!)
+            const response = await this.axiosInstance.post<PayWayResponse>(
                 this.generateQrUrl,
-                payload,
+                new URLSearchParams(payload as any).toString(),
                 {
                     headers: {
-                        "Content-Type": "application/json",
+                        "Content-Type": "application/x-www-form-urlencoded",
                     },
                 }
             );
 
-            // Step 8: Check response status
+            // Step 9: Check response status
             if (response.data.status.code !== "0") {
                 throw new Error(
                     `PayWay API Error: ${response.data.status.code} - ${response.data.status.message}`
                 );
             }
 
-            // Step 9: Calculate expiration time (15 minutes from now)
+            // Step 10: Calculate expiration time (15 minutes from now)
             const expiresAt = new Date(Date.now() + 15 * 60 * 1000);
 
             console.log(`[PAYWAY] Payment created successfully for ${tranId}`);
             console.log(`[PAYWAY] Checkout URL: ${response.data.checkout_url}`);
 
-            // Step 10: Return formatted result
+            // Step 11: Return formatted result
             return {
                 tranId: tranId,
                 checkoutUrl: response.data.checkout_url,
@@ -269,36 +294,89 @@ export class PayWayQRService {
     /**
      * Generates HMAC-SHA512 hash for Purchase API
      *
-     * According to PayWay Purchase API documentation:
-     * Hash = req_time + merchant_id + tran_id + amount
-     * 
-     * NOTE: URLs and other fields are NOT included in hash
+     * Based on working Laravel implementation.
+     * Hash includes 23 fields in exact order!
      *
-     * @param reqTime - Formatted timestamp
+     * @param reqTime - Unix timestamp (not formatted string!)
      * @param tranId - Transaction ID
-     * @param amount - Amount as string
-     * @returns HMAC-SHA512 hash
+     * @param amount - Amount in cents as string
+     * @param items - Base64 encoded items
+     * @param shipping - Shipping cost (usually 0)
+     * @param firstName - Customer first name
+     * @param lastName - Customer last name
+     * @param email - Customer email
+     * @param phone - Customer phone
+     * @param type - Always "purchase"
+     * @param paymentOption - Payment method (e.g., "abapay")
+     * @param returnUrl - Webhook callback URL
+     * @param cancelUrl - Cancel URL (empty string)
+     * @param continueUrl - Success URL
+     * @param returnDeeplink - Mobile deep link (empty string)
+     * @param currency - "USD" or "KHR"
+     * @param customFields - Custom fields (empty string)
+     * @param returnParams - Base64 encoded return params
+     * @returns HMAC-SHA512 hash (base64)
      */
     private generateQRHash(
-        reqTime: string,
+        reqTime: number,
         tranId: string,
-        amount: string
+        amount: string,
+        items: string,
+        shipping: string,
+        firstName: string,
+        lastName: string,
+        email: string,
+        phone: string,
+        type: string,
+        paymentOption: string,
+        returnUrl: string,
+        cancelUrl: string,
+        continueUrl: string,
+        returnDeeplink: string,
+        currency: string,
+        customFields: string,
+        returnParams: string
     ): string {
-        // Build hash string (ORDER IS CRITICAL!)
-        // PayWay Purchase hash: ONLY req_time + merchant_id + tran_id + amount
+        // Build hash string - ALL 23 FIELDS IN EXACT ORDER!
+        const payout = '';
+        const lifetime = '';
+        const additionalParams = '';
+        const googlePayToken = '';
+
         const dataToHash =
-            reqTime +
+            reqTime.toString() +
             this.merchantId +
             tranId +
-            amount;
+            amount +
+            items +
+            shipping +
+            firstName +
+            lastName +
+            email +
+            phone +
+            type +
+            paymentOption +
+            returnUrl +
+            cancelUrl +
+            continueUrl +
+            returnDeeplink +
+            currency +
+            customFields +
+            returnParams +
+            payout +
+            lifetime +
+            additionalParams +
+            googlePayToken;
 
-        console.log(`[PAYWAY] Hash string: ${dataToHash}`);
+        console.log(`[PAYWAY] Hash string (first 100 chars): ${dataToHash.substring(0, 100)}...`);
 
-        // Generate HMAC-SHA512
+        // Generate HMAC-SHA512 with BINARY output (true parameter)
         const hmac = crypto.createHmac("sha512", this.apiKey);
         hmac.update(dataToHash);
+        const binaryHash = hmac.digest(); // Get binary, not base64!
 
-        const hash = hmac.digest("base64");
+        // Then base64 encode the binary hash
+        const hash = binaryHash.toString('base64');
         console.log(`[PAYWAY] Generated hash: ${hash}`);
 
         return hash;
@@ -337,7 +415,10 @@ export class PayWayQRService {
  * Singleton instance
  *
  * Use this instead of creating new instances:
- * import { payWayQRService } from './payway-qr.service'
- * payWayQRService.generateQR(...)
+ * import { payWayService } from './payway.service'
+ * payWayService.generateQR(...)
  */
-export const payWayQRService = new PayWayQRService();
+export const payWayService = new PayWayService();
+
+// Legacy export for backward compatibility
+export const payWayQRService = payWayService;
