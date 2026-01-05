@@ -2,17 +2,16 @@
  * PayWay QR Generation Service
  *
  * This service handles the core PayWay integration:
- * - Generates QR codes for payments
- * - Calls PayWay Generate QR API
- * - Returns QR image, deep link, and transaction details
+ * - Generates QR codes for payments using Purchase API
+ * - Returns checkout URL which contains QR code
+ * - User can scan or use deep link to pay
  *
  * FLOW:
- * 1. Mobile app requests QR code
- * 2. We call PayWay API with payment details
- * 3. PayWay generates QR code and deep link
- * 4. We return to mobile app
- * 5. User scans QR or opens banking app
- * 6. User pays → PayWay sends webhook to us
+ * 1. Mobile app requests payment
+ * 2. We call PayWay Purchase API with payment details
+ * 3. PayWay returns checkout_url
+ * 4. Mobile app displays checkout page (contains QR code)
+ * 5. User pays → PayWay sends webhook to us
  */
 
 import axios, { AxiosInstance } from "axios";
@@ -33,16 +32,15 @@ interface GenerateQRRequest {
 }
 
 /**
- * Response from PayWay Generate QR API
+ * Response from PayWay Purchase API
  */
 interface PayWayQRResponse {
     status: {
         code: string; // "0" = success, other = error
         message: string; // Status message
     };
-    qrString: string; // QR code data string (for scanning)
-    qrImage: string; // Base64 PNG image (data:image/png;base64,...)
-    abapay_deeplink: string; // Deep link to open ABA PAY app
+    checkout_url: string; // URL to PayWay checkout page (contains QR code)
+    tran_id: string; // Transaction ID
 }
 
 /**
@@ -50,10 +48,8 @@ interface PayWayQRResponse {
  */
 interface QRCodeResult {
     tranId: string; // Transaction ID for tracking
-    qrString: string; // QR code data
-    qrImage: string; // Base64 PNG image
-    deeplinkUrl: string; // Deep link to banking app
-    expiresAt: Date; // When QR code expires
+    checkoutUrl: string; // URL to PayWay checkout page
+    expiresAt: Date; // When payment expires
 }
 
 /**
@@ -72,10 +68,10 @@ export class PayWayQRService {
         this.merchantId = process.env.PAYWAY_MERCHANT_ID || "";
         this.apiKey = process.env.PAYWAY_API_KEY || "";
 
-        // PayWay Generate QR endpoint
+        // PayWay Purchase API endpoint (from your credentials)
         this.generateQrUrl =
-            process.env.PAYWAY_GENERATE_QR_URL ||
-            "https://checkout-sandbox.payway.com.kh/api/payment-gateway/v1/payments/generate-qr";
+            process.env.PAYWAY_API_URL ||
+            "https://checkout-sandbox.payway.com.kh/api/payment-gateway/v1/payments/purchase";
 
         // Validate configuration
         if (!this.merchantId || !this.apiKey) {
@@ -84,6 +80,10 @@ export class PayWayQRService {
             console.error("- PAYWAY_API_KEY");
             throw new Error("PayWay configuration incomplete");
         }
+
+        console.log("[PAYWAY] Initialized with:");
+        console.log("- Merchant ID:", this.merchantId);
+        console.log("- API URL:", this.generateQrUrl);
 
         // Create axios instance for API calls
         this.axiosInstance = axios.create({
@@ -170,25 +170,36 @@ export class PayWayQRService {
                 amountInSmallestUnit
             );
 
-            // Step 5: Generate HMAC-SHA512 hash for security
+            // Step 5: Define return URLs
+            const returnUrl = "https://your-app.com/payment/success";
+            const continueSuccessUrl = "https://your-app.com/payment/success";
+            const cancelUrl = "https://your-app.com/payment/cancel";
+
+            // Step 6: Generate HMAC-SHA512 hash for security
             // ORDER MATTERS! Must match PayWay's expected order
             const hash = this.generateQRHash(
                 reqTime,
                 tranId,
-                request.amount,
+                amountInSmallestUnit.toString(),
                 items,
-                request.currency
+                returnUrl,
+                continueSuccessUrl
             );
 
-            // Step 6: Prepare request payload
+            // Step 7: Prepare request payload for Purchase API
             const payload = {
                 req_time: reqTime,
                 merchant_id: this.merchantId,
                 tran_id: tranId,
-                amount: amountInSmallestUnit,
+                amount: amountInSmallestUnit.toString(),
                 items: items,
+                return_url: returnUrl,
+                continue_success_url: continueSuccessUrl,
+                cancel_url: cancelUrl,
+                continue_success_url: "https://your-app.com/payment/success",
+                cancel_url: "https://your-app.com/payment/cancel",
                 currency: request.currency,
-                payment_option: "abapay_khqr", // KHQR via ABA PAY
+                payment_option: "abapay", // or "cards" for credit card
                 hash: hash,
 
                 // Optional customer information
@@ -202,9 +213,10 @@ export class PayWayQRService {
                 ...(request.customerEmail && { email: request.customerEmail }),
             };
 
-            console.log("[PAYWAY] Calling Generate QR API...");
+            console.log("[PAYWAY] Calling Purchase API...");
+            console.log("[PAYWAY] Payload:", JSON.stringify(payload, null, 2));
 
-            // Step 7: Call PayWay Generate QR API
+            // Step 7: Call PayWay Purchase API
             const response = await this.axiosInstance.post<PayWayQRResponse>(
                 this.generateQrUrl,
                 payload,
@@ -222,17 +234,16 @@ export class PayWayQRService {
                 );
             }
 
-            // Step 9: Calculate QR expiration time (15 minutes from now)
+            // Step 9: Calculate expiration time (15 minutes from now)
             const expiresAt = new Date(Date.now() + 15 * 60 * 1000);
 
-            console.log(`[PAYWAY] QR generated successfully for ${tranId}`);
+            console.log(`[PAYWAY] Payment created successfully for ${tranId}`);
+            console.log(`[PAYWAY] Checkout URL: ${response.data.checkout_url}`);
 
             // Step 10: Return formatted result
             return {
                 tranId: tranId,
-                qrString: response.data.qrString,
-                qrImage: response.data.qrImage,
-                deeplinkUrl: response.data.abapay_deeplink,
+                checkoutUrl: response.data.checkout_url,
                 expiresAt: expiresAt,
             };
         } catch (error: any) {
@@ -242,6 +253,7 @@ export class PayWayQRService {
             if (error.response?.data) {
                 // PayWay API returned error
                 const apiError = error.response.data;
+                console.error("[PAYWAY] API Error Details:", JSON.stringify(apiError, null, 2));
                 throw new Error(
                     `PayWay Error: ${
                         apiError.status?.message || JSON.stringify(apiError)
@@ -260,50 +272,49 @@ export class PayWayQRService {
     }
 
     /**
-     * Generates HMAC-SHA512 hash for Generate QR API
+     * Generates HMAC-SHA512 hash for Purchase API
      *
      * IMPORTANT: The order of fields in hash calculation matters!
-     * PayWay expects specific order for Generate QR endpoint.
-     *
-     * Hash format for Generate QR:
-     * req_time + merchant_id + tran_id + amount + items + currency + payment_option +
-     * first_name + last_name + phone + email
+     * For PayWay Purchase API, the hash format is:
+     * req_time + merchant_id + tran_id + amount + items + return_url + continue_success_url
      *
      * @param reqTime - Formatted timestamp
      * @param tranId - Transaction ID
-     * @param amount - Amount in dollars/riel
+     * @param amount - Amount as string
      * @param items - Base64 encoded items
-     * @param currency - "USD" or "KHR"
+     * @param returnUrl - Return URL after payment
+     * @param continueSuccessUrl - Success URL
      * @returns HMAC-SHA512 hash
      */
     private generateQRHash(
         reqTime: string,
         tranId: string,
-        amount: number,
+        amount: string,
         items: string,
-        currency: string
+        returnUrl: string,
+        continueSuccessUrl: string
     ): string {
-        // Convert amount to smallest unit for hash calculation
-        const amountInSmallestUnit = PayWayUtils.convertAmount(
-            amount,
-            currency
-        );
-
         // Build hash string (ORDER IS CRITICAL!)
+        // PayWay Purchase hash: req_time + merchant_id + tran_id + amount + items + return_url + continue_success_url
         const dataToHash =
             reqTime +
             this.merchantId +
             tranId +
-            amountInSmallestUnit.toString() +
+            amount +
             items +
-            currency +
-            "abapay_khqr"; // payment_option
+            returnUrl +
+            continueSuccessUrl;
+
+        console.log(`[PAYWAY] Hash string: ${dataToHash.substring(0, 100)}...`);
 
         // Generate HMAC-SHA512
         const hmac = crypto.createHmac("sha512", this.apiKey);
         hmac.update(dataToHash);
 
-        return hmac.digest("base64");
+        const hash = hmac.digest("base64");
+        console.log(`[PAYWAY] Generated hash: ${hash}`);
+
+        return hash;
     }
 
     /**

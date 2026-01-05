@@ -107,28 +107,12 @@ export class PayWayController {
 
             console.log(`[PAYWAY CONTROLLER] Generating QR for booking: ${bookingId}`);
 
-            // Step 5: Get booking details (optional - for customer info)
-            let customerName: string | undefined;
-            let customerEmail: string | undefined;
-            let customerPhone: string | undefined;
-
-            try {
-                // Try to get booking with user details
-                // This is optional - if it fails, we continue without customer info
-                const booking = await prisma.booking.findUnique({
-                    where: { id: bookingId },
-                    include: { user: true },
-                });
-
-                if (booking && booking.user) {
-                    customerName = `${booking.user.firstName || ""} ${booking.user.lastName || ""}`.trim();
-                    customerEmail = booking.user.email;
-                    customerPhone = booking.user.phone;
-                }
-            } catch (error) {
-                console.warn("[PAYWAY CONTROLLER] Could not fetch booking details:", error);
-                // Continue without customer info
-            }
+            // Step 5: Customer info (optional - can be added later)
+            // For now, we generate QR without customer details
+            // You can add customer info by passing it from the mobile app
+            const customerName: string | undefined = undefined;
+            const customerEmail: string | undefined = undefined;
+            const customerPhone: string | undefined = undefined;
 
             // Step 6: Call PayWay service to generate QR
             const qrResult = await payWayQRService.generateQR({
@@ -141,7 +125,7 @@ export class PayWayController {
                 customerPhone,
             });
 
-            console.log(`[PAYWAY CONTROLLER] QR generated: ${qrResult.tranId}`);
+            console.log(`[PAYWAY CONTROLLER] Payment created: ${qrResult.tranId}`);
 
             // Step 7: Save payment record to database
             const payment = await prisma.kHQRPayment.create({
@@ -150,8 +134,7 @@ export class PayWayController {
                     userId: userId,
                     amount: amount,
                     currency: currency as any,
-                    qrString: qrResult.qrString,
-                    deeplinkUrl: qrResult.deeplinkUrl,
+                    deeplinkUrl: qrResult.checkoutUrl,
                     status: PaymentStatus.PENDING,
                     description: description || `Parking Payment - Booking ${bookingId}`,
                     paymentMethod: "payway",
@@ -163,14 +146,12 @@ export class PayWayController {
 
             console.log(`[PAYWAY CONTROLLER] Payment created: ${payment.id}`);
 
-            // Step 8: Return success response with QR data
+            // Step 8: Return success response with checkout URL
             res.status(201).json(
-                successResponse("QR code generated successfully", {
+                successResponse("Payment created successfully", {
                     paymentId: payment.id,
                     tranId: qrResult.tranId,
-                    qrString: qrResult.qrString,
-                    qrImage: qrResult.qrImage,
-                    deeplinkUrl: qrResult.deeplinkUrl,
+                    checkoutUrl: qrResult.checkoutUrl,
                     amount: payment.amount,
                     currency: payment.currency,
                     status: payment.status,
@@ -399,22 +380,12 @@ export class PayWayController {
 
                 console.log(`[PAYWAY WEBHOOK] Payment marked as PAID: ${payment.id}`);
 
-                // Step 7: Update booking status to CONFIRMED (if booking exists)
-                if (payment.bookingId && payment.booking) {
-                    await prisma.booking.update({
-                        where: { id: payment.bookingId },
-                        data: { status: "CONFIRMED" },
-                    });
-                    console.log(`[PAYWAY WEBHOOK] Booking confirmed: ${payment.bookingId}`);
-
-                    // Step 8: Update parking spot to OCCUPIED
-                    if (payment.booking.spotId) {
-                        await prisma.parkingSpot.update({
-                            where: { id: payment.booking.spotId },
-                            data: { status: "OCCUPIED" },
-                        });
-                        console.log(`[PAYWAY WEBHOOK] Parking spot occupied: ${payment.booking.spotId}`);
-                    }
+                // Step 7: Update booking status (via API call to booking service)
+                // TODO: If you have a booking service, call it here to update booking status
+                // For now, we just log the booking ID
+                if (payment.bookingId) {
+                    console.log(`[PAYWAY WEBHOOK] Booking to confirm: ${payment.bookingId}`);
+                    // Example: await bookingService.updateStatus(payment.bookingId, "CONFIRMED");
                 }
 
                 console.log("[PAYWAY WEBHOOK] ✅ Payment processing complete");

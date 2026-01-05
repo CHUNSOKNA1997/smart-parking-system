@@ -117,18 +117,23 @@ export class PayWayUtils {
      * Generates unique transaction ID
      *
      * WHY? Each payment needs a unique identifier to track it.
-     * Format: booking-{bookingId}-{timestamp}
+     * Format: {timestamp}-{random} (max 20 chars)
      *
-     * @param bookingId - The parking booking ID
-     * @returns Unique transaction ID
+     * IMPORTANT: PayWay limits transaction IDs to 20 characters!
+     *
+     * @param bookingId - The parking booking ID (for reference only)
+     * @returns Unique transaction ID (max 20 chars)
      *
      * @example
      * const tranId = PayWayUtils.generateTransactionId("abc-123");
-     * // Returns: "booking-abc-123-1736156789"
+     * // Returns: "1767431882-a3b2c1" (17 chars)
      */
     static generateTransactionId(bookingId: string): string {
         const timestamp = Date.now();
-        return `booking-${bookingId}-${timestamp}`;
+        // Generate random 6-char suffix
+        const random = Math.random().toString(36).substring(2, 8);
+        // Format: {timestamp}-{random} (17 chars total)
+        return `${timestamp}-${random}`;
     }
 
     /**
