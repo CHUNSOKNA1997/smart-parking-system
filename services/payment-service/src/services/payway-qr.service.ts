@@ -176,14 +176,11 @@ export class PayWayQRService {
             const cancelUrl = "https://your-app.com/payment/cancel";
 
             // Step 6: Generate HMAC-SHA512 hash for security
-            // ORDER MATTERS! Must match PayWay's expected order
+            // Hash and payload MUST use same amount format
             const hash = this.generateQRHash(
                 reqTime,
                 tranId,
-                amountInSmallestUnit.toString(),
-                items,
-                returnUrl,
-                continueSuccessUrl
+                amountInSmallestUnit.toString() // Use cents: "500"
             );
 
             // Step 7: Prepare request payload for Purchase API
@@ -196,8 +193,6 @@ export class PayWayQRService {
                 return_url: returnUrl,
                 continue_success_url: continueSuccessUrl,
                 cancel_url: cancelUrl,
-                continue_success_url: "https://your-app.com/payment/success",
-                cancel_url: "https://your-app.com/payment/cancel",
                 currency: request.currency,
                 payment_option: "abapay", // or "cards" for credit card
                 hash: hash,
@@ -274,38 +269,30 @@ export class PayWayQRService {
     /**
      * Generates HMAC-SHA512 hash for Purchase API
      *
-     * IMPORTANT: The order of fields in hash calculation matters!
-     * For PayWay Purchase API, the hash format is:
-     * req_time + merchant_id + tran_id + amount + items + return_url + continue_success_url
+     * According to PayWay Purchase API documentation:
+     * Hash = req_time + merchant_id + tran_id + amount
+     * 
+     * NOTE: URLs and other fields are NOT included in hash
      *
      * @param reqTime - Formatted timestamp
      * @param tranId - Transaction ID
      * @param amount - Amount as string
-     * @param items - Base64 encoded items
-     * @param returnUrl - Return URL after payment
-     * @param continueSuccessUrl - Success URL
      * @returns HMAC-SHA512 hash
      */
     private generateQRHash(
         reqTime: string,
         tranId: string,
-        amount: string,
-        items: string,
-        returnUrl: string,
-        continueSuccessUrl: string
+        amount: string
     ): string {
         // Build hash string (ORDER IS CRITICAL!)
-        // PayWay Purchase hash: req_time + merchant_id + tran_id + amount + items + return_url + continue_success_url
+        // PayWay Purchase hash: ONLY req_time + merchant_id + tran_id + amount
         const dataToHash =
             reqTime +
             this.merchantId +
             tranId +
-            amount +
-            items +
-            returnUrl +
-            continueSuccessUrl;
+            amount;
 
-        console.log(`[PAYWAY] Hash string: ${dataToHash.substring(0, 100)}...`);
+        console.log(`[PAYWAY] Hash string: ${dataToHash}`);
 
         // Generate HMAC-SHA512
         const hmac = crypto.createHmac("sha512", this.apiKey);
