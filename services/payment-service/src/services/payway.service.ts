@@ -67,11 +67,13 @@ export class PayWayService {
     private merchantId: string;
     private apiKey: string;
     private generateQrUrl: string;
+    private webhookBaseUrl: string;
 
     constructor() {
         // Load configuration from environment variables
         this.merchantId = process.env.PAYWAY_MERCHANT_ID || "";
         this.apiKey = process.env.PAYWAY_API_KEY || "";
+        this.webhookBaseUrl = process.env.PAYWAY_WEBHOOK_BASE_URL || "";
 
         // PayWay Purchase API endpoint (from your credentials)
         this.generateQrUrl =
@@ -89,6 +91,7 @@ export class PayWayService {
         console.log("[PAYWAY] Initialized with:");
         console.log("- Merchant ID:", this.merchantId);
         console.log("- API URL:", this.generateQrUrl);
+        console.log("- Webhook Base URL:", this.webhookBaseUrl || "Not configured (localhost only)");
 
         // Create axios instance for API calls
         this.axiosInstance = axios.create({
@@ -183,9 +186,16 @@ export class PayWayService {
             const phone = request.customerPhone || "";
             const type = "purchase";
             const paymentOption = "abapay";
-            const returnUrl = "https://your-app.com/api/payway/webhook"; // Webhook URL
+            
+            // Build webhook URL from environment variable
+            const returnUrl = this.webhookBaseUrl 
+                ? `${this.webhookBaseUrl}/api/v1/payments/webhook/payway`
+                : "https://your-app.com/api/payway/webhook"; // Fallback (won't work)
+            
             const cancelUrl = "";
-            const continueUrl = "https://your-app.com/payment/success";
+            const continueUrl = this.webhookBaseUrl 
+                ? `${this.webhookBaseUrl}/payment/success`
+                : "https://your-app.com/payment/success";
             const returnDeeplink = "";
             const currency = request.currency;
             const customFields = "";
