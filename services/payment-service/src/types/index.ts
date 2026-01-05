@@ -27,6 +27,7 @@ export interface CreatePaymentRequest {
 export interface CreatePaymentResponse {
     paymentId: string;
     qrString: string;
+    qrImage?: string;
     deeplinkUrl: string;
     amount: number;
     currency: string;

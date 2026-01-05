@@ -40,7 +40,9 @@ interface PayWayResponse {
         code: string; // "0" = success, other = error
         message: string; // Status message
     };
-    checkout_url: string; // URL to PayWay checkout page
+    qrString?: string; // KHQR code string (for QR display)
+    qrImage?: string; // Base64 QR code image
+    abapay_deeplink?: string; // Deep link to ABA Pay app
     tran_id: string; // Transaction ID
 }
 
@@ -49,7 +51,9 @@ interface PayWayResponse {
  */
 interface PaymentResult {
     tranId: string; // Transaction ID for tracking
-    checkoutUrl: string; // URL to PayWay checkout page
+    qrString?: string; // KHQR code string (for QR display)
+    qrImage?: string; // Base64 QR code image
+    deeplink?: string; // Deep link to ABA Pay app
     expiresAt: Date; // When payment expires
 }
 
@@ -264,12 +268,16 @@ export class PayWayService {
             const expiresAt = new Date(Date.now() + 15 * 60 * 1000);
 
             console.log(`[PAYWAY] ✅ Payment created successfully for ${tranId}`);
-            console.log(`[PAYWAY] Checkout URL: ${response.data.checkout_url}`);
+            console.log(`[PAYWAY] QR String: ${response.data.qrString ? 'Present' : 'Missing'}`);
+            console.log(`[PAYWAY] QR Image: ${response.data.qrImage ? 'Present' : 'Missing'}`);
+            console.log(`[PAYWAY] Deeplink: ${response.data.abapay_deeplink || 'N/A'}`);
 
             // Step 11: Return formatted result
             return {
                 tranId: tranId,
-                checkoutUrl: response.data.checkout_url,
+                qrString: response.data.qrString,
+                qrImage: response.data.qrImage,
+                deeplink: response.data.abapay_deeplink,
                 expiresAt: expiresAt,
             };
         } catch (error: any) {

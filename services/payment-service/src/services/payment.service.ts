@@ -39,7 +39,8 @@ class PaymentService {
                     userId: request.userId,
                     amount: request.amount,
                     currency: request.currency as any,
-                    deeplinkUrl: qrResult.checkoutUrl, // Store checkout URL
+                    qrString: qrResult.qrString, // Store KHQR string
+                    deeplinkUrl: qrResult.deeplink, // Store ABA Pay deeplink
                     status: PaymentStatus.PENDING,
                     description: request.description,
                     paymentMethod: "payway",
@@ -51,6 +52,7 @@ class PaymentService {
             return {
                 paymentId: payment.id,
                 qrString: payment.qrString || "",
+                qrImage: qrResult.qrImage, // Pass through QR image
                 deeplinkUrl: payment.deeplinkUrl || "",
                 amount: Number(payment.amount),
                 currency: payment.currency,

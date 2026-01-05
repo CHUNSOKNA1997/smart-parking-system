@@ -134,7 +134,8 @@ export class PayWayController {
                     userId: userId,
                     amount: amount,
                     currency: currency as any,
-                    deeplinkUrl: qrResult.checkoutUrl,
+                    qrString: qrResult.qrString,
+                    deeplinkUrl: qrResult.deeplink,
                     status: PaymentStatus.PENDING,
                     description: description || `Parking Payment - Booking ${bookingId}`,
                     paymentMethod: "payway",
@@ -146,12 +147,14 @@ export class PayWayController {
 
             console.log(`[PAYWAY CONTROLLER] Payment created: ${payment.id}`);
 
-            // Step 8: Return success response with checkout URL
+            // Step 8: Return success response with QR data
             res.status(201).json(
                 successResponse("Payment created successfully", {
                     paymentId: payment.id,
                     tranId: qrResult.tranId,
-                    checkoutUrl: qrResult.checkoutUrl,
+                    qrString: qrResult.qrString,
+                    qrImage: qrResult.qrImage,
+                    deeplink: qrResult.deeplink,
                     amount: payment.amount,
                     currency: payment.currency,
                     status: payment.status,
@@ -326,7 +329,6 @@ export class PayWayController {
             // Step 3: Find payment by transaction ID
             const payment = await prisma.kHQRPayment.findFirst({
                 where: { transactionHash: tran_id },
-                include: { booking: true },
             });
 
             if (!payment) {
