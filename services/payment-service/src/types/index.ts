@@ -22,13 +22,13 @@ export interface CreatePaymentRequest {
     // New: multiple bookings support
     bookings?: Array<{
         bookingId: string;
-        amount: number;
+        amount?: number; // Optional: will fetch from booking service if not provided
         description?: string;
     }>;
     
     userId: string;
-    amount: number; // Total amount
-    currency: PaymentCurrency;
+    amount?: number; // Optional: will be calculated from bookings if not provided
+    currency?: PaymentCurrency; // Optional: will fetch from booking if not provided
     description?: string;
     paymentMethod?: "payway";
 }

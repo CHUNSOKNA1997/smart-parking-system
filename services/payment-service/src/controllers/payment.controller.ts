@@ -15,7 +15,7 @@ export class PaymentController {
      */
     async createPayment(req: Request, res: Response): Promise<void> {
         try {
-            const { bookingId, amount, currency, description, paymentMethod } = req.body;
+            const { bookingId, bookings, amount, currency, description, paymentMethod } = req.body;
             const userId = req.user?.userId;
 
             if (!userId) {
@@ -23,14 +23,23 @@ export class PaymentController {
                 return;
             }
 
+            // Get auth token from request header
+            const authToken = req.headers.authorization?.replace('Bearer ', '') || '';
+            
+            if (!authToken) {
+                res.status(401).json(errorResponse("Authorization token required"));
+                return;
+            }
+
             const payment = await paymentService.createPayment({
                 bookingId,
+                bookings,
                 userId,
                 amount,
                 currency,
                 description,
                 paymentMethod,
-            });
+            }, authToken);
 
             const responseData = successResponse("Payment created successfully", payment);
 

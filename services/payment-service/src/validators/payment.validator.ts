@@ -23,7 +23,7 @@ export const createPaymentSchema = Joi.object({
                     .min(0.01)
                     .max(100000)
                     .precision(2)
-                    .required()
+                    .optional() // Optional: will fetch from booking service
                     .messages({
                         "number.base": "Amount must be a number",
                         "number.positive": "Amount must be positive",
@@ -46,16 +46,15 @@ export const createPaymentSchema = Joi.object({
         .min(0.01)
         .max(100000)
         .precision(2)
-        .required()
+        .optional() // Optional: will be calculated from bookings
         .messages({
             "number.base": "Amount must be a number",
             "number.positive": "Amount must be positive",
             "number.min": "Amount must be at least $0.01",
             "number.max": "Amount cannot exceed $100,000",
-            "any.required": "Amount is required",
         }),
 
-    currency: Joi.string().valid("USD", "KHR").default("USD").messages({
+    currency: Joi.string().valid("USD", "KHR").optional().messages({
         "string.base": "Currency must be a string",
         "any.only": "Currency must be either USD or KHR",
     }),

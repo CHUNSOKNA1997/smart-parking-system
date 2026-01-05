@@ -10,22 +10,25 @@ import type {
 } from "../types/index.js";
 import { PaymentStatus } from "@prisma/client";
 import { payWayQRService } from "./payway.service.js";
+import { bookingServiceClient } from "../clients/booking-client.js";
 
 class PaymentService {
     /**
      * Creates a new payment with PayWay QR
      *
-     * @param request - Payment creation details including amount, currency, and booking ID(s)
+     * @param request - Payment creation details including booking ID(s)
+     * @param authToken - JWT token to fetch booking details
      * @returns Payment response with QR code and deep link
      * @throws Error if payment method is not supported or PayWay service fails
      */
     async createPayment(
-        request: CreatePaymentRequest
+        request: CreatePaymentRequest,
+        authToken: string
     ): Promise<CreatePaymentResponse> {
         // Only support PayWay QR now
         if (request.paymentMethod === "payway") {
             // Normalize bookings - support both legacy single booking and new array
-            const bookings = request.bookings || 
+            let bookings = request.bookings || 
                 (request.bookingId ? [{ 
                     bookingId: request.bookingId, 
                     amount: request.amount,
@@ -36,19 +39,51 @@ class PaymentService {
                 throw new Error("At least one booking is required");
             }
 
-            // Validate total amount matches sum of booking amounts
-            const totalBookingAmount = bookings.reduce((sum, b) => sum + b.amount, 0);
-            if (Math.abs(totalBookingAmount - request.amount) > 0.01) {
+            // Fetch booking details from booking service if amounts not provided
+            const needsFetch = bookings.some(b => !b.amount);
+            
+            if (needsFetch) {
+                console.log('[PAYMENT SERVICE] Fetching booking details from booking service...');
+                
+                const bookingIds = bookings.map(b => b.bookingId);
+                const bookingDetails = await bookingServiceClient.getBookings(bookingIds, authToken);
+                
+                // Merge fetched details with provided data
+                bookings = bookings.map((booking, index) => ({
+                    bookingId: booking.bookingId,
+                    amount: booking.amount || parseFloat(bookingDetails[index].totalPrice),
+                    description: booking.description || 
+                        `${bookingDetails[index].spotId} - ${bookingDetails[index].durationHours}h`
+                }));
+                
+                console.log('[PAYMENT SERVICE] Booking details fetched successfully');
+            }
+
+            // Calculate total amount
+            const totalAmount = request.amount || bookings.reduce((sum, b) => sum + (b.amount || 0), 0);
+            
+            // Validate total amount matches sum of booking amounts (if provided)
+            const totalBookingAmount = bookings.reduce((sum, b) => sum + (b.amount || 0), 0);
+            if (request.amount && Math.abs(totalBookingAmount - request.amount) > 0.01) {
                 throw new Error(
                     `Total amount (${request.amount}) does not match sum of booking amounts (${totalBookingAmount})`
                 );
             }
 
+            // Get currency from first booking if not provided
+            let currency = request.currency;
+            if (!currency && needsFetch) {
+                const firstBooking = await bookingServiceClient.getBooking(bookings[0].bookingId, authToken);
+                currency = firstBooking.currency as any;
+                console.log(`[PAYMENT SERVICE] Using currency from booking: ${currency}`);
+            }
+            currency = currency || 'USD'; // Default fallback
+
             // Generate QR code via PayWay
             const qrResult = await payWayQRService.generateQR({
                 bookingId: bookings[0].bookingId, // Legacy: use first booking for tracking
-                amount: request.amount,
-                currency: request.currency,
+                amount: totalAmount,
+                currency: currency as any,
                 description: request.description || 
                     `Payment for ${bookings.length} booking${bookings.length > 1 ? 's' : ''}`,
             });
@@ -60,8 +95,8 @@ class PaymentService {
                     data: {
                         bookingId: bookings[0].bookingId, // Legacy field: store first booking
                         userId: request.userId,
-                        amount: request.amount,
-                        currency: request.currency as any,
+                        amount: totalAmount,
+                        currency: currency as any,
                         qrString: qrResult.qrString,
                         deeplinkUrl: qrResult.deeplink,
                         status: PaymentStatus.PENDING,
@@ -77,7 +112,7 @@ class PaymentService {
                     data: bookings.map((booking) => ({
                         paymentId: newPayment.id,
                         bookingId: booking.bookingId,
-                        amount: booking.amount,
+                        amount: booking.amount!,
                     })),
                 });
 
