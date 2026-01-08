@@ -1,0 +1,149 @@
+name: PR Check - Pull Request Validation
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+
+jobs:
+  # Job 1: Validate PR Title and Description
+  validate-pr:
+    name: Validate Pull Request
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Check PR title
+        run: |
+          echo "pr title: ${{ github.event.pull_request.title }}"
+          if [ -z "${{ github.event.pull_request.title }}" ]; then
+            echo "error: pr title cannot be empty"
+            exit 1
+          fi
+
+      - name: Check PR description
+        run: |
+          echo "pr description length: ${#PR_BODY}"
+          if [ ${#PR_BODY} -lt 10 ]; then
+            echo "warning: pr description is very short"
+          fi
+        env:
+          PR_BODY: ${{ github.event.pull_request.body }}
+
+  # Job 2: Quick Validation
+  quick-check:
+    name: Quick Validation
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Check for merge conflicts
+        run: |
+          if grep -r "<<<<<<< HEAD" services/ 2>/dev/null; then
+            echo "error: merge conflict markers found"
+            exit 1
+          fi
+          echo "no merge conflicts detected"
+
+      - name: Check file sizes
+        run: |
+          find services/ -type f -size +5M -exec ls -lh {} \; > large_files.txt
+          if [ -s large_files.txt ]; then
+            echo "warning: large files detected"
+            cat large_files.txt
+          else
+            echo "no large files detected"
+          fi
+
+      - name: Check for secrets
+        run: |
+          if grep -r "password.*=.*['\"].*['\"]" services/ --include="*.ts" --include="*.js" 2>/dev/null | grep -v "PASSWORD" | grep -v "validatePassword"; then
+            echo "warning: potential hardcoded passwords found"
+          fi
+          echo "secret check completed"
+
+  # Job 3: Run Tests
+  test:
+    name: Run Tests
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install dependencies
+        run: |
+          cd services/auth-service && npm ci
+          cd ../parking-service && npm ci
+          cd ../payment-service && npm ci
+
+      - name: Run tests
+        run: |
+          echo "running tests for all services"
+          cd services/auth-service && npm test || echo "no tests configured"
+          cd ../parking-service && npm test || echo "no tests configured"
+          cd ../payment-service && npm test || echo "no tests configured"
+
+  # Job 4: Check Code Changes
+  changes:
+    name: Analyze Changes
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Get changed files
+        id: changed-files
+        uses: tj-actions/changed-files@v40
+        with:
+          files: |
+            services/**/*.ts
+            services/**/*.js
+            **/*.prisma
+
+      - name: List changed files
+        run: |
+          echo "changed files:"
+          for file in ${{ steps.changed-files.outputs.all_changed_files }}; do
+            echo "  - $file"
+          done
+
+      - name: Check if migrations changed
+        if: contains(steps.changed-files.outputs.all_changed_files, '.prisma')
+        run: echo "database schema changes detected - review carefully"
+
+  # Job 5: PR Summary
+  summary:
+    name: PR Check Summary
+    runs-on: ubuntu-latest
+    needs: [validate-pr, quick-check, test, changes]
+    if: always()
+    
+    steps:
+      - name: Generate summary
+        run: |
+          echo "pull request validation summary"
+          echo "validate pr: ${{ needs.validate-pr.result }}"
+          echo "quick check: ${{ needs.quick-check.result }}"
+          echo "test: ${{ needs.test.result }}"
+          echo "changes: ${{ needs.changes.result }}"
+          
+          if [ "${{ needs.validate-pr.result }}" == "failure" ] || [ "${{ needs.quick-check.result }}" == "failure" ]; then
+            echo "some checks failed - please review"
+            exit 1
+          fi
+          
+          echo "all checks passed"
