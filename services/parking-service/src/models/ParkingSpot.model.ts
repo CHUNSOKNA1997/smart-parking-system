@@ -7,13 +7,13 @@ import prisma from "../config/prisma.js";
 class ParkingSpotModel {
     /**
      * Retrieves all parking spots from the database.
-     * Results are ordered by level, section, and ID.
+     * Results are ordered by spot name.
      *
      * @returns Array of all parking spots
      */
     static async findAll() {
         return await prisma.parkingSpot.findMany({
-            orderBy: [{ level: "asc" }, { section: "asc" }, { id: "asc" }],
+            orderBy: [{ spotName: "asc" }],
         });
     }
 
@@ -26,7 +26,7 @@ class ParkingSpotModel {
     static async findAvailable() {
         return await prisma.parkingSpot.findMany({
             where: { isAvailable: true },
-            orderBy: [{ level: "asc" }, { section: "asc" }],
+            orderBy: [{ spotName: "asc" }],
         });
     }
 
@@ -77,15 +77,14 @@ class ParkingSpotModel {
     }
 
     /**
-     * Retrieves all parking spots on a specific parking level.
+     * Retrieves a parking spot by its spot name (e.g., SPOT-001).
      *
-     * @param level - Parking level number
-     * @returns Array of parking spots on the specified level
+     * @param spotName - Parking spot name
+     * @returns Parking spot object or null if not found
      */
-    static async findByLevel(level) {
-        return await prisma.parkingSpot.findMany({
-            where: { level },
-            orderBy: { id: "asc" },
+    static async findBySpotName(spotName) {
+        return await prisma.parkingSpot.findUnique({
+            where: { spotName },
         });
     }
 

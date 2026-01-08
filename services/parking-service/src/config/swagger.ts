@@ -38,14 +38,9 @@ const options = {
                             type: "string",
                             format: "uuid",
                         },
-                        spotNumber: {
+                        spotName: {
                             type: "string",
-                        },
-                        level: {
-                            type: "string",
-                        },
-                        section: {
-                            type: "string",
+                            description: "Spot identifier (e.g., SPOT-001)",
                         },
                         spotType: {
                             type: "string",
@@ -53,6 +48,10 @@ const options = {
                         },
                         isAvailable: {
                             type: "boolean",
+                        },
+                        pricePerHour: {
+                            type: "number",
+                            format: "decimal",
                         },
                     },
                 },

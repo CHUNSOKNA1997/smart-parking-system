@@ -41,9 +41,8 @@ enum TransactionStatus {
 
 // Parking Spots table
 model ParkingSpot {
-  id           String    @id @map("spot_id") @db.VarChar(10)
-  level        Int
-  section      String    @db.VarChar(10)
+  id           String    @id @default(uuid()) @map("spot_id") @db.Uuid
+  spotName     String    @unique @map("spot_name") @db.VarChar(20)
   spotType     SpotType  @map("spot_type")
   isAvailable  Boolean   @default(true) @map("is_available")
   pricePerHour Decimal   @default(2.00) @map("price_per_hour") @db.Decimal(10, 2)
@@ -54,6 +53,7 @@ model ParkingSpot {
 
   @@index([isAvailable])
   @@index([spotType])
+  @@index([spotName])
   @@map("parking_spots")
 }
 
@@ -61,7 +61,7 @@ model ParkingSpot {
 model Booking {
   id            String        @id @default(uuid()) @map("booking_id") @db.Uuid
   userId        String        @map("user_id") @db.Uuid // Reference to auth-service User (no FK)
-  spotId        String        @map("spot_id") @db.VarChar(10)
+  spotId        String        @map("spot_id") @db.Uuid
   startTime     DateTime      @default(now()) @map("start_time")
   endTime       DateTime?     @map("end_time")
   durationHours Decimal?      @map("duration_hours") @db.Decimal(4, 2)

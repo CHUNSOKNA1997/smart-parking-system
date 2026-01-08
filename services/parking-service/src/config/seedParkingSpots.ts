@@ -1,109 +1,56 @@
 import prisma from "./prisma.js";
 import { SpotType } from "@prisma/client";
 
-const parkingSpots = [
-    {
-        id: "A1-001",
-        level: 1,
-        section: "A1",
-        spotType: SpotType.CAR,
-        isAvailable: true,
-        pricePerHour: 2.5,
-    },
-    {
-        id: "A1-002",
-        level: 1,
-        section: "A1",
-        spotType: SpotType.CAR,
-        isAvailable: true,
-        pricePerHour: 2.5,
-    },
-    {
-        id: "A1-003",
-        level: 1,
-        section: "A1",
-        spotType: SpotType.MOTORCYCLE,
-        isAvailable: true,
-        pricePerHour: 1.0,
-    },
-    {
-        id: "A1-004",
-        level: 1,
-        section: "A1",
-        spotType: SpotType.MOTORCYCLE,
-        isAvailable: true,
-        pricePerHour: 1.0,
-    },
-    {
-        id: "B1-001",
-        level: 1,
-        section: "B1",
-        spotType: SpotType.CAR,
-        isAvailable: false,
-        pricePerHour: 2.5,
-    },
-    {
-        id: "B1-002",
-        level: 1,
-        section: "B1",
-        spotType: SpotType.CAR,
-        isAvailable: true,
-        pricePerHour: 2.5,
-    },
-    {
-        id: "A2-001",
-        level: 2,
-        section: "A2",
-        spotType: SpotType.CAR,
-        isAvailable: true,
-        pricePerHour: 3.0,
-    },
-    {
-        id: "A2-002",
-        level: 2,
-        section: "A2",
-        spotType: SpotType.CAR,
-        isAvailable: true,
-        pricePerHour: 3.0,
-    },
-    {
-        id: "A2-003",
-        level: 2,
-        section: "A2",
-        spotType: SpotType.MOTORCYCLE,
-        isAvailable: false,
-        pricePerHour: 1.5,
-    },
-    {
-        id: "B2-001",
-        level: 2,
-        section: "B2",
-        spotType: SpotType.CAR,
-        isAvailable: true,
-        pricePerHour: 3.0,
-    },
-];
+// Generate parking spots with SPOT-001, SPOT-002 format
+const generateParkingSpots = () => {
+    const spots = [];
+    
+    // Generate 50 car spots: SPOT-001 to SPOT-050
+    for (let i = 1; i <= 50; i++) {
+        const spotNumber = String(i).padStart(3, '0');
+        spots.push({
+            spotName: `SPOT-${spotNumber}`,
+            spotType: SpotType.CAR,
+            isAvailable: true,
+            pricePerHour: 2.5,
+        });
+    }
+    
+    // Generate 20 motorcycle spots: SPOT-051 to SPOT-070
+    for (let i = 51; i <= 70; i++) {
+        const spotNumber = String(i).padStart(3, '0');
+        spots.push({
+            spotName: `SPOT-${spotNumber}`,
+            spotType: SpotType.MOTORCYCLE,
+            isAvailable: true,
+            pricePerHour: 1.0,
+        });
+    }
+    
+    return spots;
+};
 
 export const seedParkingSpots = async () => {
     try {
-        console.log("🌱 Starting parking spots seeder...");
+        console.log("starting parking spots seeder...");
 
         // Check if spots already exist
         const existingCount = await prisma.parkingSpot.count();
         if (existingCount > 0) {
             console.log(
-                `ℹ️  Database already has ${existingCount} parking spots. Skipping seed.`
+                `database already has ${existingCount} parking spots, skipping seed`
             );
             return;
         }
 
-        // Create parking spots
+        // Generate and create parking spots
+        const parkingSpots = generateParkingSpots();
         const result = await prisma.parkingSpot.createMany({
             data: parkingSpots,
             skipDuplicates: true,
         });
 
-        console.log(`success: Successfully seeded ${result.count} parking spots`);
+        console.log(`success: seeded ${result.count} parking spots`);
 
         // Display summary
         const spotsByType = await prisma.parkingSpot.groupBy({
@@ -111,7 +58,7 @@ export const seedParkingSpots = async () => {
             _count: true,
         });
 
-        console.log("\nstats: Parking Spots Summary:");
+        console.log("\nstats: parking spots summary:");
         spotsByType.forEach((type) => {
             console.log(`   - ${type.spotType}: ${type._count} spots`);
         });
