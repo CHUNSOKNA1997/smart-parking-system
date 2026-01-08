@@ -21,7 +21,7 @@ jobs:
     
     strategy:
       matrix:
-        service: [auth-service, parking-service, payment-service, gateway]
+        service: [auth-service, parking-service, payment-service]
     
     steps:
       - name: Checkout code
@@ -51,7 +51,7 @@ jobs:
       - name: Build and push Docker image
         uses: docker/build-push-action@v5
         with:
-          context: .
+          context: ./services/${{ matrix.service }}
           file: ./services/${{ matrix.service }}/Dockerfile
           push: true
           tags: ${{ steps.meta.outputs.tags }}
@@ -120,6 +120,5 @@ jobs:
             - auth-service: ${{ env.REGISTRY }}/${{ env.IMAGE_PREFIX }}/auth-service:${{ github.ref_name }}
             - parking-service: ${{ env.REGISTRY }}/${{ env.IMAGE_PREFIX }}/parking-service:${{ github.ref_name }}
             - payment-service: ${{ env.REGISTRY }}/${{ env.IMAGE_PREFIX }}/payment-service:${{ github.ref_name }}
-            - gateway: ${{ env.REGISTRY }}/${{ env.IMAGE_PREFIX }}/gateway:${{ github.ref_name }}
           draft: false
           prerelease: false

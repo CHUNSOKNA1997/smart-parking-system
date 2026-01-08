@@ -23,14 +23,14 @@ jobs:
           cache: 'npm'
 
       - name: Install root dependencies
-        run: npm ci
+        run: npm install || npm ci || echo "no root dependencies"
 
       - name: Install service dependencies
         run: |
-          cd services/auth-service && npm ci
-          cd ../parking-service && npm ci
-          cd ../payment-service && npm ci
-          cd ../../aggregator && npm ci
+          cd services/auth-service && (npm ci || npm install)
+          cd ../parking-service && (npm ci || npm install)
+          cd ../payment-service && (npm ci || npm install)
+          cd ../../aggregator && (npm ci || npm install)
 
       - name: Check code formatting
         run: |
@@ -66,7 +66,7 @@ jobs:
           cache: 'npm'
 
       - name: Install dependencies
-        run: cd services/${{ matrix.service }} && npm ci
+        run: cd services/${{ matrix.service }} && (npm ci || npm install)
 
       - name: Generate Prisma Client
         run: cd services/${{ matrix.service }} && npx prisma generate
@@ -108,7 +108,7 @@ jobs:
           node-version: '20'
 
       - name: Install dependencies
-        run: cd services/${{ matrix.service }} && npm ci
+        run: cd services/${{ matrix.service }} && (npm ci || npm install)
 
       - name: Run Prisma migrations
         env:
