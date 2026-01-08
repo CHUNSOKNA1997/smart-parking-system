@@ -51,19 +51,17 @@ export const generateQRSchema = Joi.object({
         .min(0.01)
         .max(100000)
         .precision(2)
-        .required()
+        .optional() // Optional: will fetch from booking service
         .messages({
             "number.base": "Amount must be a number",
             "number.positive": "Amount must be positive",
             "number.min": "Amount must be at least $0.01",
             "number.max": "Amount cannot exceed $100,000",
-            "any.required": "Amount is required",
         }),
 
-    currency: Joi.string().valid("USD", "KHR").required().messages({
+    currency: Joi.string().valid("USD", "KHR").optional().messages({
         "string.base": "Currency must be a string",
         "any.only": "Currency must be either USD or KHR",
-        "any.required": "Currency is required",
     }),
 
     description: Joi.string().max(500).optional().messages({

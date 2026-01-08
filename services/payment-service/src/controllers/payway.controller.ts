@@ -78,27 +78,42 @@ export class PayWayController {
                 return;
             }
 
-            // Step 2: Validate required fields
-            if (!bookingId || !amount || !currency) {
-                console.error("[PAYWAY CONTROLLER] Missing required fields");
-                res.status(400).json(
-                    errorResponse("Missing required fields: bookingId, amount, currency")
-                );
+            // Step 2: Get auth token
+            const authToken = req.headers.authorization?.replace('Bearer ', '') || '';
+            
+            if (!authToken) {
+                res.status(401).json(errorResponse("Authorization token required"));
                 return;
             }
 
-            // Step 3: Validate amount is positive
-            if (amount <= 0) {
-                console.error("[PAYWAY CONTROLLER] Invalid amount:", amount);
+            // Step 3: Fetch booking details if amount/currency not provided
+            let finalAmount = amount;
+            let finalCurrency = currency;
+            
+            if (!finalAmount || !finalCurrency) {
+                console.log('[PAYWAY CONTROLLER] Fetching booking details from booking service...');
+                
+                const { bookingServiceClient } = await import('../clients/booking-client.js');
+                const booking = await bookingServiceClient.getBooking(bookingId, authToken);
+                
+                finalAmount = finalAmount || parseFloat(booking.totalPrice);
+                finalCurrency = finalCurrency || booking.currency;
+                
+                console.log(`[PAYWAY CONTROLLER] Booking details fetched: ${finalAmount} ${finalCurrency}`);
+            }
+
+            // Step 4: Validate amount is positive
+            if (finalAmount <= 0) {
+                console.error("[PAYWAY CONTROLLER] Invalid amount:", finalAmount);
                 res.status(400).json(
                     errorResponse("Amount must be greater than 0")
                 );
                 return;
             }
 
-            // Step 4: Validate currency
-            if (!["USD", "KHR"].includes(currency)) {
-                console.error("[PAYWAY CONTROLLER] Invalid currency:", currency);
+            // Step 5: Validate currency
+            if (!["USD", "KHR"].includes(finalCurrency)) {
+                console.error("[PAYWAY CONTROLLER] Invalid currency:", finalCurrency);
                 res.status(400).json(
                     errorResponse("Currency must be USD or KHR")
                 );
@@ -107,18 +122,16 @@ export class PayWayController {
 
             console.log(`[PAYWAY CONTROLLER] Generating QR for booking: ${bookingId}`);
 
-            // Step 5: Customer info (optional - can be added later)
-            // For now, we generate QR without customer details
-            // You can add customer info by passing it from the mobile app
+            // Step 6: Customer info (optional - can be added later)
             const customerName: string | undefined = undefined;
             const customerEmail: string | undefined = undefined;
             const customerPhone: string | undefined = undefined;
 
-            // Step 6: Call PayWay service to generate QR
+            // Step 7: Call PayWay service to generate QR
             const qrResult = await payWayQRService.generateQR({
                 bookingId,
-                amount,
-                currency,
+                amount: finalAmount,
+                currency: finalCurrency as any,
                 description: description || `Parking Payment - Booking ${bookingId}`,
                 customerName,
                 customerEmail,
@@ -127,13 +140,13 @@ export class PayWayController {
 
             console.log(`[PAYWAY CONTROLLER] Payment created: ${qrResult.tranId}`);
 
-            // Step 7: Save payment record to database
+            // Step 8: Save payment record to database
             const payment = await prisma.kHQRPayment.create({
                 data: {
                     bookingId: bookingId,
                     userId: userId,
-                    amount: amount,
-                    currency: currency as any,
+                    amount: finalAmount,
+                    currency: finalCurrency as any,
                     qrString: qrResult.qrString,
                     deeplinkUrl: qrResult.deeplink,
                     status: PaymentStatus.PENDING,
@@ -147,7 +160,7 @@ export class PayWayController {
 
             console.log(`[PAYWAY CONTROLLER] Payment created: ${payment.id}`);
 
-            // Step 8: Return success response with QR data
+            // Step 9: Return success response with QR data
             res.status(201).json(
                 successResponse("Payment created successfully", {
                     paymentId: payment.id,
