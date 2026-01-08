@@ -101,6 +101,17 @@ export class PayWayController {
                 
                 console.log(`[PAYWAY CONTROLLER] Booking details fetched: ${finalAmount} ${finalCurrency}`);
             }
+            
+            // Force USD currency for PayWay
+            if (finalCurrency === 'KHR') {
+                // Convert KHR to USD (1 USD = ~4100 KHR)
+                const khrToUsdRate = 4100;
+                finalAmount = finalAmount / khrToUsdRate;
+                finalCurrency = 'USD';
+                console.log(`[PAYWAY CONTROLLER] Converted to USD: ${finalAmount} USD`);
+            } else if (finalCurrency === 'USD') {
+                console.log(`[PAYWAY CONTROLLER] Using USD: ${finalAmount} USD`);
+            }
 
             // Step 4: Validate amount is positive
             if (finalAmount <= 0) {
