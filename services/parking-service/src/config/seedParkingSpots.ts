@@ -103,7 +103,7 @@ export const seedParkingSpots = async () => {
             skipDuplicates: true,
         });
 
-        console.log(`✅ Successfully seeded ${result.count} parking spots`);
+        console.log(`SUCCESS: Successfully seeded ${result.count} parking spots`);
 
         // Display summary
         const spotsByType = await prisma.parkingSpot.groupBy({
@@ -111,7 +111,7 @@ export const seedParkingSpots = async () => {
             _count: true,
         });
 
-        console.log("\n📊 Parking Spots Summary:");
+        console.log("\nSTATS: Parking Spots Summary:");
         spotsByType.forEach((type) => {
             console.log(`   - ${type.spotType}: ${type._count} spots`);
         });
@@ -124,7 +124,7 @@ export const seedParkingSpots = async () => {
             `   - Occupied: ${existingCount + result.count - availableCount} spots\n`
         );
     } catch (error) {
-        console.error("❌ Error seeding parking spots:", error);
+        console.error("ERROR: Error seeding parking spots:", error);
         throw error;
     }
 };

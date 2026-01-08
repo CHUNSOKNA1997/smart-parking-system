@@ -8,7 +8,7 @@ export const errorHandler = (
     res: Response,
     next: NextFunction
 ): Response => {
-    console.error("❌ Error occurred:", {
+    console.error("ERROR: Error occurred:", {
         message: err.message,
         stack: err.stack,
         path: req.path,

@@ -17,7 +17,7 @@ export async function initDefaultUser() {
 
         if (existingUser) {
             console.log(
-                `✅ Default user already exists: ${DEFAULT_USER.email}`
+                `SUCCESS: Default user already exists: ${DEFAULT_USER.email}`
             );
             return;
         }
@@ -36,9 +36,9 @@ export async function initDefaultUser() {
             },
         });
 
-        console.log(`✅ Default user created: ${user.email}`);
+        console.log(`SUCCESS: Default user created: ${user.email}`);
     } catch (error) {
-        console.error("❌ Failed to initialize default user:", error);
+        console.error("ERROR: Failed to initialize default user:", error);
     } finally {
         await prisma.$disconnect();
     }
