@@ -155,7 +155,7 @@ jobs:
 
       - name: Test Docker Compose
         run: |
-          docker-compose config
+          docker compose config
           echo "docker compose configuration is valid"
 
   # Job 6: Integration Summary
