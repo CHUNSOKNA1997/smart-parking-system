@@ -8,11 +8,11 @@ class CronService {
 
     static start() {
         if (this.intervalId) {
-            console.log("[CRON] Service already running");
+            console.log("[cron] Service already running");
             return;
         }
 
-        console.log(`[CRON] Starting booking cleanup service (Interval: ${this.INTERVAL_MS}ms, Timeout: ${this.EXPIRATION_MINUTES}m)`);
+        console.log(`[cron] Starting booking cleanup service (Interval: ${this.INTERVAL_MS}ms, Timeout: ${this.EXPIRATION_MINUTES}m)`);
 
         // Run immediately on startup
         this.checkExpiredBookings();
@@ -27,7 +27,7 @@ class CronService {
         if (this.intervalId) {
             clearInterval(this.intervalId);
             this.intervalId = null;
-            console.log("[CRON] Service stopped");
+            console.log("[cron] Service stopped");
         }
     }
 
@@ -35,10 +35,10 @@ class CronService {
         try {
             const count = await BookingModel.releaseExpiredReservations(this.EXPIRATION_MINUTES);
             if (count > 0) {
-                console.log(`[CRON] Released ${count} expired bookings`);
+                console.log(`[cron] Released ${count} expired bookings`);
             }
         } catch (error) {
-            console.error("[CRON] Error during booking cleanup:", error);
+            console.error("[cron] Error during booking cleanup:", error);
         }
     }
 }

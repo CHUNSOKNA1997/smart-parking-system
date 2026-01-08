@@ -80,7 +80,7 @@ class AuthController {
                 );
             }
 
-            console.log(`[AUTH] New user registered: ${email}`);
+            console.log(`[auth] New user registered: ${email}`);
 
             // Generate token for unverified user (allows them to verify email and check status)
             const token = generateAccessToken(user.id);
@@ -101,7 +101,7 @@ class AuthController {
                 }
             );
         } catch (error) {
-            console.error("[AUTH] Registration error:", error);
+            console.error("[auth] Registration error:", error);
             return sendError(res, 500, "Internal server error", error.message);
         }
     }
@@ -182,7 +182,7 @@ class AuthController {
                 },
             });
         } catch (error) {
-            console.error("[AUTH] Login error:", error);
+            console.error("[auth] Login error:", error);
             return sendError(res, 500, "Internal server error", error.message);
         }
     }
@@ -234,7 +234,7 @@ class AuthController {
                 );
             }
 
-            console.log(`[AUTH] Email verified: ${user.email}`);
+            console.log(`[auth] Email verified: ${user.email}`);
 
             // Generate token for auto-login after verification
             const token = generateAccessToken(user.id);
@@ -256,7 +256,7 @@ class AuthController {
                 }
             );
         } catch (error) {
-            console.error("[AUTH] OTP verification error:", error);
+            console.error("[auth] OTP verification error:", error);
             return sendError(res, 500, "Internal server error", error.message);
         }
     }
@@ -310,11 +310,11 @@ class AuthController {
 
             await sendVerificationOTP(email, verificationOtp);
 
-            console.log(`[AUTH] Verification OTP resent to: ${email}`);
+            console.log(`[auth] Verification OTP resent to: ${email}`);
 
             return sendSuccess(res, 200, "Verification code sent successfully");
         } catch (error) {
-            console.error("[AUTH] Resend verification error:", error);
+            console.error("[auth] Resend verification error:", error);
             return sendError(res, 500, "Internal server error", error.message);
         }
     }
@@ -363,7 +363,7 @@ class AuthController {
                 "Password reset code sent to your email"
             );
         } catch (error) {
-            console.error("[AUTH] Forgot password error:", error);
+            console.error("[auth] Forgot password error:", error);
             return sendError(res, 500, "Internal server error", error.message);
         }
     }
@@ -412,7 +412,7 @@ class AuthController {
                 }
             );
         } catch (error) {
-            console.error("[AUTH] Verify reset OTP error:", error);
+            console.error("[auth] Verify reset OTP error:", error);
             return sendError(res, 500, "Internal server error", error.message);
         }
     }
@@ -483,7 +483,7 @@ class AuthController {
                 "Password reset successful. You can now login with your new password."
             );
         } catch (error) {
-            console.error("[AUTH] Reset password error:", error);
+            console.error("[auth] Reset password error:", error);
             return sendError(res, 500, "Internal server error", error.message);
         }
     }
@@ -515,7 +515,7 @@ class AuthController {
                 user,
             });
         } catch (error) {
-            console.error("[AUTH] Get user error:", error);
+            console.error("[auth] Get user error:", error);
             return sendError(res, 500, "Internal server error", error.message);
         }
     }
@@ -564,7 +564,7 @@ class AuthController {
                 user: updatedUser,
             });
         } catch (error) {
-            console.error("[AUTH] Update profile error:", error);
+            console.error("[auth] Update profile error:", error);
             return sendError(res, 500, "Internal server error", error.message);
         }
     }
@@ -609,7 +609,7 @@ class AuthController {
                 user: decoded,
             });
         } catch (error: any) {
-            console.error("[AUTH] Token verification failed:", error.message);
+            console.error("[auth] Token verification failed:", error.message);
             return sendError(res, 401, "Invalid or expired token");
         }
     }
@@ -664,7 +664,7 @@ class AuthController {
                 user: updatedUser,
             });
         } catch (error) {
-            console.error("[AUTH] Upload profile image error:", error);
+            console.error("[auth] Upload profile image error:", error);
             // If database update fails, we might want to delete the uploaded file
             // fs.unlinkSync(req.file.path);
             return sendError(res, 500, "Internal server error", error.message);
@@ -775,7 +775,7 @@ class AuthController {
             });
 
         } catch (error) {
-            console.error("[AUTH] Upload base64 image error:", error);
+            console.error("[auth] Upload base64 image error:", error);
             return sendError(res, 500, "Internal server error", error.message);
         }
     }

@@ -97,9 +97,9 @@ export class PayWayUtils {
     ): boolean {
         // If no hash provided (sandbox behavior), log warning and allow
         if (!receivedHash || receivedHash === 'undefined') {
-            console.log('[PAYWAY SIGNATURE] WARNING: No hash provided in webhook (sandbox mode)');
-            console.log('[PAYWAY SIGNATURE] WARNING: This is OK for testing but NOT for production!');
-            console.log('[PAYWAY SIGNATURE] TODO: Verify hash in production environment');
+            console.log('[payway signature] warning: no hash provided in webhook (sandbox mode)');
+            console.log('[payway signature] note: this is ok for testing but not for production!');
+            console.log('[payway signature] todo: verify hash in production environment');
             return true; // Allow for sandbox
         }
 
@@ -122,9 +122,9 @@ export class PayWayUtils {
             
             // Check if buffers are same length
             if (expectedBuffer.length !== receivedBuffer.length) {
-                console.log('[PAYWAY SIGNATURE] ERROR: Hash length mismatch');
-                console.log('[PAYWAY SIGNATURE] Expected length:', expectedBuffer.length);
-                console.log('[PAYWAY SIGNATURE] Received length:', receivedBuffer.length);
+                console.log('[payway signature] error: Hash length mismatch');
+                console.log('[payway signature] Expected length:', expectedBuffer.length);
+                console.log('[payway signature] Received length:', receivedBuffer.length);
                 return false;
             }
 
@@ -132,15 +132,15 @@ export class PayWayUtils {
             const isValid = crypto.timingSafeEqual(expectedBuffer, receivedBuffer);
             
             if (isValid) {
-                console.log('[PAYWAY SIGNATURE] Signature verified successfully');
+                console.log('[payway signature] Signature verified successfully');
             } else {
-                console.log('[PAYWAY SIGNATURE] ERROR: Signature verification failed');
+                console.log('[payway signature] error: Signature verification failed');
             }
             
             return isValid;
             
         } catch (error) {
-            console.error('[PAYWAY SIGNATURE] Verification error:', error);
+            console.error('[payway signature] Verification error:', error);
             return false;
         }
     }

@@ -16,13 +16,13 @@ CronService.start();
 
 // Start server
 const server: Server = app.listen(PORT, () => {
-    console.log(`\n[${SERVICE_NAME}] Parking Service running on port ${PORT}`);
+    console.log(`\n[${SERVICE_NAME}] parking service running on port ${PORT}`);
     console.log(
-        `[${SERVICE_NAME}] Environment: ${process.env.NODE_ENV || "development"}`
+        `[${SERVICE_NAME}] environment: ${process.env.NODE_ENV || "development"}`
     );
-    console.log(`[${SERVICE_NAME}] Health: http://localhost:${PORT}/health`);
+    console.log(`[${SERVICE_NAME}] health: http://localhost:${PORT}/health`);
     console.log(
-        `[${SERVICE_NAME}] API: http://localhost:${PORT}/api/v1/parking\n`
+        `[${SERVICE_NAME}] api: http://localhost:${PORT}/api/v1/parking\n`
     );
 });
 
@@ -31,7 +31,7 @@ const shutdown = async (signal: string) => {
     console.log(`\n[${SERVICE_NAME}] ${signal} received: closing server`);
     server.close(async () => {
         await prisma.$disconnect();
-        console.log(`[${SERVICE_NAME}] Server closed\n`);
+        console.log(`[${SERVICE_NAME}] server closed\n`);
         process.exit(0);
     });
 };

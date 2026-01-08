@@ -187,7 +187,7 @@ class BookingModel {
             return 0;
         }
 
-        console.log(`[BOOKING] Found ${expiredBookings.length} expired bookings to release`);
+        console.log(`[booking] Found ${expiredBookings.length} expired bookings to release`);
 
         // Process each expired booking
         // We do this individually to ensure all related updates (spot, transactions) happen correctly
@@ -225,9 +225,9 @@ class BookingModel {
                 });
 
                 releasedCount++;
-                console.log(`[BOOKING] Auto-released expired booking: ${booking.id}`);
+                console.log(`[booking] Auto-released expired booking: ${booking.id}`);
             } catch (error) {
-                console.error(`[BOOKING] Failed to release expired booking ${booking.id}:`, error);
+                console.error(`[booking] Failed to release expired booking ${booking.id}:`, error);
             }
         }
 

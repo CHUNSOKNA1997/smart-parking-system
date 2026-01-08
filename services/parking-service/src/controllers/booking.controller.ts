@@ -62,7 +62,7 @@ class BookingController {
                 // If status is RESERVED, we cancel it to allow the new booking (e.g. user changing payment method)
                 // This must happen BEFORE checking spot availability to avoid "spot taken" error
                 if (activeBooking.status === BookingStatus.RESERVED) {
-                    console.log(`[BOOKING] Auto-cancelling existing RESERVED booking ${activeBooking.id}`);
+                    console.log(`[booking] Auto-cancelling existing RESERVED booking ${activeBooking.id}`);
                     await BookingModel.updateStatus(activeBooking.id, BookingStatus.CANCELLED, new Date());
                     await ParkingSpotModel.updateAvailability(activeBooking.spotId, true);
                 }
@@ -123,7 +123,7 @@ class BookingController {
                 return newBooking;
             });
 
-            console.log(`[BOOKING] Booking created in transaction: ${booking.id}`);
+            console.log(`[booking] Booking created in transaction: ${booking.id}`);
 
             console.log(
                 `[BOOKING] Booking created: ${booking.id} for user: ${userId}`
@@ -143,7 +143,7 @@ class BookingController {
                 }
             });
         } catch (error) {
-            console.error("[BOOKING] Create booking error:", error);
+            console.error("[booking] Create booking error:", error);
             return sendError(
                 res,
                 500,
@@ -194,7 +194,7 @@ class BookingController {
 
             return sendSuccess(res, 200, "Bookings retrieved successfully", result);
         } catch (error) {
-            console.error("[BOOKING] Get user bookings error:", error);
+            console.error("[booking] Get user bookings error:", error);
             return sendError(
                 res,
                 500,
@@ -233,7 +233,7 @@ class BookingController {
                 booking,
             });
         } catch (error) {
-            console.error("[BOOKING] Get booking by ID error:", error);
+            console.error("[booking] Get booking by ID error:", error);
             return sendError(
                 res,
                 500,
@@ -268,7 +268,7 @@ class BookingController {
                 { booking }
             );
         } catch (error) {
-            console.error("[BOOKING] Get active booking error:", error);
+            console.error("[booking] Get active booking error:", error);
             return sendError(
                 res,
                 500,
@@ -336,7 +336,7 @@ class BookingController {
                 { booking: updatedBooking }
             );
         } catch (error) {
-            console.error("[BOOKING] Update booking status error:", error);
+            console.error("[booking] Update booking status error:", error);
             return sendError(
                 res,
                 500,
@@ -360,7 +360,7 @@ class BookingController {
             const { bookingId } = req.params;
             const { paymentId, transactionId, amount } = req.body;
 
-            console.log(`[BOOKING] Confirming payment for booking ${bookingId}`);
+            console.log(`[booking] Confirming payment for booking ${bookingId}`);
 
             const booking = await BookingModel.findById(bookingId);
 
@@ -422,7 +422,7 @@ class BookingController {
                 { booking: updatedBooking }
             );
         } catch (error) {
-            console.error("[BOOKING] Confirm payment error:", error);
+            console.error("[booking] Confirm payment error:", error);
             return sendError(
                 res,
                 500,

@@ -42,7 +42,7 @@ export const idempotencyMiddleware = async (
     // If no idempotency key provided, continue without caching
     // This maintains backward compatibility with existing clients
     if (!idempotencyKey) {
-        console.log('[IDEMPOTENCY] No idempotency key provided, continuing without cache');
+        console.log('[idempotency] No idempotency key provided, continuing without cache');
         return next();
     }
 
@@ -54,7 +54,7 @@ export const idempotencyMiddleware = async (
             .update(requestBody)
             .digest('hex');
 
-        console.log('[IDEMPOTENCY] Checking key:', idempotencyKey);
+        console.log('[idempotency] Checking key:', idempotencyKey);
 
         // Check if this idempotency key exists
         const existingKey = await prisma.idempotencyKey.findUnique({
@@ -64,7 +64,7 @@ export const idempotencyMiddleware = async (
         if (existingKey) {
             // Check if key has expired
             if (new Date() > existingKey.expiresAt) {
-                console.log('[IDEMPOTENCY] Key expired, deleting and continuing');
+                console.log('[idempotency] Key expired, deleting and continuing');
                 await prisma.idempotencyKey.delete({
                     where: { key: idempotencyKey },
                 });
@@ -76,11 +76,11 @@ export const idempotencyMiddleware = async (
 
             // Check if request body matches
             if (existingKey.requestHash === requestHash) {
-                console.log('[IDEMPOTENCY] Duplicate request detected, returning cached response');
+                console.log('[idempotency] Duplicate request detected, returning cached response');
                 // Return cached response
                 return res.status(existingKey.statusCode).json(existingKey.response);
             } else {
-                console.log('[IDEMPOTENCY] ERROR: Same key used with different request body');
+                console.log('[idempotency] error: Same key used with different request body');
                 return res.status(409).json({
                     error: 'IDEMPOTENCY_KEY_REUSED',
                     message: 'Idempotency key already used with different request parameters',
@@ -89,7 +89,7 @@ export const idempotencyMiddleware = async (
         }
 
         // New idempotency key - flag for caching
-        console.log('[IDEMPOTENCY] New key, will cache response');
+        console.log('[idempotency] New key, will cache response');
         req.idempotencyKey = idempotencyKey;
         req.shouldCacheResponse = true;
 
@@ -98,7 +98,7 @@ export const idempotencyMiddleware = async (
 
         next();
     } catch (error) {
-        console.error('[IDEMPOTENCY] Error checking idempotency key:', error);
+        console.error('[idempotency] Error checking idempotency key:', error);
         // On error, continue without idempotency (fail open)
         next();
     }
@@ -128,9 +128,9 @@ export const cacheIdempotentResponse = async (
             },
         });
 
-        console.log('[IDEMPOTENCY] Response cached for key:', idempotencyKey);
+        console.log('[idempotency] Response cached for key:', idempotencyKey);
     } catch (error) {
-        console.error('[IDEMPOTENCY] Error caching response:', error);
+        console.error('[idempotency] Error caching response:', error);
         // Don't throw - caching failure shouldn't break the payment flow
     }
 };
@@ -149,10 +149,10 @@ export const cleanupExpiredKeys = async () => {
             },
         });
 
-        console.log(`[IDEMPOTENCY] Cleaned up ${result.count} expired keys`);
+        console.log(`[idempotency] Cleaned up ${result.count} expired keys`);
         return result.count;
     } catch (error) {
-        console.error('[IDEMPOTENCY] Error cleaning up expired keys:', error);
+        console.error('[idempotency] Error cleaning up expired keys:', error);
         return 0;
     }
 };

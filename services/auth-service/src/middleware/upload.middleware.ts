@@ -37,10 +37,10 @@ export const uploadProfile = multer({
 
 // Error handling middleware for multer
 export const handleUploadError = (err: any, req: any, res: any, next: any) => {
-    console.log('[UPLOAD ERROR]', err);
-    console.log('[UPLOAD ERROR] Type:', err.constructor.name);
-    console.log('[UPLOAD ERROR] Message:', err.message);
-    console.log('[UPLOAD ERROR] Code:', err.code);
+    console.log('[upload error]', err);
+    console.log('[upload error] Type:', err.constructor.name);
+    console.log('[upload error] Message:', err.message);
+    console.log('[upload error] Code:', err.code);
 
     if (err instanceof multer.MulterError) {
         // Multer-specific errors

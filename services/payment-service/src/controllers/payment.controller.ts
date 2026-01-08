@@ -56,7 +56,7 @@ export class PaymentController {
 
             res.status(201).json(responseData);
         } catch (error: any) {
-            console.error("[PAYMENT] Create payment error:", error);
+            console.error("[payment] Create payment error:", error);
             res.status(500).json(
                 errorResponse("Failed to create payment", error.message)
             );
@@ -112,7 +112,7 @@ export class PaymentController {
                 },
             });
 
-            console.log(`[PAYMENT] Manual confirmation: Payment ${payment.id} marked as PAID`);
+            console.log(`[payment] Manual confirmation: Payment ${payment.id} marked as PAID`);
 
             // Update booking status if bookingId exists
             if (payment.bookingId) {
@@ -120,7 +120,7 @@ export class PaymentController {
                     const parkingServiceUrl = process.env.PARKING_SERVICE_URL || "http://localhost:3002";
                     const bookingUpdateUrl = `${parkingServiceUrl}/api/v1/bookings/${payment.bookingId}/confirm-payment`;
 
-                    console.log(`[PAYMENT] Updating booking ${payment.bookingId} via ${bookingUpdateUrl}`);
+                    console.log(`[payment] Updating booking ${payment.bookingId} via ${bookingUpdateUrl}`);
 
                     await axios.post(
                         bookingUpdateUrl,
@@ -136,7 +136,7 @@ export class PaymentController {
                         }
                     );
 
-                    console.log(`[PAYMENT] Booking ${payment.bookingId} updated successfully`);
+                    console.log(`[payment] Booking ${payment.bookingId} updated successfully`);
                 } catch (bookingError: any) {
                     console.error(
                         "[PAYMENT] Failed to update booking:",
@@ -160,7 +160,7 @@ export class PaymentController {
                 })
             );
         } catch (error: any) {
-            console.error("[PAYMENT] Manual confirm error:", error);
+            console.error("[payment] Manual confirm error:", error);
             res.status(500).json(
                 errorResponse("Failed to confirm payment", error.message)
             );
@@ -182,7 +182,7 @@ export class PaymentController {
                 successResponse("Payments retrieved successfully", payments)
             );
         } catch (error: any) {
-            console.error("[PAYMENT] Get user payments error:", error);
+            console.error("[payment] Get user payments error:", error);
             res.status(500).json(
                 errorResponse("Failed to retrieve payments", error.message)
             );

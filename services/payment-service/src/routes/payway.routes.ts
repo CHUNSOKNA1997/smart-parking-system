@@ -58,7 +58,7 @@ router.use(authMiddleware);
  * RESPONSE (201 Created):
  *   {
  *     "success": true,
- *     "message": "QR code generated successfully",
+ *     "message": "qr code generated successfully",
  *     "data": {
  *       "paymentId": "uuid",
  *       "tranId": "booking-abc-123-1736156789",

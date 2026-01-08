@@ -39,7 +39,7 @@ class BookingServiceClient {
      */
     async getBooking(bookingId: string, authToken: string): Promise<BookingDetails> {
         try {
-            console.log(`[BOOKING CLIENT] Fetching booking: ${bookingId}`);
+            console.log(`[booking client] Fetching booking: ${bookingId}`);
             
             const response = await axios.get<BookingResponse>(
                 `${this.baseUrl}/api/v1/bookings/${bookingId}`,
@@ -57,11 +57,11 @@ class BookingServiceClient {
 
             const booking = response.data.data.booking;
             
-            console.log(`[BOOKING CLIENT] Booking fetched: ${bookingId} - ${booking.totalPrice} ${booking.currency}`);
+            console.log(`[booking client] Booking fetched: ${bookingId} - ${booking.totalPrice} ${booking.currency}`);
             
             return booking;
         } catch (error: any) {
-            console.error(`[BOOKING CLIENT] Error fetching booking ${bookingId}:`, error.message);
+            console.error(`[booking client] Error fetching booking ${bookingId}:`, error.message);
             
             if (error.response?.status === 404) {
                 throw new Error(`Booking not found: ${bookingId}`);
@@ -86,17 +86,17 @@ class BookingServiceClient {
      * @returns Array of booking details
      */
     async getBookings(bookingIds: string[], authToken: string): Promise<BookingDetails[]> {
-        console.log(`[BOOKING CLIENT] Fetching ${bookingIds.length} bookings`);
+        console.log(`[booking client] Fetching ${bookingIds.length} bookings`);
         
         // Fetch all bookings in parallel
         const bookingPromises = bookingIds.map(id => this.getBooking(id, authToken));
         
         try {
             const bookings = await Promise.all(bookingPromises);
-            console.log(`[BOOKING CLIENT] Successfully fetched ${bookings.length} bookings`);
+            console.log(`[booking client] Successfully fetched ${bookings.length} bookings`);
             return bookings;
         } catch (error: any) {
-            console.error('[BOOKING CLIENT] Error fetching multiple bookings:', error.message);
+            console.error('[booking client] Error fetching multiple bookings:', error.message);
             throw error;
         }
     }

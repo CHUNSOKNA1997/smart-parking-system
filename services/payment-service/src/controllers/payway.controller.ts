@@ -49,7 +49,7 @@ export class PayWayController {
      * RESPONSE:
      * {
      *   "success": true,
-     *   "message": "QR code generated successfully",
+     *   "message": "qr code generated successfully",
      *   "data": {
      *     "paymentId": "uuid-here",
      *     "tranId": "booking-abc-123-1736156789",
@@ -65,7 +65,7 @@ export class PayWayController {
      */
     async generateQR(req: Request, res: Response): Promise<void> {
         try {
-            console.log("[PAYWAY CONTROLLER] Generate QR request received");
+            console.log("[payway controller] Generate QR request received");
 
             // Extract data from request
             const { bookingId, amount, currency, description } = req.body;
@@ -73,7 +73,7 @@ export class PayWayController {
 
             // Step 1: Validate user is authenticated
             if (!userId) {
-                console.error("[PAYWAY CONTROLLER] User not authenticated");
+                console.error("[payway controller] User not authenticated");
                 res.status(401).json(errorResponse("User not authenticated"));
                 return;
             }
@@ -91,7 +91,7 @@ export class PayWayController {
             let finalCurrency = currency;
             
             if (!finalAmount || !finalCurrency) {
-                console.log('[PAYWAY CONTROLLER] Fetching booking details from booking service...');
+                console.log('[payway controller] Fetching booking details from booking service...');
                 
                 const { bookingServiceClient } = await import('../clients/booking-client.js');
                 const booking = await bookingServiceClient.getBooking(bookingId, authToken);
@@ -99,7 +99,7 @@ export class PayWayController {
                 finalAmount = finalAmount || parseFloat(booking.totalPrice);
                 finalCurrency = finalCurrency || booking.currency;
                 
-                console.log(`[PAYWAY CONTROLLER] Booking details fetched: ${finalAmount} ${finalCurrency}`);
+                console.log(`[payway controller] Booking details fetched: ${finalAmount} ${finalCurrency}`);
             }
             
             // Force USD currency for PayWay
@@ -108,14 +108,14 @@ export class PayWayController {
                 const khrToUsdRate = 4100;
                 finalAmount = finalAmount / khrToUsdRate;
                 finalCurrency = 'USD';
-                console.log(`[PAYWAY CONTROLLER] Converted to USD: ${finalAmount} USD`);
+                console.log(`[payway controller] Converted to USD: ${finalAmount} USD`);
             } else if (finalCurrency === 'USD') {
-                console.log(`[PAYWAY CONTROLLER] Using USD: ${finalAmount} USD`);
+                console.log(`[payway controller] Using USD: ${finalAmount} USD`);
             }
 
             // Step 4: Validate amount is positive
             if (finalAmount <= 0) {
-                console.error("[PAYWAY CONTROLLER] Invalid amount:", finalAmount);
+                console.error("[payway controller] Invalid amount:", finalAmount);
                 res.status(400).json(
                     errorResponse("Amount must be greater than 0")
                 );
@@ -124,14 +124,14 @@ export class PayWayController {
 
             // Step 5: Validate currency
             if (!["USD", "KHR"].includes(finalCurrency)) {
-                console.error("[PAYWAY CONTROLLER] Invalid currency:", finalCurrency);
+                console.error("[payway controller] Invalid currency:", finalCurrency);
                 res.status(400).json(
                     errorResponse("Currency must be USD or KHR")
                 );
                 return;
             }
 
-            console.log(`[PAYWAY CONTROLLER] Generating QR for booking: ${bookingId}`);
+            console.log(`[payway controller] Generating QR for booking: ${bookingId}`);
 
             // Step 6: Customer info (optional - can be added later)
             const customerName: string | undefined = undefined;
@@ -149,7 +149,7 @@ export class PayWayController {
                 customerPhone,
             });
 
-            console.log(`[PAYWAY CONTROLLER] Payment created: ${qrResult.tranId}`);
+            console.log(`[payway controller] Payment created: ${qrResult.tranId}`);
 
             // Step 8: Save payment record to database
             const payment = await prisma.kHQRPayment.create({
@@ -169,7 +169,7 @@ export class PayWayController {
                 },
             });
 
-            console.log(`[PAYWAY CONTROLLER] Payment created: ${payment.id}`);
+            console.log(`[payway controller] Payment created: ${payment.id}`);
 
             // Step 9: Return success response with QR data
             res.status(201).json(
@@ -187,7 +187,7 @@ export class PayWayController {
                 })
             );
         } catch (error: any) {
-            console.error("[PAYWAY CONTROLLER] Generate QR error:", error);
+            console.error("[payway controller] Generate QR error:", error);
             res.status(500).json(
                 errorResponse(
                     "Failed to generate QR code",
@@ -234,7 +234,7 @@ export class PayWayController {
                 return;
             }
 
-            console.log(`[PAYWAY CONTROLLER] Checking status for payment: ${paymentId}`);
+            console.log(`[payway controller] Checking status for payment: ${paymentId}`);
 
             // Get payment from database
             const payment = await prisma.kHQRPayment.findUnique({
@@ -277,7 +277,7 @@ export class PayWayController {
                 })
             );
         } catch (error: any) {
-            console.error("[PAYWAY CONTROLLER] Check status error:", error);
+            console.error("[payway controller] Check status error:", error);
             res.status(500).json(
                 errorResponse("Failed to check payment status", error.message)
             );
@@ -321,15 +321,15 @@ export class PayWayController {
      */
     async handleWebhook(req: Request, res: Response): Promise<void> {
         try {
-            console.log("[PAYWAY WEBHOOK] Received webhook from PayWay");
-            console.log("[PAYWAY WEBHOOK] Payload:", JSON.stringify(req.body, null, 2));
+            console.log("[payway webhook] Received webhook from PayWay");
+            console.log("[payway webhook] Payload:", JSON.stringify(req.body, null, 2));
 
             const payload = req.body;
             const receivedHash = payload.hash;
 
             // Step 1: Verify signature (CRITICAL FOR SECURITY!)
-            console.log("[PAYWAY WEBHOOK] Verifying webhook signature...");
-            console.log("[PAYWAY WEBHOOK] Received hash:", receivedHash || 'No hash provided');
+            console.log("[payway webhook] Verifying webhook signature...");
+            console.log("[payway webhook] Received hash:", receivedHash || 'No hash provided');
             
             const isValid = PayWayUtils.verifyWebhookSignature(
                 payload,
@@ -338,8 +338,8 @@ export class PayWayController {
             );
 
             if (!isValid) {
-                console.error("[PAYWAY WEBHOOK] SECURITY WARNING: INVALID SIGNATURE! Possible fraud attempt!");
-                console.error("[PAYWAY WEBHOOK] Payload:", payload);
+                console.error("[payway webhook] security warning: invalid signature! Possible fraud attempt!");
+                console.error("[payway webhook] Payload:", payload);
                 // Still return 200 to prevent retries
                 res.status(200).json({ 
                     success: false, 
@@ -348,7 +348,7 @@ export class PayWayController {
                 return;
             }
 
-            console.log("[PAYWAY WEBHOOK] Signature verified");
+            console.log("[payway webhook] Signature verified");
 
             // Step 2: Extract data from webhook
             const { tran_id, amount, currency, status } = payload;
@@ -359,7 +359,7 @@ export class PayWayController {
             });
 
             if (!payment) {
-                console.error(`[PAYWAY WEBHOOK] Payment not found for tran_id: ${tran_id}`);
+                console.error(`[payway webhook] Payment not found for tran_id: ${tran_id}`);
                 // Still return 200 (maybe payment was deleted)
                 res.status(200).json({ 
                     success: false, 
@@ -368,11 +368,11 @@ export class PayWayController {
                 return;
             }
 
-            console.log(`[PAYWAY WEBHOOK] Found payment: ${payment.id}`);
+            console.log(`[payway webhook] Found payment: ${payment.id}`);
 
             // Step 4: Check if already processed (idempotency)
             if (payment.status === PaymentStatus.PAID) {
-                console.log("[PAYWAY WEBHOOK] Payment already processed, skipping");
+                console.log("[payway webhook] Payment already processed, skipping");
                 res.status(200).json({ 
                     success: true, 
                     message: "Already processed" 
@@ -382,10 +382,10 @@ export class PayWayController {
 
             // Step 5: Check payment status from webhook
             // PayWay can send status as number (0) or string ("0" or "success")
-            console.log(`[PAYWAY WEBHOOK] Checking status field: "${status}" (type: ${typeof status})`);
+            console.log(`[payway webhook] Checking status field: "${status}" (type: ${typeof status})`);
             
             if (status === 0 || status === "0" || status === "success") {
-                console.log(`[PAYWAY WEBHOOK] Payment successful: ${tran_id}`);
+                console.log(`[payway webhook] Payment successful: ${tran_id}`);
 
                 // Convert amount from cents to dollars
                 const amountInDollars = PayWayUtils.convertFromSmallestUnit(
@@ -410,29 +410,29 @@ export class PayWayController {
                     },
                 });
 
-                console.log(`[PAYWAY WEBHOOK] Payment marked as PAID: ${payment.id}`);
+                console.log(`[payway webhook] Payment marked as PAID: ${payment.id}`);
 
                 // Step 7: Update booking status (via API call to booking service)
                 // TODO: If you have a booking service, call it here to update booking status
                 // For now, we just log the booking ID
                 if (payment.bookingId) {
-                    console.log(`[PAYWAY WEBHOOK] Booking to confirm: ${payment.bookingId}`);
+                    console.log(`[payway webhook] Booking to confirm: ${payment.bookingId}`);
                     // Example: await bookingService.updateStatus(payment.bookingId, "CONFIRMED");
                 }
 
-                console.log("[PAYWAY WEBHOOK] Payment processing complete");
+                console.log("[payway webhook] Payment processing complete");
             } else {
                 // Payment failed
-                console.log(`[PAYWAY WEBHOOK] Payment FAILED: ${tran_id}`);
-                console.log(`[PAYWAY WEBHOOK] Status received: "${status}" (expected "0" or "success")`);
-                console.log(`[PAYWAY WEBHOOK] Full webhook data:`, JSON.stringify(payload, null, 2));
+                console.log(`[payway webhook] Payment FAILED: ${tran_id}`);
+                console.log(`[payway webhook] Status received: "${status}" (expected "0" or "success")`);
+                console.log(`[payway webhook] Full webhook data:`, JSON.stringify(payload, null, 2));
 
                 await prisma.kHQRPayment.update({
                     where: { id: payment.id },
                     data: { status: PaymentStatus.FAILED },
                 });
                 
-                console.log(`[PAYWAY WEBHOOK] Payment marked as FAILED in database`);
+                console.log(`[payway webhook] Payment marked as FAILED in database`);
             }
 
             // Step 9: Always return 200 OK
@@ -441,7 +441,7 @@ export class PayWayController {
                 message: "Webhook processed"
             });
         } catch (error: any) {
-            console.error("[PAYWAY WEBHOOK] Error processing webhook:", error);
+            console.error("[payway webhook] Error processing webhook:", error);
             // Still return 200 to prevent PayWay from retrying
             res.status(200).json({ 
                 success: false, 

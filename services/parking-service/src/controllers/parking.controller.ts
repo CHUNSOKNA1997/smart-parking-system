@@ -72,7 +72,7 @@ class ParkingController {
                 { spot }
             );
         } catch (error) {
-            console.error("Get spot by ID error:", error);
+            console.error("get spot by ID error:", error);
             return sendError(
                 res,
                 500,
@@ -113,7 +113,7 @@ class ParkingController {
                 }
             );
         } catch (error) {
-            console.error("Get spots by type error:", error);
+            console.error("get spots by type error:", error);
             return sendError(
                 res,
                 500,

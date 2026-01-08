@@ -49,10 +49,10 @@ export const sendVerificationOTP = async (
         };
 
         await transporter.sendMail(mailOptions);
-        console.log(`[EMAIL] Verification OTP sent to: ${email}`);
+        console.log(`[email] Verification OTP sent to: ${email}`);
         return true;
     } catch (error) {
-        console.error("[EMAIL] Error sending verification OTP:", error);
+        console.error("[email] Error sending verification OTP:", error);
         throw error;
     }
 };
@@ -94,10 +94,10 @@ export const sendPasswordResetOTP = async (
         console.log(
             `[EMAIL] Password reset OTP sent to: ${email} (MOCKED: ${otp})`
         );
-        console.log(`[EMAIL] Password reset OTP sent to: ${email}`);
+        console.log(`[email] Password reset OTP sent to: ${email}`);
         return true;
     } catch (error) {
-        console.error("[EMAIL] Error sending password reset OTP:", error);
+        console.error("[email] Error sending password reset OTP:", error);
         throw error;
     }
 };
@@ -136,10 +136,10 @@ export const sendWelcomeEmail = async (
         };
 
         await transporter.sendMail(mailOptions);
-        console.log(`[EMAIL] Welcome email sent to: ${email}`);
+        console.log(`[email] Welcome email sent to: ${email}`);
         return true;
     } catch (error) {
-        console.error("[EMAIL] Error sending welcome email:", error);
+        console.error("[email] Error sending welcome email:", error);
         // Don't throw error for welcome email to prevent disrupting the verification flow
         return false;
     }

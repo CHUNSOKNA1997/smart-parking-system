@@ -23,25 +23,25 @@ export function validateEnvironment() {
     }
 
     if (missing.length > 0) {
-        console.error('ERROR: Missing required environment variables:');
+        console.error('error: Missing required environment variables:');
         missing.forEach(v => console.error(`   - ${v}`));
-        console.error('\nNOTE: Please check your .env file');
+        console.error('\nnote: Please check your .env file');
         process.exit(1);
     }
 
     // Validate JWT_SECRET length
     const jwtSecret = process.env.JWT_SECRET as string;
     if (jwtSecret.length < 32) {
-        console.error('ERROR: JWT_SECRET must be at least 32 characters long');
+        console.error('error: JWT_SECRET must be at least 32 characters long');
         process.exit(1);
     }
 
     // Validate SMTP_PORT is a number
     const smtpPort = parseInt(process.env.SMTP_PORT as string);
     if (isNaN(smtpPort)) {
-        console.error('ERROR: SMTP_PORT must be a valid number');
+        console.error('error: SMTP_PORT must be a valid number');
         process.exit(1);
     }
 
-    console.log('SUCCESS: Environment variables validated successfully');
+    console.log('success: Environment variables validated successfully');
 }

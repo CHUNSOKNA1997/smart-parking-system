@@ -309,9 +309,9 @@ router.post(
     authenticateToken,
     (req, res, next) => {
         // Debug logging
-        console.log('[UPLOAD] Headers:', req.headers);
-        console.log('[UPLOAD] Content-Type:', req.headers['content-type']);
-        console.log('[UPLOAD] Content-Length:', req.headers['content-length']);
+        console.log('[upload] Headers:', req.headers);
+        console.log('[upload] Content-Type:', req.headers['content-type']);
+        console.log('[upload] Content-Length:', req.headers['content-length']);
         next();
     },
     uploadProfile.single("image"),

@@ -18,10 +18,10 @@ export const authenticateIoT = (
             );
         }
 
-        const validApiKey = process.env.IOT_API_KEY;
+        const validApiKey = process.env.iot api key;
 
         if (!validApiKey) {
-            console.error("IOT_API_KEY not configured in environment");
+            console.error("iot api key not configured in environment");
             return sendError(
                 res,
                 500,

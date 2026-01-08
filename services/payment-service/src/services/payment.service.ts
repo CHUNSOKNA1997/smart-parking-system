@@ -43,7 +43,7 @@ class PaymentService {
             const needsFetch = bookings.some(b => !b.amount);
             
             if (needsFetch) {
-                console.log('[PAYMENT SERVICE] Fetching booking details from booking service...');
+                console.log('[payment service] Fetching booking details from booking service...');
                 
                 const bookingIds = bookings.map(b => b.bookingId);
                 const bookingDetails = await bookingServiceClient.getBookings(bookingIds, authToken);
@@ -56,7 +56,7 @@ class PaymentService {
                         `${bookingDetails[index].spotId} - ${bookingDetails[index].durationHours}h`
                 }));
                 
-                console.log('[PAYMENT SERVICE] Booking details fetched successfully');
+                console.log('[payment service] Booking details fetched successfully');
             }
 
             // Calculate total amount
@@ -75,7 +75,7 @@ class PaymentService {
             if (!currency && needsFetch) {
                 const firstBooking = await bookingServiceClient.getBooking(bookings[0].bookingId, authToken);
                 currency = firstBooking.currency as any;
-                console.log(`[PAYMENT SERVICE] Using currency from booking: ${currency}`);
+                console.log(`[payment service] Using currency from booking: ${currency}`);
             }
             currency = currency || 'USD'; // Default fallback
 

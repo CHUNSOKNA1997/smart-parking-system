@@ -6,9 +6,9 @@ const prisma = new PrismaClient();
 // Handle connection
 prisma
     .$connect()
-    .then(() => console.log("SUCCESS: Prisma connected to database"))
+    .then(() => console.log("success: Prisma connected to database"))
     .catch((err) => {
-        console.error("ERROR: Prisma connection failed:", err);
+        console.error("error: Prisma connection failed:", err);
         process.exit(1);
     });
 

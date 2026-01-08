@@ -82,13 +82,13 @@ export class PayWayService {
 
         // Validate configuration
         if (!this.merchantId || !this.apiKey) {
-            console.error("[PAYWAY] Missing configuration! Check .env file:");
+            console.error("[payway] Missing configuration! Check .env file:");
             console.error("- PAYWAY_MERCHANT_ID");
             console.error("- PAYWAY_API_KEY");
             throw new Error("PayWay configuration incomplete");
         }
 
-        console.log("[PAYWAY] Initialized with:");
+        console.log("[payway] Initialized with:");
         console.log("- Merchant ID:", this.merchantId);
         console.log("- API URL:", this.generateQrUrl);
         console.log("- Webhook Base URL:", this.webhookBaseUrl || "Not configured (localhost only)");
@@ -102,28 +102,28 @@ export class PayWayService {
         if (process.env.NODE_ENV !== "production") {
             this.axiosInstance.interceptors.request.use(
                 (config) => {
-                    console.log("[PAYWAY] API Request:", {
+                    console.log("[payway] API Request:", {
                         url: config.url,
                         method: config.method?.toUpperCase(),
                     });
                     return config;
                 },
                 (error) => {
-                    console.error("[PAYWAY] Request Error:", error);
+                    console.error("[payway] Request Error:", error);
                     return Promise.reject(error);
                 }
             );
 
             this.axiosInstance.interceptors.response.use(
                 (response) => {
-                    console.log("[PAYWAY] API Response:", {
+                    console.log("[payway] API Response:", {
                         status: response.status,
                         statusCode: response.data?.status?.code,
                     });
                     return response;
                 },
                 (error) => {
-                    console.error("[PAYWAY] Response Error:", {
+                    console.error("[payway] Response Error:", {
                         status: error.response?.status,
                         data: error.response?.data,
                     });
@@ -161,7 +161,7 @@ export class PayWayService {
         try {
             // Step 1: Generate unique transaction ID
             const tranId = PayWayUtils.generateTransactionId(request.bookingId);
-            console.log(`[PAYWAY] Generating QR for transaction: ${tranId}`);
+            console.log(`[payway] Generating QR for transaction: ${tranId}`);
 
             // Step 2: Get Unix timestamp (NOT formatted string!)
             const reqTime = Math.floor(Date.now() / 1000); // Unix timestamp
@@ -247,8 +247,8 @@ export class PayWayService {
                 hash: hash,
             };
 
-            console.log("[PAYWAY] Calling Purchase API...");
-            console.log("[PAYWAY] Payload:", JSON.stringify(payload, null, 2));
+            console.log("[payway] Calling Purchase API...");
+            console.log("[payway] Payload:", JSON.stringify(payload, null, 2));
 
             // Step 8: Call PayWay Purchase API with FORM DATA (not JSON!)
             const response = await this.axiosInstance.post<PayWayResponse>(
@@ -272,15 +272,15 @@ export class PayWayService {
                 );
             }
 
-            console.log(`[PAYWAY] PayWay Response:`, JSON.stringify(response.data, null, 2));
+            console.log(`[payway] PayWay Response:`, JSON.stringify(response.data, null, 2));
 
             // Step 10: Calculate expiration time (15 minutes from now)
             const expiresAt = new Date(Date.now() + 15 * 60 * 1000);
 
-            console.log(`[PAYWAY] Payment created successfully for ${tranId}`);
-            console.log(`[PAYWAY] QR String: ${response.data.qrString ? 'Present' : 'Missing'}`);
-            console.log(`[PAYWAY] QR Image: ${response.data.qrImage ? 'Present' : 'Missing'}`);
-            console.log(`[PAYWAY] Deeplink: ${response.data.abapay_deeplink || 'N/A'}`);
+            console.log(`[payway] Payment created successfully for ${tranId}`);
+            console.log(`[payway] QR String: ${response.data.qrString ? 'Present' : 'Missing'}`);
+            console.log(`[payway] QR Image: ${response.data.qrImage ? 'Present' : 'Missing'}`);
+            console.log(`[payway] Deeplink: ${response.data.abapay_deeplink || 'N/A'}`);
 
             // Step 11: Return formatted result
             return {
@@ -292,12 +292,12 @@ export class PayWayService {
             };
         } catch (error: any) {
             // Handle errors
-            console.error("[PAYWAY] Generate QR failed:", error.message);
+            console.error("[payway] Generate QR failed:", error.message);
 
             if (error.response?.data) {
                 // PayWay API returned error
                 const apiError = error.response.data;
-                console.error("[PAYWAY] API Error Details:", JSON.stringify(apiError, null, 2));
+                console.error("[payway] API Error Details:", JSON.stringify(apiError, null, 2));
                 throw new Error(
                     `PayWay Error: ${
                         apiError.status?.message || JSON.stringify(apiError)
@@ -392,7 +392,7 @@ export class PayWayService {
             additionalParams +
             googlePayToken;
 
-        console.log(`[PAYWAY] Hash string (first 100 chars): ${dataToHash.substring(0, 100)}...`);
+        console.log(`[payway] Hash string (first 100 chars): ${dataToHash.substring(0, 100)}...`);
 
         // Generate HMAC-SHA512 with BINARY output (true parameter)
         const hmac = crypto.createHmac("sha512", this.apiKey);
@@ -401,7 +401,7 @@ export class PayWayService {
 
         // Then base64 encode the binary hash
         const hash = binaryHash.toString('base64');
-        console.log(`[PAYWAY] Generated hash: ${hash}`);
+        console.log(`[payway] Generated hash: ${hash}`);
 
         return hash;
     }
