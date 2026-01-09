@@ -25,8 +25,14 @@ class PaymentService {
         request: CreatePaymentRequest,
         authToken: string
     ): Promise<CreatePaymentResponse> {
+        const normalizedMethod = (request.paymentMethod || "payway").toLowerCase();
+        const resolvedMethod =
+            normalizedMethod === "khqr" || normalizedMethod === "aba"
+                ? "payway"
+                : normalizedMethod;
+
         // Only support PayWay QR now
-        if (request.paymentMethod === "payway") {
+        if (resolvedMethod === "payway") {
             // Normalize bookings - support both legacy single booking and new array
             let bookings = request.bookings || 
                 (request.bookingId ? [{ 

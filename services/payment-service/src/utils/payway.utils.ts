@@ -180,14 +180,14 @@ export class PayWayUtils {
      * @returns Amount in smallest unit
      *
      * @example
-     * PayWayUtils.convertAmount(5.00, "USD")  // Returns: 500
+     * PayWayUtils.convertAmount(5.00, "USD")  // Returns: 5.00
      * PayWayUtils.convertAmount(4100, "KHR")  // Returns: 4100
      */
     static convertAmount(amount: number, currency: string): number {
         if (currency === "KHR") {
             return Math.round(amount); // KHR has no decimals
         }
-        return Math.round(amount * 100); // USD to cents
+        return Number(amount.toFixed(2)); // USD uses decimal amount
     }
 
     /**
@@ -201,14 +201,14 @@ export class PayWayUtils {
      * @returns Amount in dollars/riel
      *
      * @example
-     * PayWayUtils.convertFromSmallestUnit(500, "USD")  // Returns: 5.00
+     * PayWayUtils.convertFromSmallestUnit(500, "USD")  // Returns: 500
      * PayWayUtils.convertFromSmallestUnit(4100, "KHR") // Returns: 4100
      */
     static convertFromSmallestUnit(amount: number, currency: string): number {
         if (currency === "KHR") {
             return amount; // KHR has no decimals
         }
-        return amount / 100; // Cents to dollars
+        return amount; // USD already in decimal amount
     }
 
     /**

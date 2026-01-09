@@ -21,8 +21,8 @@ export const createBookingSchema = Joi.object({
         "number.max": "Duration cannot exceed 24 hours",
     }),
 
-    paymentMethod: Joi.string().valid("aba", "khqr").optional().messages({
-        "any.only": "Payment method must be either 'aba' or 'khqr'",
+    paymentMethod: Joi.string().valid("aba", "khqr", "payway").optional().messages({
+        "any.only": "Payment method must be one of: 'aba', 'khqr', or 'payway'",
     }),
 
     currency: Joi.string().valid("USD", "KHR").optional().messages({

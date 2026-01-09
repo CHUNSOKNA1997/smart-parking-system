@@ -62,6 +62,12 @@ export const createPaymentSchema = Joi.object({
     description: Joi.string().max(500).optional().messages({
         "string.max": "Description cannot exceed 500 characters",
     }),
+    paymentMethod: Joi.string()
+        .valid("payway", "khqr", "aba")
+        .optional()
+        .messages({
+            "any.only": "Payment method must be 'payway', 'khqr', or 'aba'",
+        }),
 })
     .or("bookingId", "bookings")
     .messages({

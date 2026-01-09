@@ -17,6 +17,7 @@ import type { Request, Response } from "express";
 import { payWayQRService } from "../services/payway.service.js";
 import { successResponse, errorResponse } from "../utils/response.js";
 import prisma from "../config/prisma.js";
+import axios from "axios";
 import { PaymentStatus } from "@prisma/client";
 import { PayWayUtils } from "../utils/payway.utils.js";
 
@@ -412,12 +413,31 @@ export class PayWayController {
 
                 console.log(`[payway webhook] Payment marked as PAID: ${payment.id}`);
 
-                // Step 7: Update booking status (via API call to booking service)
-                // TODO: If you have a booking service, call it here to update booking status
-                // For now, we just log the booking ID
                 if (payment.bookingId) {
                     console.log(`[payway webhook] Booking to confirm: ${payment.bookingId}`);
-                    // Example: await bookingService.updateStatus(payment.bookingId, "CONFIRMED");
+                    const parkingServiceUrl = process.env.PARKING_SERVICE_URL || "http://localhost:3002";
+                    const bookingUpdateUrl = `${parkingServiceUrl}/api/v1/bookings/${payment.bookingId}/confirm-payment`;
+                    try {
+                        await axios.post(
+                            bookingUpdateUrl,
+                            {
+                                paymentId: payment.id,
+                                transactionId: payment.id,
+                                amount: Number(payment.amount),
+                            },
+                            {
+                                headers: {
+                                    "Content-Type": "application/json",
+                                },
+                            }
+                        );
+                        console.log(`[payway webhook] Booking ${payment.bookingId} updated successfully`);
+                    } catch (bookingError: any) {
+                        console.error(
+                            "[payway webhook] Failed to update booking:",
+                            bookingError.response?.data || bookingError.message
+                        );
+                    }
                 }
 
                 console.log("[payway webhook] Payment processing complete");
