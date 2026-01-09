@@ -90,6 +90,24 @@ router.post("/:id/confirm", (req, res) =>
 
 /**
  * @swagger
+ * /api/v1/payments/me:
+ *   get:
+ *     summary: Get all payments for the authenticated user
+ *     tags: [Payments]
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Payments retrieved successfully
+ *       401:
+ *         description: Unauthorized
+ *       500:
+ *         description: Server error
+ */
+router.get("/me", (req, res) => paymentController.getMyPayments(req, res));
+
+/**
+ * @swagger
  * /api/v1/payments/user/{userId}:
  *   get:
  *     summary: Get all payments for a specific user

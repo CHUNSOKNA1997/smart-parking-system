@@ -175,6 +175,15 @@ export class PaymentController {
     async getUserPayments(req: Request, res: Response): Promise<void> {
         try {
             const { userId } = req.params;
+            const authUserId = req.user?.userId;
+            if (!authUserId) {
+                res.status(401).json(errorResponse("Unauthorized", "UNAUTHORIZED"));
+                return;
+            }
+            if (authUserId !== userId) {
+                res.status(403).json(errorResponse("Access denied", "FORBIDDEN"));
+                return;
+            }
 
             const payments = await paymentService.getPaymentsByUserId(userId);
 
@@ -183,6 +192,32 @@ export class PaymentController {
             );
         } catch (error: any) {
             console.error("[payment] Get user payments error:", error);
+            res.status(500).json(
+                errorResponse("Failed to retrieve payments", error.message)
+            );
+        }
+    }
+
+    /**
+     * Retrieves all payments for the authenticated user.
+     *
+     * @route GET /api/v1/payments/me
+     */
+    async getMyPayments(req: Request, res: Response): Promise<void> {
+        try {
+            const userId = req.user?.userId;
+            if (!userId) {
+                res.status(401).json(errorResponse("Unauthorized", "UNAUTHORIZED"));
+                return;
+            }
+
+            const payments = await paymentService.getPaymentsByUserId(userId);
+
+            res.status(200).json(
+                successResponse("Payments retrieved successfully", payments)
+            );
+        } catch (error: any) {
+            console.error("[payment] Get my payments error:", error);
             res.status(500).json(
                 errorResponse("Failed to retrieve payments", error.message)
             );
