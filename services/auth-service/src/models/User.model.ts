@@ -84,6 +84,16 @@ class UserModel {
         });
     }
 
+    // Get password hash for authenticated user
+    static async getPasswordHashById(userId: string): Promise<string | null> {
+        const user = await prisma.user.findUnique({
+            where: { id: userId },
+            select: { passwordHash: true },
+        });
+
+        return user?.passwordHash ?? null;
+    }
+
     // Find user by email and OTP
     static async findByOTP(email: string, otp: string): Promise<User | null> {
         return await prisma.user.findFirst({

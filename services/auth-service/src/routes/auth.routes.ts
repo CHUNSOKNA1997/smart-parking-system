@@ -16,6 +16,7 @@ import {
     resetPasswordSchema,
     otpVerificationSchema,
     updateUserSchema,
+    changePasswordSchema,
 } from "../validators/auth.validator.js";
 import { uploadProfile, handleUploadError } from "../middleware/upload.middleware.js";
 
@@ -250,6 +251,43 @@ router.post(
     "/password/reset",
     validate(resetPasswordSchema),
     AuthController.resetPassword
+);
+
+/**
+ * @swagger
+ * /api/v1/auth/password/change:
+ *   post:
+ *     summary: Change password (authenticated user)
+ *     tags: [Password]
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - currentPassword
+ *               - newPassword
+ *             properties:
+ *               currentPassword:
+ *                 type: string
+ *               newPassword:
+ *                 type: string
+ *     responses:
+ *       200:
+ *         description: Password changed successfully
+ *       400:
+ *         description: Invalid password
+ *       401:
+ *         description: Unauthorized
+ */
+router.post(
+    "/password/change",
+    authenticateToken,
+    validate(changePasswordSchema),
+    AuthController.changePassword
 );
 
 /**

@@ -571,6 +571,65 @@ class AuthController {
 
     /**
      * @swagger
+     * /api/v1/auth/password/change:
+     *   post:
+     *     summary: Change password (authenticated user)
+     *     tags: [Password]
+     *     security:
+     *       - bearerAuth: []
+     *     requestBody:
+     *       required: true
+     *       content:
+     *         application/json:
+     *           schema:
+     *             type: object
+     *             required:
+     *               - currentPassword
+     *               - newPassword
+     *             properties:
+     *               currentPassword:
+     *                 type: string
+     *               newPassword:
+     *                 type: string
+     *     responses:
+     *       200:
+     *         description: Password changed successfully
+     *       400:
+     *         description: Invalid password
+     *       401:
+     *         description: Unauthorized
+     */
+    static async changePassword(req: AuthRequest, res: Response): Promise<Response> {
+        try {
+            const userId = req.user!.userId;
+            const { currentPassword, newPassword } = req.body;
+
+            const passwordHash = await UserModel.getPasswordHashById(userId);
+            if (!passwordHash) {
+                return sendError(res, 404, "User not found");
+            }
+
+            const matches = await bcrypt.compare(currentPassword, passwordHash);
+            if (!matches) {
+                return sendError(res, 400, "Current password is incorrect");
+            }
+
+            if (currentPassword === newPassword) {
+                return sendError(res, 400, "New password must be different");
+            }
+
+            const newHash = await bcrypt.hash(newPassword, 10);
+            await UserModel.updatePassword(userId, newHash);
+
+            return sendSuccess(res, 200, "Password changed successfully");
+        } catch (error) {
+            console.error("[auth] Change password error:", error);
+            return sendError(res, 500, "Internal server error", error.message);
+        }
+    }
+
+    /**
+     * @swagger
      * /api/v1/auth/token/verify:
      *   post:
      *     summary: Verify JWT token for microservices

@@ -85,6 +85,21 @@ const resetPasswordSchema = Joi.object({
         }),
 });
 
+// Change password schema (authenticated user)
+const changePasswordSchema = Joi.object({
+    currentPassword: Joi.string().required().messages({
+        "string.empty": "Current password is required",
+    }),
+
+    newPassword: Joi.string()
+        .min(PASSWORD_MIN_LENGTH)
+        .required()
+        .messages({
+            "string.empty": "New password is required",
+            "string.min": `Password must be at least ${PASSWORD_MIN_LENGTH} characters`,
+        }),
+});
+
 // Update user validation schema
 const updateUserSchema = Joi.object({
     firstName: Joi.string().min(2).max(50).messages({
@@ -132,4 +147,5 @@ export {
     resetPasswordSchema,
     otpVerificationSchema,
     updateUserSchema,
+    changePasswordSchema,
 };
