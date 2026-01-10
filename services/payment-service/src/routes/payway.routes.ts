@@ -45,7 +45,7 @@ const router = Router();
  */
 router.get(
     "/:paymentId/status",
-    validate(paymentIdSchema),
+    validate(paymentIdSchema, "params"),
     (req, res) => payWayController.checkPaymentStatus(req, res)
 );
 

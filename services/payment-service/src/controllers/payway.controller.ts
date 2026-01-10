@@ -243,7 +243,9 @@ export class PayWayController {
 
             // Verify payment belongs to user (only when authenticated)
             if (userId && payment.userId !== userId) {
-                res.status(403).json(errorResponse("Access denied"));
+                res.status(403).json(
+                    errorResponse("Payment does not belong to this user")
+                );
                 return;
             }
 
