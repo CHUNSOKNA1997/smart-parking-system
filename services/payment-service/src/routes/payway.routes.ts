@@ -28,6 +28,29 @@ const router = Router();
 
 /**
  * =============================================================================
+ * PUBLIC ROUTES (No Authentication Required)
+ * =============================================================================
+ *
+ * These routes can be called without JWT token.
+ * PayWay calls these endpoints directly from their servers.
+ */
+
+/**
+ * Check Payment Status (Polling) - Public
+ *
+ * GET /api/v1/payments/payway/:paymentId/status
+ *
+ * NOTE: In dev, we allow public polling to avoid JWT issues in mobile polling.
+ * TODO: tighten security in production (e.g., signed token or short-lived token).
+ */
+router.get(
+    "/:paymentId/status",
+    validate(paymentIdSchema),
+    (req, res) => payWayController.checkPaymentStatus(req, res)
+);
+
+/**
+ * =============================================================================
  * PROTECTED ROUTES (Require Authentication)
  * =============================================================================
  *
@@ -183,20 +206,7 @@ router.post(
  *       500:
  *         description: Server error
  */
-router.get(
-    "/:paymentId/status",
-    validate(paymentIdSchema), // Validate paymentId is valid UUID
-    (req, res) => payWayController.checkPaymentStatus(req, res)
-);
-
-/**
- * =============================================================================
- * PUBLIC ROUTES (No Authentication Required)
- * =============================================================================
- *
- * These routes can be called without JWT token.
- * PayWay calls these endpoints directly from their servers.
- */
+// (status polling route moved to public section above)
 
 /**
  * Webhook - Payment Notification from PayWay

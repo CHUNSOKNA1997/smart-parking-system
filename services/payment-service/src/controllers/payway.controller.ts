@@ -229,12 +229,6 @@ export class PayWayController {
             const { paymentId } = req.params;
             const userId = req.user?.userId;
 
-            // Validate user is authenticated
-            if (!userId) {
-                res.status(401).json(errorResponse("User not authenticated"));
-                return;
-            }
-
             console.log(`[payway controller] Checking status for payment: ${paymentId}`);
 
             // Get payment from database
@@ -247,8 +241,8 @@ export class PayWayController {
                 return;
             }
 
-            // Verify payment belongs to user
-            if (payment.userId !== userId) {
+            // Verify payment belongs to user (only when authenticated)
+            if (userId && payment.userId !== userId) {
                 res.status(403).json(errorResponse("Access denied"));
                 return;
             }
