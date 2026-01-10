@@ -40,8 +40,8 @@ docs/CONVERSATION-DATASET-README.md
 docs/DATASET-SUMMARY.md
 conversation-dataset.json
 IoT/
-docs/frontend-kotlin-integration.md
-credentials/credential_info.txt
+docs/*
 docs/payway/PAYWAY_INTEGRATION_GUIDE.md
 docs/payway/payway-integration.md
 docs/postman-testing-guide.md
+credentials/credential_info.txt
