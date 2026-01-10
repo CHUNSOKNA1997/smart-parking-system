@@ -30,6 +30,7 @@ interface GeneratePaymentRequest {
     customerPhone?: string; // Optional: User's phone
     customerEmail?: string; // Optional: User's email
     paymentOption?: string; // "abapay", "cards", "alipay", "wechat", etc.
+    qrImageTemplate?: string; // Optional: PayWay QR image template
 }
 
 /**
@@ -200,6 +201,7 @@ export class PayWayService {
             const currency = request.currency;
             const customFields = "";
             const returnParams = ""; // Can encode booking info here if needed
+            const qrImageTemplate = request.qrImageTemplate || "template4_color";
 
             // Step 6: Generate HMAC-SHA512 hash with ALL fields
             const hash = this.generateQRHash(
@@ -220,11 +222,12 @@ export class PayWayService {
                 returnDeeplink,
                 currency,
                 customFields,
-                returnParams
+                returnParams,
+                qrImageTemplate
             );
 
             // Step 7: Prepare request payload for Purchase API (FORM DATA FORMAT)
-            const payload = {
+            const payload: Record<string, string> = {
                 req_time: reqTime.toString(),
                 merchant_id: this.merchantId,
                 tran_id: tranId,
@@ -246,7 +249,10 @@ export class PayWayService {
                 return_params: returnParams,
                 hash: hash,
             };
+            // Always add qr_image_template (default is template4_color)
+            payload.qr_image_template = qrImageTemplate;
 
+            console.log("[payway] Using QR template:", qrImageTemplate);
             console.log("[payway] Calling Purchase API...");
             console.log("[payway] Payload:", JSON.stringify(payload, null, 2));
 
@@ -279,7 +285,7 @@ export class PayWayService {
 
             console.log(`[payway] Payment created successfully for ${tranId}`);
             console.log(`[payway] QR String: ${response.data.qrString ? 'Present' : 'Missing'}`);
-            console.log(`[payway] QR Image: ${response.data.qrImage ? 'Present' : 'Missing'}`);
+            console.log(`[payway] QR Image: ${response.data.qrImage ? `Present (${response.data.qrImage.length} chars)` : 'Missing'}`);
             console.log(`[payway] Deeplink: ${response.data.abapay_deeplink || 'N/A'}`);
 
             // Step 11: Return formatted result
@@ -319,7 +325,7 @@ export class PayWayService {
      * Generates HMAC-SHA512 hash for Purchase API
      *
      * Based on working Laravel implementation.
-     * Hash includes 23 fields in exact order!
+     * Hash includes required fields in exact order.
      *
      * @param reqTime - Unix timestamp (not formatted string!)
      * @param tranId - Transaction ID
@@ -359,9 +365,11 @@ export class PayWayService {
         returnDeeplink: string,
         currency: string,
         customFields: string,
-        returnParams: string
+        returnParams: string,
+        qrImageTemplate: string
     ): string {
-        // Build hash string - ALL 23 FIELDS IN EXACT ORDER!
+        // Build hash string - ALL REQUIRED FIELDS IN EXACT ORDER!
+        const qrImageTemplateValue = qrImageTemplate || '';
         const payout = '';
         const lifetime = '';
         const additionalParams = '';
@@ -387,6 +395,7 @@ export class PayWayService {
             currency +
             customFields +
             returnParams +
+            qrImageTemplateValue +
             payout +
             lifetime +
             additionalParams +
