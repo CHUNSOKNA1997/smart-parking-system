@@ -76,10 +76,13 @@ export class PayWayService {
         this.apiKey = process.env.PAYWAY_API_KEY || "";
         this.webhookBaseUrl = process.env.PAYWAY_WEBHOOK_BASE_URL || "";
 
-        // PayWay Purchase API endpoint (from your credentials)
+        // PayWay API endpoints
+        // NOTE: There are TWO different endpoints:
+        // 1. /purchase - For full checkout (NO template support)
+        // 2. /generate-qr - For direct QR generation (WITH template support)
         this.generateQrUrl =
-            process.env.PAYWAY_API_URL ||
-            "https://checkout-sandbox.payway.com.kh/api/payment-gateway/v1/payments/purchase";
+            process.env.PAYWAY_GENERATE_QR_URL ||
+            "https://checkout-sandbox.payway.com.kh/api/payment-gateway/v1/payments/generate-qr";
 
         // Validate configuration
         if (!this.merchantId || !this.apiKey) {
@@ -201,9 +204,9 @@ export class PayWayService {
             const currency = request.currency;
             const customFields = "";
             const returnParams = ""; // Can encode booking info here if needed
-            const qrImageTemplate = request.qrImageTemplate || "template4_color";
 
             // Step 6: Generate HMAC-SHA512 hash with ALL fields
+            // NOTE: qr_image_template is NOT supported by PayWay Purchase API
             const hash = this.generateQRHash(
                 reqTime,
                 tranId,
@@ -222,8 +225,7 @@ export class PayWayService {
                 returnDeeplink,
                 currency,
                 customFields,
-                returnParams,
-                qrImageTemplate
+                returnParams
             );
 
             // Step 7: Prepare request payload for Purchase API (FORM DATA FORMAT)
@@ -249,12 +251,10 @@ export class PayWayService {
                 return_params: returnParams,
                 hash: hash,
             };
-            // Always add qr_image_template (default is template4_color)
-            payload.qr_image_template = qrImageTemplate;
 
-            console.log("[payway] Using QR template:", qrImageTemplate);
             console.log("[payway] Calling Purchase API...");
-            console.log("[payway] Payload:", JSON.stringify(payload, null, 2));
+            console.log("[payway] Note: qr_image_template not supported by Purchase API - PayWay returns raw QR");
+            console.log("[payway] Payload (without template):", JSON.stringify(payload, null, 2));
 
             // Step 8: Call PayWay Purchase API with FORM DATA (not JSON!)
             const response = await this.axiosInstance.post<PayWayResponse>(
@@ -327,6 +327,9 @@ export class PayWayService {
      * Based on working Laravel implementation.
      * Hash includes required fields in exact order.
      *
+     * NOTE: qr_image_template is NOT included because PayWay's Purchase API
+     * does not support styled QR templates. It always returns a plain B&W QR code.
+     *
      * @param reqTime - Unix timestamp (not formatted string!)
      * @param tranId - Transaction ID
      * @param amount - Amount in cents as string
@@ -365,11 +368,9 @@ export class PayWayService {
         returnDeeplink: string,
         currency: string,
         customFields: string,
-        returnParams: string,
-        qrImageTemplate: string
+        returnParams: string
     ): string {
         // Build hash string - ALL REQUIRED FIELDS IN EXACT ORDER!
-        const qrImageTemplateValue = qrImageTemplate || '';
         const payout = '';
         const lifetime = '';
         const additionalParams = '';
@@ -395,7 +396,6 @@ export class PayWayService {
             currency +
             customFields +
             returnParams +
-            qrImageTemplateValue +
             payout +
             lifetime +
             additionalParams +

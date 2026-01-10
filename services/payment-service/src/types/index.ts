@@ -31,6 +31,7 @@ export interface CreatePaymentRequest {
     currency?: PaymentCurrency; // Optional: will fetch from booking if not provided
     description?: string;
     paymentMethod?: "payway";
+    qrImageTemplate?: string;
 }
 
 export interface CreatePaymentResponse {

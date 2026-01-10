@@ -67,6 +67,10 @@ export const generateQRSchema = Joi.object({
     description: Joi.string().max(500).optional().messages({
         "string.max": "Description cannot exceed 500 characters",
     }),
+
+    qrImageTemplate: Joi.string().max(50).optional().messages({
+        "string.max": "QR image template name too long",
+    }),
 });
 
 /**

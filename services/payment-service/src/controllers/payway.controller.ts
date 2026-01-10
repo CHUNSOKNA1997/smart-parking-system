@@ -69,7 +69,7 @@ export class PayWayController {
             console.log("[payway controller] Generate QR request received");
 
             // Extract data from request
-            const { bookingId, amount, currency, description } = req.body;
+            const { bookingId, amount, currency, description, qrImageTemplate } = req.body;
             const userId = req.user?.userId; // From auth middleware
 
             // Step 1: Validate user is authenticated
@@ -148,6 +148,7 @@ export class PayWayController {
                 customerName,
                 customerEmail,
                 customerPhone,
+                qrImageTemplate,
             });
 
             console.log(`[payway controller] Payment created: ${qrResult.tranId}`);

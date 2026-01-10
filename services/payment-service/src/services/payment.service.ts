@@ -92,6 +92,7 @@ class PaymentService {
                 currency: currency as any,
                 description: request.description || 
                     `Payment for ${bookings.length} booking${bookings.length > 1 ? 's' : ''}`,
+                qrImageTemplate: request.qrImageTemplate,
             });
 
             // Create payment record with bookings in a transaction

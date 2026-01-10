@@ -68,6 +68,9 @@ export const createPaymentSchema = Joi.object({
         .messages({
             "any.only": "Payment method must be 'payway', 'khqr', or 'aba'",
         }),
+    qrImageTemplate: Joi.string().max(50).optional().messages({
+        "string.max": "QR image template name too long",
+    }),
 })
     .or("bookingId", "bookings")
     .messages({
