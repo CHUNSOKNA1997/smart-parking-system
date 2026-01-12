@@ -90,6 +90,35 @@ router.post("/:id/confirm", (req, res) =>
 
 /**
  * @swagger
+ * /api/v1/payments/{id}/cancel:
+ *   post:
+ *     summary: Cancel a payment (and booking if applicable)
+ *     tags: [Payments]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *           format: uuid
+ *     responses:
+ *       200:
+ *         description: Payment cancelled
+ *       400:
+ *         description: Payment already completed
+ *       404:
+ *         description: Payment not found
+ *       403:
+ *         description: Access denied
+ */
+router.post("/:id/cancel", (req, res) =>
+    paymentController.cancelPayment(req, res)
+);
+
+/**
+ * @swagger
  * /api/v1/payments/me:
  *   get:
  *     summary: Get all payments for the authenticated user

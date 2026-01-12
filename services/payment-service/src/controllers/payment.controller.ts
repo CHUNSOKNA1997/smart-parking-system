@@ -168,6 +168,98 @@ export class PaymentController {
     }
 
     /**
+     * Cancels a payment and updates booking status if needed.
+     *
+     * @route POST /api/v1/payments/:id/cancel
+     */
+    async cancelPayment(req: Request, res: Response): Promise<void> {
+        try {
+            const { id } = req.params;
+            const userId = req.user?.userId;
+
+            if (!userId) {
+                res.status(401).json(errorResponse("User not authenticated"));
+                return;
+            }
+
+            const payment = await paymentService.getPaymentById(id);
+
+            if (!payment) {
+                res.status(404).json(errorResponse("Payment not found"));
+                return;
+            }
+
+            if (payment.userId !== userId) {
+                res.status(403).json(errorResponse("Access denied"));
+                return;
+            }
+
+            if (payment.status === PaymentStatus.PAID) {
+                res.status(400).json(errorResponse("Payment already completed"));
+                return;
+            }
+
+            if (payment.status === PaymentStatus.CANCELLED) {
+                res.status(200).json(
+                    successResponse("Payment already cancelled", { payment })
+                );
+                return;
+            }
+
+            const updatedPayment = await prisma.transaction.update({
+                where: { id: payment.id },
+                data: {
+                    status: PaymentStatus.CANCELLED,
+                },
+            });
+
+            console.log(`[payment] Payment ${payment.id} marked as CANCELLED`);
+
+            if (payment.bookingId) {
+                try {
+                    const parkingServiceUrl =
+                        process.env.PARKING_SERVICE_URL || "http://localhost:3002";
+                    const bookingCancelUrl = `${parkingServiceUrl}/api/v1/bookings/${payment.bookingId}/cancel-payment`;
+
+                    console.log(
+                        `[payment] Cancelling booking ${payment.bookingId} via ${bookingCancelUrl}`
+                    );
+
+                    await axios.post(
+                        bookingCancelUrl,
+                        {
+                            paymentId: payment.id,
+                            amount: Number(payment.amount),
+                        },
+                        {
+                            headers: {
+                                "Content-Type": "application/json",
+                            },
+                        }
+                    );
+                } catch (bookingError: any) {
+                    console.error(
+                        "[PAYMENT] Failed to cancel booking:",
+                        bookingError.response?.data || bookingError.message
+                    );
+                }
+            }
+
+            res.status(200).json(
+                successResponse("Payment cancelled successfully", {
+                    payment: updatedPayment,
+                    bookingUpdated: !!payment.bookingId,
+                })
+            );
+        } catch (error: any) {
+            console.error("[payment] Cancel payment error:", error);
+            res.status(500).json(
+                errorResponse("Failed to cancel payment", error.message)
+            );
+        }
+    }
+
+    /**
      * Retrieves all payments for a specific user.
      *
      * @route GET /api/v1/users/:userId/payments
