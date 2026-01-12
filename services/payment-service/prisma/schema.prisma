@@ -27,10 +27,8 @@ enum Currency {
     KHR
 }
 
-// PayWay Payments table
-// NOTE: Model name kept as KHQRPayment for backward compatibility with existing database
-// Table maps to "khqr_payments" to avoid migration
-model KHQRPayment {
+// Transactions table
+model Transaction {
     id                String         @id @default(uuid()) @map("payment_id") @db.Uuid
     bookingId         String?        @map("booking_id") @db.Uuid // Deprecated: kept for backward compatibility
     userId            String         @map("user_id") @db.Uuid
@@ -56,7 +54,7 @@ model KHQRPayment {
     @@index([status])
     @@index([transactionHash])
     @@index([createdAt])
-    @@map("khqr_payments")
+    @@map("transactions")
 }
 
 // Payment-Booking Junction Table
@@ -69,7 +67,7 @@ model PaymentBooking {
     createdAt   DateTime     @default(now()) @map("created_at")
 
     // Relations
-    payment     KHQRPayment  @relation(fields: [paymentId], references: [id], onDelete: Cascade)
+    payment     Transaction  @relation(fields: [paymentId], references: [id], onDelete: Cascade)
 
     @@unique([paymentId, bookingId])
     @@index([paymentId])

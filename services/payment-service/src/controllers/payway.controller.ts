@@ -154,7 +154,7 @@ export class PayWayController {
             console.log(`[payway controller] Payment created: ${qrResult.tranId}`);
 
             // Step 8: Save payment record to database
-            const payment = await prisma.kHQRPayment.create({
+            const payment = await prisma.transaction.create({
                 data: {
                     bookingId: bookingId,
                     userId: userId,
@@ -233,7 +233,7 @@ export class PayWayController {
             console.log(`[payway controller] Checking status for payment: ${paymentId}`);
 
             // Get payment from database
-            const payment = await prisma.kHQRPayment.findUnique({
+            const payment = await prisma.transaction.findUnique({
                 where: { id: paymentId },
             });
 
@@ -254,7 +254,7 @@ export class PayWayController {
             if (payment.expiresAt && new Date() > payment.expiresAt) {
                 // Update status to expired if still pending
                 if (payment.status === PaymentStatus.PENDING) {
-                    await prisma.kHQRPayment.update({
+                    await prisma.transaction.update({
                         where: { id: paymentId },
                         data: { status: PaymentStatus.EXPIRED },
                     });
@@ -352,7 +352,7 @@ export class PayWayController {
             const { tran_id, amount, currency, status } = payload;
 
             // Step 3: Find payment by transaction ID
-            const payment = await prisma.kHQRPayment.findFirst({
+            const payment = await prisma.transaction.findFirst({
                 where: { transactionHash: tran_id },
             });
 
@@ -400,7 +400,7 @@ export class PayWayController {
                 }
 
                 // Step 6: Update payment status to PAID
-                await prisma.kHQRPayment.update({
+                await prisma.transaction.update({
                     where: { id: payment.id },
                     data: {
                         status: PaymentStatus.PAID,
@@ -444,7 +444,7 @@ export class PayWayController {
                 console.log(`[payway webhook] Status received: "${status}" (expected "0" or "success")`);
                 console.log(`[payway webhook] Full webhook data:`, JSON.stringify(payload, null, 2));
 
-                await prisma.kHQRPayment.update({
+                await prisma.transaction.update({
                     where: { id: payment.id },
                     data: { status: PaymentStatus.FAILED },
                 });

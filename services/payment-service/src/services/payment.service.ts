@@ -98,7 +98,7 @@ class PaymentService {
             // Create payment record with bookings in a transaction
             const payment = await prisma.$transaction(async (tx) => {
                 // Create payment
-                const newPayment = await tx.kHQRPayment.create({
+                const newPayment = await tx.transaction.create({
                     data: {
                         bookingId: bookings[0].bookingId, // Legacy field: store first booking
                         userId: request.userId,
@@ -124,7 +124,7 @@ class PaymentService {
                 });
 
                 // Return payment with bookings
-                return await tx.kHQRPayment.findUnique({
+                return await tx.transaction.findUnique({
                     where: { id: newPayment.id },
                     include: {
                         bookings: true,
@@ -165,7 +165,7 @@ class PaymentService {
      * @throws Error if payment not found
      */
     async getPaymentById(paymentId: string) {
-        const payment = await prisma.kHQRPayment.findUnique({
+        const payment = await prisma.transaction.findUnique({
             where: { id: paymentId },
             include: {
                 bookings: true,
@@ -186,7 +186,7 @@ class PaymentService {
      * @returns Array of payment records ordered by creation date (newest first)
      */
     async getPaymentsByUserId(userId: string) {
-        return await prisma.kHQRPayment.findMany({
+        return await prisma.transaction.findMany({
             where: { userId },
             include: {
                 bookings: true,

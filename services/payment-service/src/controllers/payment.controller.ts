@@ -104,7 +104,7 @@ export class PaymentController {
             }
 
             // Update payment status to PAID
-            const updatedPayment = await prisma.kHQRPayment.update({
+            const updatedPayment = await prisma.transaction.update({
                 where: { id: payment.id },
                 data: {
                     status: PaymentStatus.PAID,
