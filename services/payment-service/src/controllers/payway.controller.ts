@@ -252,13 +252,40 @@ export class PayWayController {
 
             // Check if payment has expired
             if (payment.expiresAt && new Date() > payment.expiresAt) {
-                // Update status to expired if still pending
+                // Update status to cancelled if still pending
                 if (payment.status === PaymentStatus.PENDING) {
                     await prisma.transaction.update({
                         where: { id: paymentId },
-                        data: { status: PaymentStatus.EXPIRED },
+                        data: { status: PaymentStatus.CANCELLED },
                     });
-                    payment.status = PaymentStatus.EXPIRED;
+                    payment.status = PaymentStatus.CANCELLED;
+
+                    if (payment.bookingId) {
+                        try {
+                            const parkingServiceUrl =
+                                process.env.PARKING_SERVICE_URL ||
+                                "http://localhost:3002";
+                            const bookingCancelUrl = `${parkingServiceUrl}/api/v1/bookings/${payment.bookingId}/cancel-payment`;
+
+                            console.log(
+                                `[payway controller] Cancelling booking ${payment.bookingId} via ${bookingCancelUrl}`
+                            );
+
+                            await axios.post(
+                                bookingCancelUrl,
+                                {
+                                    paymentId: payment.id,
+                                    amount: Number(payment.amount),
+                                },
+                                { timeout: 5000 }
+                            );
+                        } catch (bookingError: any) {
+                            console.error(
+                                "[payway controller] Failed to cancel booking:",
+                                bookingError.response?.data || bookingError.message
+                            );
+                        }
+                    }
                 }
             }
 

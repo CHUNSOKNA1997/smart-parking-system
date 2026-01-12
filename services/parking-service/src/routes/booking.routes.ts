@@ -253,4 +253,31 @@ router.post(
     BookingController.confirmPayment
 );
 
+/**
+ * @swagger
+ * /api/v1/bookings/{bookingId}/cancel-payment:
+ *   post:
+ *     summary: Cancel booking when payment expires (Internal use only)
+ *     tags: [Bookings]
+ *     description: Called by payment service after payment expiration
+ *     parameters:
+ *       - in: path
+ *         name: bookingId
+ *         required: true
+ *         schema:
+ *           type: string
+ *           format: uuid
+ *     responses:
+ *       200:
+ *         description: Booking cancelled successfully
+ *       400:
+ *         description: Invalid booking state
+ *       404:
+ *         description: Booking not found
+ */
+router.post(
+    "/:bookingId/cancel-payment",
+    BookingController.cancelPayment
+);
+
 export default router;

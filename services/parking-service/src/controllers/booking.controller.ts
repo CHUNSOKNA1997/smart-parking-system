@@ -431,6 +431,81 @@ class BookingController {
             );
         }
     }
+
+    /**
+     * Cancels a booking when payment expires.
+     * Called by the payment service after QR expiration.
+     *
+     * @route POST /api/v1/bookings/:bookingId/cancel-payment
+     */
+    static async cancelPayment(
+        req: AuthRequest,
+        res: Response
+    ): Promise<Response> {
+        try {
+            const { bookingId } = req.params;
+
+            console.log(`[booking] Cancelling booking ${bookingId} due to payment expiry`);
+
+            const booking = await BookingModel.findById(bookingId);
+
+            if (!booking) {
+                return sendError(res, 404, "Booking not found");
+            }
+
+            if (booking.status !== BookingStatus.RESERVED) {
+                return sendError(
+                    res,
+                    400,
+                    `Cannot cancel booking with status: ${booking.status}`
+                );
+            }
+
+            const cancelledBooking = await prisma.$transaction(async (tx) => {
+                const updated = await tx.booking.update({
+                    where: { id: bookingId },
+                    data: {
+                        status: BookingStatus.CANCELLED,
+                        endTime: new Date(),
+                    },
+                });
+
+                await tx.parkingSpot.update({
+                    where: { id: booking.spotId },
+                    data: { isAvailable: true },
+                });
+
+                await tx.transaction.updateMany({
+                    where: {
+                        bookingId,
+                        status: { not: "COMPLETED" },
+                    },
+                    data: { status: "FAILED" },
+                });
+
+                return updated;
+            });
+
+            console.log(
+                `[booking] Booking ${bookingId} cancelled due to payment expiry`
+            );
+
+            return sendSuccess(
+                res,
+                200,
+                "Booking cancelled due to payment expiry",
+                { booking: cancelledBooking }
+            );
+        } catch (error) {
+            console.error("[booking] Cancel payment error:", error);
+            return sendError(
+                res,
+                500,
+                "Failed to cancel booking",
+                error.message
+            );
+        }
+    }
 }
 
 export default BookingController;

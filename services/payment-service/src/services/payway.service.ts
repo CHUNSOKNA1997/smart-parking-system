@@ -280,8 +280,8 @@ export class PayWayService {
 
             console.log(`[payway] PayWay Response:`, JSON.stringify(response.data, null, 2));
 
-            // Step 10: Calculate expiration time (15 minutes from now)
-            const expiresAt = new Date(Date.now() + 15 * 60 * 1000);
+            // Step 10: Calculate expiration time (2 minutes from now)
+            const expiresAt = new Date(Date.now() + 2 * 60 * 1000);
 
             console.log(`[payway] Payment created successfully for ${tranId}`);
             console.log(`[payway] QR String: ${response.data.qrString ? 'Present' : 'Missing'}`);

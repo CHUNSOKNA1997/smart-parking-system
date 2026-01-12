@@ -144,6 +144,7 @@ class PaymentService {
                 amount: Number(payment.amount),
                 currency: payment.currency,
                 status: payment.status,
+                expiresAt: payment.expiresAt,
                 bookings: payment.bookings.map((b) => ({
                     bookingId: b.bookingId,
                     amount: Number(b.amount),

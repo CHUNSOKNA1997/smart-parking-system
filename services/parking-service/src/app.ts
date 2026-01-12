@@ -42,7 +42,7 @@ setupSwagger(app);
 // 404 handler
 app.use(notFound);
 
-// Error handler (must be last)
+// Error handler
 app.use(errorHandler);
 
 export default app;
