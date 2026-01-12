@@ -2,6 +2,7 @@ import "dotenv/config";
 import { Server } from "http";
 import app from "./app.js";
 import prisma from "./config/prisma.js";
+import { startPaymentExpiryJob } from "./utils/payment-expiry.job.js";
 
 const PORT: number = parseInt(process.env.PORT || "3003", 10);
 const SERVICE_NAME: string = process.env.SERVICE_NAME || "payment-service";
@@ -18,6 +19,8 @@ const server: Server = app.listen(PORT, () => {
     console.log(
         `[${SERVICE_NAME}] api: http://localhost:${PORT}/api/v1/payments\n`
     );
+
+    startPaymentExpiryJob();
 });
 
 // Graceful shutdown

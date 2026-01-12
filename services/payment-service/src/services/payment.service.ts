@@ -195,6 +195,25 @@ class PaymentService {
             orderBy: { createdAt: "desc" },
         });
     }
+
+    async cancelPaymentByBookingId(bookingId: string) {
+        const payment = await prisma.transaction.findFirst({
+            where: {
+                bookingId,
+                status: PaymentStatus.PENDING,
+            },
+            orderBy: { createdAt: "desc" },
+        });
+
+        if (!payment) {
+            return null;
+        }
+
+        return prisma.transaction.update({
+            where: { id: payment.id },
+            data: { status: PaymentStatus.CANCELLED },
+        });
+    }
 }
 
 /**

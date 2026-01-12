@@ -8,7 +8,12 @@ import { createPaymentSchema } from "../validators/payment.validator.js";
 
 const router = Router();
 
-// All routes require authentication
+// Internal route (booking-service)
+router.post("/booking/:bookingId/cancel", (req, res) =>
+    paymentController.cancelPaymentByBookingId(req, res)
+);
+
+// All user-facing routes require authentication
 router.use(authMiddleware);
 
 /**

@@ -325,6 +325,31 @@ class BookingController {
                 await ParkingSpotModel.updateAvailability(booking.spotId, true);
             }
 
+            if (status === BookingStatus.CANCELLED) {
+                try {
+                    const paymentServiceUrl =
+                        process.env.PAYMENT_SERVICE_URL || "http://localhost:3003";
+                    const cancelUrl = `${paymentServiceUrl}/api/v1/payments/booking/${bookingId}/cancel`;
+                    const internalKey = process.env.PAYMENT_INTERNAL_KEY;
+
+                    await axios.post(
+                        cancelUrl,
+                        {},
+                        {
+                            headers: internalKey
+                                ? { "x-internal-key": internalKey }
+                                : undefined,
+                            timeout: 5000,
+                        }
+                    );
+                } catch (paymentError: any) {
+                    console.error(
+                        "[booking] Failed to cancel payment for booking:",
+                        paymentError.response?.data || paymentError.message
+                    );
+                }
+            }
+
             console.log(
                 `[BOOKING] Booking ${bookingId} status updated to: ${status}`
             );

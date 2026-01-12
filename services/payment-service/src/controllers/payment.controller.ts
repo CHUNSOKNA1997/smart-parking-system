@@ -260,6 +260,45 @@ export class PaymentController {
     }
 
     /**
+     * Cancels a payment by booking ID (internal use from booking-service).
+     *
+     * @route POST /api/v1/payments/booking/:bookingId/cancel
+     */
+    async cancelPaymentByBookingId(req: Request, res: Response): Promise<void> {
+        try {
+            const internalKey = process.env.PAYMENT_INTERNAL_KEY;
+            const providedKey = req.header("x-internal-key");
+            if (internalKey && providedKey !== internalKey) {
+                res.status(401).json(errorResponse("Unauthorized", "UNAUTHORIZED"));
+                return;
+            }
+
+            const { bookingId } = req.params;
+            const payment = await paymentService.cancelPaymentByBookingId(bookingId);
+
+            if (!payment) {
+                res.status(404).json(errorResponse("Payment not found"));
+                return;
+            }
+
+            console.log(
+                `[payment] Payment ${payment.id} cancelled via booking ${bookingId}`
+            );
+
+            res.status(200).json(
+                successResponse("Payment cancelled successfully", {
+                    payment,
+                })
+            );
+        } catch (error: any) {
+            console.error("[payment] Cancel by booking error:", error);
+            res.status(500).json(
+                errorResponse("Failed to cancel payment", error.message)
+            );
+        }
+    }
+
+    /**
      * Retrieves all payments for a specific user.
      *
      * @route GET /api/v1/users/:userId/payments
