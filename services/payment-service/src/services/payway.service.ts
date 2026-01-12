@@ -82,7 +82,7 @@ export class PayWayService {
         // 2. /generate-qr - For direct QR generation (WITH template support)
         this.generateQrUrl =
             process.env.PAYWAY_GENERATE_QR_URL ||
-            "https://checkout-sandbox.payway.com.kh/api/payment-gateway/v1/payments/generate-qr";
+            "https://checkout-sandbox.payway.com.kh/api/payment-gateway/v1/payments/purchase";
 
         // Validate configuration
         if (!this.merchantId || !this.apiKey) {
