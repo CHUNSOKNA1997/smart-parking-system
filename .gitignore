@@ -28,6 +28,9 @@ dist/
 build/
 *.tsbuildinfo
 
+.node_modules
+.aggregator
+aggregator/
 # Docker
 docker-compose.override.yml
 *.backup
@@ -36,12 +39,5 @@ docker-compose.override.yml
 # Environment files with sensitive data
 .env
 services/*/.env.docker
-docs/CONVERSATION-DATASET-README.md
-docs/DATASET-SUMMARY.md
 conversation-dataset.json
-IoT/
-docs/*
-docs/payway/PAYWAY_INTEGRATION_GUIDE.md
-docs/payway/payway-integration.md
-docs/postman-testing-guide.md
 credentials/credential_info.txt
