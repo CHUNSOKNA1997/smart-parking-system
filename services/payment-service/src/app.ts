@@ -8,6 +8,7 @@ import helmet from "helmet";
 import dotenv from "dotenv";
 import paymentRoutes from "./routes/payment.routes.js";
 import { payWayRoutes, webhookRoutes } from "./routes/payway.routes.js";
+import userRoutes from "./routes/user.routes.js";
 import { errorMiddleware } from "./middleware/error.middleware.js";
 import { setupSwagger } from "./config/swagger.js";
 
@@ -35,6 +36,7 @@ app.use("/api/v1/payments", webhookRoutes); // Public routes (webhook)
 
 // API Routes (v1) - Protected
 app.use("/api/v1/payments", paymentRoutes);
+app.use("/api/v1/users", userRoutes);
 
 // PayWay Routes - Protected
 app.use("/api/v1/payments/payway", payWayRoutes); // Protected routes (QR generation, status check)

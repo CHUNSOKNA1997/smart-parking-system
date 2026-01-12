@@ -106,29 +106,4 @@ router.post("/:id/confirm", (req, res) =>
  */
 router.get("/me", (req, res) => paymentController.getMyPayments(req, res));
 
-/**
- * @swagger
- * /api/v1/payments/user/{userId}:
- *   get:
- *     summary: Get all payments for a specific user
- *     tags: [Payments]
- *     security:
- *       - bearerAuth: []
- *     parameters:
- *       - in: path
- *         name: userId
- *         required: true
- *         schema:
- *           type: string
- *           format: uuid
- *     responses:
- *       200:
- *         description: Payments retrieved successfully
- *       500:
- *         description: Server error
- */
-router.get("/user/:userId", (req, res) =>
-    paymentController.getUserPayments(req, res)
-);
-
 export default router;

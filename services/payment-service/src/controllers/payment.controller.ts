@@ -170,7 +170,7 @@ export class PaymentController {
     /**
      * Retrieves all payments for a specific user.
      *
-     * @route GET /api/v1/payments/users/:userId
+     * @route GET /api/v1/users/:userId/payments
      */
     async getUserPayments(req: Request, res: Response): Promise<void> {
         try {
