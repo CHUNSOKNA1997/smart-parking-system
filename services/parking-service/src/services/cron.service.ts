@@ -37,6 +37,10 @@ class CronService {
             if (count > 0) {
                 console.log(`[cron] Released ${count} expired bookings`);
             }
+            const completedCount = await BookingModel.completeExpiredActiveBookings();
+            if (completedCount > 0) {
+                console.log(`[cron] Completed ${completedCount} active bookings`);
+            }
         } catch (error) {
             console.error("[cron] Error during booking cleanup:", error);
         }

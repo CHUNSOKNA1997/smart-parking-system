@@ -233,6 +233,61 @@ class BookingModel {
 
         return releasedCount;
     }
+
+    // Complete active bookings whose endTime has passed
+    static async completeExpiredActiveBookings() {
+        const now = new Date();
+
+        const expiredActiveBookings = await prisma.booking.findMany({
+            where: {
+                status: BookingStatus.ACTIVE,
+                endTime: {
+                    lt: now,
+                },
+            },
+        });
+
+        if (expiredActiveBookings.length === 0) {
+            return 0;
+        }
+
+        console.log(
+            `[booking] Found ${expiredActiveBookings.length} active bookings to complete`
+        );
+
+        let completedCount = 0;
+
+        for (const booking of expiredActiveBookings) {
+            try {
+                await prisma.$transaction(async (tx) => {
+                    await tx.booking.update({
+                        where: { id: booking.id },
+                        data: {
+                            status: BookingStatus.COMPLETED,
+                            endTime: booking.endTime || now,
+                        },
+                    });
+
+                    await tx.parkingSpot.update({
+                        where: { id: booking.spotId },
+                        data: { isAvailable: true },
+                    });
+                });
+
+                completedCount++;
+                console.log(
+                    `[booking] Auto-completed booking: ${booking.id}`
+                );
+            } catch (error) {
+                console.error(
+                    `[booking] Failed to complete booking ${booking.id}:`,
+                    error
+                );
+            }
+        }
+
+        return completedCount;
+    }
 }
 
 export default BookingModel;
