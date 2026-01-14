@@ -139,6 +139,13 @@ const otpVerificationSchema = Joi.object({
         }),
 });
 
+// Refresh token schema
+const refreshTokenSchema = Joi.object({
+    refreshToken: Joi.string().required().messages({
+        "string.empty": "Refresh token is required",
+    }),
+});
+
 export {
     registerSchema,
     loginSchema,
@@ -148,4 +155,5 @@ export {
     otpVerificationSchema,
     updateUserSchema,
     changePasswordSchema,
+    refreshTokenSchema,
 };

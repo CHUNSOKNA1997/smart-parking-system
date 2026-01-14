@@ -1,7 +1,12 @@
 import bcrypt from "bcrypt";
 import { Request, Response } from "express";
 import UserModel from "../models/User.model.js";
-import { generateAccessToken } from "../services/token.service.js";
+import RefreshTokenModel from "../models/RefreshToken.model.js";
+import {
+    generateAccessToken,
+    generateRefreshToken,
+    hashToken,
+} from "../services/token.service.js";
 import {
     sendVerificationOTP,
     sendPasswordResetOTP,
@@ -111,6 +116,81 @@ class AuthController {
 
     /**
      * @swagger
+     * /api/v1/auth/logout:
+     *   post:
+     *     summary: Logout current user
+     *     tags: [Auth]
+     *     security:
+     *       - bearerAuth: []
+     *     responses:
+     *       200:
+     *         description: Logout successful
+     *       401:
+     *         description: Unauthorized
+     */
+    static async logout(req: AuthRequest, res: Response): Promise<Response> {
+        try {
+            const { refreshToken } = req.body;
+            const userId = req.user?.userId;
+            if (userId) {
+                console.log(`[auth] Logout requested by user: ${userId}`);
+            }
+            if (!refreshToken) {
+                return sendError(res, 400, "Refresh token is required");
+            }
+            const tokenHash = hashToken(refreshToken);
+            const stored = await RefreshTokenModel.findByTokenHash(tokenHash);
+            if (!stored) {
+                return sendError(res, 400, "Invalid refresh token");
+            }
+            if (userId && stored.userId !== userId) {
+                return sendError(res, 403, "Refresh token does not match user");
+            }
+            await RefreshTokenModel.deleteByTokenHash(tokenHash);
+            return sendSuccess(res, 200, "Logout successful");
+        } catch (error) {
+            console.error("[auth] Logout error:", error);
+            return sendError(res, 500, "Internal server error", error.message);
+        }
+    }
+
+    /**
+     * Refresh access token using refresh token.
+     */
+    static async refreshToken(req: Request, res: Response): Promise<Response> {
+        try {
+            const { refreshToken } = req.body;
+            if (!refreshToken) {
+                return sendError(res, 400, "Refresh token is required");
+            }
+
+            const tokenHash = hashToken(refreshToken);
+            const stored = await RefreshTokenModel.findByTokenHash(tokenHash);
+            if (!stored) {
+                return sendError(res, 401, "Invalid refresh token");
+            }
+
+            const user = await UserModel.findById(stored.userId);
+            if (!user) {
+                return sendError(res, 404, "User not found");
+            }
+
+            const token = generateAccessToken(
+                user.id,
+                user.email,
+                user.firstName,
+                user.lastName
+            );
+
+            return sendSuccess(res, 200, "Token refreshed", { token });
+        } catch (error) {
+            console.error("[auth] Refresh token error:", error);
+            return sendError(res, 500, "Internal server error", error.message);
+        }
+    }
+
+    /**
+     * @swagger
      * /api/v1/auth/login:
      *   post:
      *     summary: Login a user
@@ -175,8 +255,12 @@ class AuthController {
                 user.lastName
             );
 
+            const refreshToken = generateRefreshToken();
+            await RefreshTokenModel.upsertToken(user.id, hashToken(refreshToken));
+
             return sendSuccess(res, 200, "Login successful", {
                 token,
+                refreshToken,
                 user: {
                     id: user.id,
                     firstName: user.firstName,
@@ -247,12 +331,16 @@ class AuthController {
                 user.lastName
             );
 
+            const refreshToken = generateRefreshToken();
+            await RefreshTokenModel.upsertToken(user.id, hashToken(refreshToken));
+
             return sendSuccess(
                 res,
                 200,
                 "Email verified successfully",
                 {
                     token,
+                    refreshToken,
                     user: {
                         id: user.id,
                         firstName: user.firstName,

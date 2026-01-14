@@ -1,4 +1,5 @@
 import jwt from "jsonwebtoken";
+import crypto from "crypto";
 import { v4 as uuidv4 } from "uuid";
 
 /**
@@ -44,4 +45,23 @@ export const generateVerificationToken = (): string => {
  */
 export const generateResetToken = (): string => {
     return uuidv4();
+};
+
+/**
+ * Generates a refresh token for session renewal.
+ *
+ * @returns Refresh token string
+ */
+export const generateRefreshToken = (): string => {
+    return uuidv4();
+};
+
+/**
+ * Hashes a token using SHA-256 for secure storage.
+ *
+ * @param token - Raw token string
+ * @returns SHA-256 hash
+ */
+export const hashToken = (token: string): string => {
+    return crypto.createHash("sha256").update(token).digest("hex");
 };

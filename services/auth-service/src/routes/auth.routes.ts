@@ -17,6 +17,7 @@ import {
     otpVerificationSchema,
     updateUserSchema,
     changePasswordSchema,
+    refreshTokenSchema,
 } from "../validators/auth.validator.js";
 import { uploadProfile, handleUploadError } from "../middleware/upload.middleware.js";
 
@@ -86,6 +87,56 @@ router.post("/register", registerLimiter, validate(registerSchema), AuthControll
  *         description: Invalid credentials or email not verified
  */
 router.post("/login", loginLimiter, validate(loginSchema), AuthController.login);
+
+/**
+ * @swagger
+ * /api/v1/auth/logout:
+ *   post:
+ *     summary: Logout current user
+ *     tags: [Authentication]
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Logout successful
+ *       401:
+ *         description: Unauthorized
+ */
+router.post(
+    "/logout",
+    authenticateToken,
+    validate(refreshTokenSchema),
+    AuthController.logout
+);
+
+/**
+ * @swagger
+ * /api/v1/auth/token/refresh:
+ *   post:
+ *     summary: Refresh access token
+ *     tags: [Authentication]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - refreshToken
+ *             properties:
+ *               refreshToken:
+ *                 type: string
+ *     responses:
+ *       200:
+ *         description: Token refreshed successfully
+ *       401:
+ *         description: Invalid refresh token
+ */
+router.post(
+    "/token/refresh",
+    validate(refreshTokenSchema),
+    AuthController.refreshToken
+);
 
 /**
  * @swagger
