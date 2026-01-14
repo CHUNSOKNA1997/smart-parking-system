@@ -208,7 +208,10 @@ class UserModel {
     }
 
     // Update user profile
-    static async updateProfile(userId: string, updates: UserUpdateData & { profileImage?: string }) {
+    static async updateProfile(
+        userId: string,
+        updates: UserUpdateData & { profileImage?: string }
+    ) {
         const { firstName, lastName, phone, profileImage } = updates;
 
         return await prisma.user.update({

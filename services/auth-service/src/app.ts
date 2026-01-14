@@ -20,8 +20,8 @@ app.use(cors(corsOptions));
 
 // Body parser middleware - Don't parse multipart/form-data (handled by multer)
 app.use((req, res, next) => {
-    const contentType = req.headers['content-type'] || '';
-    if (contentType.includes('multipart/form-data')) {
+    const contentType = req.headers["content-type"] || "";
+    if (contentType.includes("multipart/form-data")) {
         // Skip body parsing for multipart - let multer handle it
         return next();
     }

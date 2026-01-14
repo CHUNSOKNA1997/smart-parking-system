@@ -19,7 +19,10 @@ import {
     changePasswordSchema,
     refreshTokenSchema,
 } from "../validators/auth.validator.js";
-import { uploadProfile, handleUploadError } from "../middleware/upload.middleware.js";
+import {
+    uploadProfile,
+    handleUploadError,
+} from "../middleware/upload.middleware.js";
 
 const router = express.Router();
 
@@ -57,7 +60,12 @@ const router = express.Router();
  *       400:
  *         description: Email already exists or invalid input
  */
-router.post("/register", registerLimiter, validate(registerSchema), AuthController.register);
+router.post(
+    "/register",
+    registerLimiter,
+    validate(registerSchema),
+    AuthController.register
+);
 
 /**
  * @swagger
@@ -86,7 +94,12 @@ router.post("/register", registerLimiter, validate(registerSchema), AuthControll
  *       401:
  *         description: Invalid credentials or email not verified
  */
-router.post("/login", loginLimiter, validate(loginSchema), AuthController.login);
+router.post(
+    "/login",
+    loginLimiter,
+    validate(loginSchema),
+    AuthController.login
+);
 
 /**
  * @swagger
@@ -398,9 +411,9 @@ router.post(
     authenticateToken,
     (req, res, next) => {
         // Debug logging
-        console.log('[upload] Headers:', req.headers);
-        console.log('[upload] Content-Type:', req.headers['content-type']);
-        console.log('[upload] Content-Length:', req.headers['content-length']);
+        console.log("[upload] Headers:", req.headers);
+        console.log("[upload] Content-Type:", req.headers["content-type"]);
+        console.log("[upload] Content-Length:", req.headers["content-length"]);
         next();
     },
     uploadProfile.single("image"),
