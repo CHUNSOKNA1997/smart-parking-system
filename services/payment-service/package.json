@@ -1,50 +1,51 @@
 {
-  "name": "payment-service",
-  "version": "1.0.0",
-  "description": "Payment microservice with ABA PayWay integration for Smart Parking System",
-  "main": "dist/server.js",
-  "type": "module",
-  "scripts": {
-    "start": "npx tsx src/server.ts",
-    "dev": "npx tsx watch src/server.ts",
-    "list:routes": "npx tsx src/scripts/listRoutes.ts",
-    "prisma:generate": "prisma generate",
-    "prisma:migrate": "prisma migrate dev",
-    "prisma:studio": "prisma studio"
-  },
-  "keywords": [
-    "aba",
-    "payway",
-    "payment",
-    "microservice",
-    "typescript"
-  ],
-  "author": "",
-  "license": "MIT",
-  "dependencies": {
-    "@prisma/client": "4.16.0",
-    "@types/cors": "^2.8.19",
-    "@types/express": "^5.0.5",
-    "@types/jsonwebtoken": "^9.0.10",
-    "@types/node": "^20.19.22",
-    "@types/swagger-ui-express": "^4.1.8",
-    "axios": "^1.6.2",
-    "cors": "^2.8.5",
-    "dotenv": "^16.3.1",
-    "express": "^4.18.2",
-    "express-rate-limit": "^8.2.1",
-    "helmet": "^7.1.0",
-    "joi": "^17.11.0",
-    "jsonwebtoken": "^9.0.2",
-    "swagger-jsdoc": "^6.2.8",
-    "swagger-ui-express": "^5.0.1",
-    "uuid": "^9.0.1"
-  },
-  "devDependencies": {
-    "@types/express-list-endpoints": "^6.0.3",
-    "express-list-endpoints": "^7.1.1",
-    "prisma": "4.16.0",
-    "tsx": "^4.20.6",
-    "typescript": "^5.9.3"
-  }
+    "name": "payment-service",
+    "version": "1.0.0",
+    "description": "Payment microservice with ABA PayWay integration for Smart Parking System",
+    "main": "dist/server.js",
+    "type": "module",
+    "scripts": {
+        "start": "npx tsx src/server.ts",
+        "dev": "npx tsx watch src/server.ts",
+        "list:routes": "npx tsx src/scripts/listRoutes.ts",
+        "prisma:generate": "prisma generate",
+        "prisma:migrate": "prisma migrate dev",
+        "prisma:studio": "prisma studio"
+    },
+    "keywords": [
+        "aba",
+        "payway",
+        "payment",
+        "microservice",
+        "typescript"
+    ],
+    "author": "",
+    "license": "MIT",
+    "dependencies": {
+        "@prisma/client": "4.16.0",
+        "@types/cors": "^2.8.19",
+        "@types/express": "^5.0.5",
+        "@types/jsonwebtoken": "^9.0.10",
+        "@types/node": "^20.19.22",
+        "@types/swagger-ui-express": "^4.1.8",
+        "axios": "^1.6.2",
+        "cors": "^2.8.5",
+        "dotenv": "^16.3.1",
+        "express": "^4.18.2",
+        "express-rate-limit": "^8.2.1",
+        "helmet": "^7.1.0",
+        "joi": "^17.11.0",
+        "jsonwebtoken": "^9.0.2",
+        "swagger-jsdoc": "^6.2.8",
+        "swagger-ui-express": "^5.0.1",
+        "uuid": "^9.0.1",
+        "ethers": "^6.9.0"
+    },
+    "devDependencies": {
+        "@types/express-list-endpoints": "^6.0.3",
+        "express-list-endpoints": "^7.1.1",
+        "prisma": "4.16.0",
+        "tsx": "^4.20.6",
+        "typescript": "^5.9.3"
+    }
 }

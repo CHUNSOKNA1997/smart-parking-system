@@ -46,6 +46,11 @@ model Transaction {
     createdAt         DateTime       @default(now()) @map("created_at")
     updatedAt         DateTime       @updatedAt @map("updated_at")
 
+    // Blockchain fields
+    blockchainTxHash   String?        @map("blockchain_tx_hash") @db.VarChar(255)
+    blockchainBlock    Int?           @map("blockchain_block")
+    blockchainStatus   String?        @default("PENDING") @map("blockchain_status") @db.VarChar(20)
+
     // Relations
     bookings          PaymentBooking[]
 
@@ -54,6 +59,7 @@ model Transaction {
     @@index([status])
     @@index([transactionHash])
     @@index([createdAt])
+    @@index([blockchainTxHash])
     @@map("transactions")
 }
 

@@ -1,0 +1,40 @@
+{
+  "_format": "hh-sol-cache-2",
+  "files": {
+    "/home/pc-kira/Documents/RUPP-Y4/Mobile App Development/smart-parking-system/services/payment-service/blockchain/contracts/PaymentRecord.sol": {
+      "lastModificationDate": 1768391138705,
+      "contentHash": "9e405bdb6ad45f5528765966d4e8cd0a",
+      "sourceName": "contracts/PaymentRecord.sol",
+      "solcConfig": {
+        "version": "0.8.19",
+        "settings": {
+          "optimizer": {
+            "enabled": true,
+            "runs": 200
+          },
+          "outputSelection": {
+            "*": {
+              "*": [
+                "abi",
+                "evm.bytecode",
+                "evm.deployedBytecode",
+                "evm.methodIdentifiers",
+                "metadata"
+              ],
+              "": [
+                "ast"
+              ]
+            }
+          }
+        }
+      },
+      "imports": [],
+      "versionPragmas": [
+        "^0.8.19"
+      ],
+      "artifacts": [
+        "PaymentRecord"
+      ]
+    }
+  }
+}
