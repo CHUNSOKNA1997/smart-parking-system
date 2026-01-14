@@ -357,38 +357,4 @@ router.post(
     AuthController.uploadProfileImage
 );
 
-// Base64 upload endpoint (simpler for mobile apps)
-router.put(
-    "/me/profile-image-base64",
-    authenticateToken,
-    AuthController.uploadProfileImageBase64
-);
-
-
-/**
- * @swagger
- * /api/v1/auth/token/verify:
- *   post:
- *     summary: Verify JWT token (for microservices)
- *     tags: [Token]
- *     requestBody:
- *       required: true
- *       content:
- *         application/json:
- *           schema:
- *             type: object
- *             required:
- *               - token
- *             properties:
- *               token:
- *                 type: string
- *     responses:
- *       200:
- *         description: Token is valid
- *       401:
- *         description: Invalid token
- */
-router.post("/token/verify", AuthController.verifyToken);
-
-
 export default router;

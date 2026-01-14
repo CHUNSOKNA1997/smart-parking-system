@@ -1,7 +1,5 @@
 import bcrypt from "bcrypt";
-import jwt from "jsonwebtoken";
 import { Request, Response } from "express";
-import fs from "fs";
 import UserModel from "../models/User.model.js";
 import { generateAccessToken } from "../services/token.service.js";
 import {
@@ -83,7 +81,12 @@ class AuthController {
             console.log(`[auth] New user registered: ${email}`);
 
             // Generate token for unverified user (allows them to verify email and check status)
-            const token = generateAccessToken(user.id);
+            const token = generateAccessToken(
+                user.id,
+                user.email,
+                user.firstName,
+                user.lastName
+            );
 
             return sendSuccess(
                 res,
@@ -237,7 +240,12 @@ class AuthController {
             console.log(`[auth] Email verified: ${user.email}`);
 
             // Generate token for auto-login after verification
-            const token = generateAccessToken(user.id);
+            const token = generateAccessToken(
+                user.id,
+                user.email,
+                user.firstName,
+                user.lastName
+            );
 
             return sendSuccess(
                 res,
@@ -630,52 +638,6 @@ class AuthController {
 
     /**
      * @swagger
-     * /api/v1/auth/token/verify:
-     *   post:
-     *     summary: Verify JWT token for microservices
-     *     tags: [Auth - Microservices]
-     *     requestBody:
-     *       required: true
-     *       content:
-     *         application/json:
-     *           schema:
-     *             type: object
-     *             properties:
-     *               token:
-     *                 type: string
-     *     responses:
-     *       200:
-     *         description: Token is valid
-     *       400:
-     *         description: Token missing
-     *       401:
-     *         description: Invalid token
-     */
-    static async verifyToken(req: Request, res: Response): Promise<Response> {
-        try {
-            const { token } = req.body;
-
-            if (!token) {
-                return sendError(res, 400, "Token is required");
-            }
-
-            const decoded = jwt.verify(
-                token,
-                process.env.JWT_SECRET as string
-            );
-            
-            return sendSuccess(res, 200, "Token is valid", {
-                user: decoded,
-            });
-        } catch (error: any) {
-            console.error("[auth] Token verification failed:", error.message);
-            return sendError(res, 401, "Invalid or expired token");
-        }
-    }
-
-
-    /**
-     * @swagger
      * /api/v1/auth/me/profile-image:
      *   post:
      *     summary: Upload profile image
@@ -730,114 +692,6 @@ class AuthController {
         }
     }
 
-    /**
-     * @swagger
-     * /api/v1/auth/me/profile-image-base64:
-     *   put:
-     *     summary: Upload profile image as base64
-     *     tags: [Auth - User]
-     *     security:
-     *       - bearerAuth: []
-     *     requestBody:
-     *       required: true
-     *       content:
-     *         application/json:
-     *           schema:
-     *             type: object
-     *             required:
-     *               - image
-     *             properties:
-     *               image:
-     *                 type: string
-     *                 description: Base64 encoded image data (with or without data URL prefix)
-     *                 example: "data:image/png;base64,iVBORw0KGgo..."
-     *     responses:
-     *       200:
-     *         description: Profile image uploaded successfully
-     *       400:
-     *         description: Invalid base64 data
-     *       401:
-     *         description: Unauthorized
-     *       500:
-     *         description: Internal server error
-     */
-    static async uploadProfileImageBase64(req: AuthRequest, res: Response): Promise<Response> {
-        try {
-            const userId = req.user!.userId;
-            const { image } = req.body;
-
-            if (!image || typeof image !== 'string') {
-                return sendError(res, 400, "Image data is required");
-            }
-
-            // Remove data URL prefix if present (e.g., "data:image/png;base64,")
-            const base64Data = image.replace(/^data:image\/\w+;base64,/, '');
-
-            // Validate base64
-            if (!base64Data || base64Data.length === 0) {
-                return sendError(res, 400, "Invalid image data");
-            }
-
-            // Create buffer from base64
-            let imageBuffer: Buffer;
-            try {
-                imageBuffer = Buffer.from(base64Data, 'base64');
-            } catch (error) {
-                return sendError(res, 400, "Invalid base64 encoding");
-            }
-
-            // Check file size (max 5MB)
-            const maxSize = 5 * 1024 * 1024;
-            if (imageBuffer.length > maxSize) {
-                return sendError(res, 400, "Image too large. Maximum size is 5MB");
-            }
-
-            // Ensure uploads directory exists
-            const uploadDir = "uploads/profiles";
-            if (!fs.existsSync(uploadDir)) {
-                fs.mkdirSync(uploadDir, { recursive: true });
-            }
-
-            // Generate unique filename
-            const uniqueSuffix = Date.now() + "-" + Math.round(Math.random() * 1e9);
-
-            // Detect image type from base64 header or default to jpg
-            let extension = 'jpg';
-            if (image.startsWith('data:image/png')) {
-                extension = 'png';
-            } else if (image.startsWith('data:image/jpeg') || image.startsWith('data:image/jpg')) {
-                extension = 'jpg';
-            } else if (image.startsWith('data:image/gif')) {
-                extension = 'gif';
-            } else if (image.startsWith('data:image/webp')) {
-                extension = 'webp';
-            }
-
-            const filename = `profile-${uniqueSuffix}.${extension}`;
-            const filepath = `${uploadDir}/${filename}`;
-
-            // Write file to disk
-            fs.writeFileSync(filepath, imageBuffer);
-
-            // Normalize path for storage
-            const normalizedPath = filepath.replace(/\\/g, "/");
-
-            // Update user profile
-            const updatedUser = await UserModel.updateProfile(userId, {
-                profileImage: normalizedPath,
-            });
-
-            return sendSuccess(res, 200, "Profile image uploaded successfully", {
-                user: updatedUser,
-                imagePath: normalizedPath,
-                imageUrl: `http://localhost:${process.env.PORT || 3001}/${normalizedPath}`
-            });
-
-        } catch (error) {
-            console.error("[auth] Upload base64 image error:", error);
-            return sendError(res, 500, "Internal server error", error.message);
-        }
-    }
 }
 
 export default AuthController;

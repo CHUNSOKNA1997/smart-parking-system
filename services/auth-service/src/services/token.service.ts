@@ -45,17 +45,3 @@ export const generateVerificationToken = (): string => {
 export const generateResetToken = (): string => {
     return uuidv4();
 };
-
-/**
- * Verifies and decodes a JWT token.
- *
- * @param token - JWT token to verify
- * @returns Decoded token payload if valid, null if invalid
- */
-export const verifyToken = (token: string): any | null => {
-    try {
-        return jwt.verify(token, process.env.JWT_SECRET as string);
-    } catch (error) {
-        return null;
-    }
-};
