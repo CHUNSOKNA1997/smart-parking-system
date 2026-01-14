@@ -8,6 +8,16 @@ import { BookingStatus, PaymentMethod } from "@prisma/client";
 import { AuthRequest } from "../types/index.js";
 
 class BookingController {
+    static computeEndTime(startTime: Date, durationHours?: number): Date | null {
+        if (durationHours == null) {
+            return null;
+        }
+        const durationMs = Number(durationHours) * 60 * 60 * 1000;
+        if (Number.isNaN(durationMs)) {
+            return null;
+        }
+        return new Date(startTime.getTime() + durationMs);
+    }
     /**
      * Creates a new parking booking for a user.
      * Validates spot availability, generates QR code, and creates transaction record.
@@ -49,16 +59,25 @@ class BookingController {
             const activeBooking = await BookingModel.findActiveByUserId(userId);
             if (activeBooking) {
                 if (activeBooking.status === BookingStatus.ACTIVE) {
-                    return sendError(
-                        res,
-                        400,
-                        "You already have an active booking"
-                    );
-                }
-
-                // If status is RESERVED, we cancel it to allow the new booking (e.g. user changing payment method)
-                // This must happen BEFORE checking spot availability to avoid "spot taken" error
-                if (activeBooking.status === BookingStatus.RESERVED) {
+                    const activeEndTime = BookingModel.computeEndTime(activeBooking);
+                    if (activeEndTime && activeEndTime < new Date()) {
+                        console.log(`[booking] Auto-completing expired ACTIVE booking ${activeBooking.id}`);
+                        await BookingModel.updateStatus(
+                            activeBooking.id,
+                            BookingStatus.COMPLETED,
+                            activeEndTime
+                        );
+                        await ParkingSpotModel.updateAvailability(activeBooking.spotId, true);
+                    } else {
+                        return sendError(
+                            res,
+                            400,
+                            "You already have an active booking"
+                        );
+                    }
+                } else if (activeBooking.status === BookingStatus.RESERVED) {
+                    // If status is RESERVED, we cancel it to allow the new booking (e.g. user changing payment method)
+                    // This must happen BEFORE checking spot availability to avoid "spot taken" error
                     console.log(`[booking] Auto-cancelling existing RESERVED booking ${activeBooking.id}`);
                     await BookingModel.updateStatus(activeBooking.id, BookingStatus.CANCELLED, new Date());
                     await ParkingSpotModel.updateAvailability(activeBooking.spotId, true);
@@ -86,6 +105,11 @@ class BookingController {
                 ? baseTotalPrice * EXCHANGE_RATE 
                 : baseTotalPrice;
 
+            const startDate = startTime ? new Date(startTime) : new Date();
+            const endDate = endTime
+                ? new Date(endTime)
+                : BookingController.computeEndTime(startDate, durationHours);
+
             // Create booking record with transaction for atomicity
             const booking = await prisma.$transaction(async (tx) => {
                 // Create booking
@@ -93,6 +117,8 @@ class BookingController {
                     data: {
                         userId,
                         spotId,
+                        startTime: startDate,
+                        endTime: endDate,
                         durationHours,
                         totalPrice,
                         currency: targetCurrency,

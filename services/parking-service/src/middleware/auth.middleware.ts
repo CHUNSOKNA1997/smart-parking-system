@@ -18,15 +18,19 @@ export const authenticateToken = async (
             return sendError(res, 401, "Unauthorized access");
         }
 
-        // Verify token with auth-service
-        const result = await authServiceClient.verifyToken(token);
+        const user = await authServiceClient.getCurrentUser(token);
 
-        if (!result.success || !result.data) {
+        if (!user) {
             return sendError(res, 403, "Invalid or expired token");
         }
 
         // Attach user info to request
-        req.user = result.data.user;
+        req.user = {
+            userId: user.id,
+            email: user.email,
+            firstName: user.firstName,
+            lastName: user.lastName,
+        };
         next();
     } catch (error: any) {
         console.error("Auth middleware error:", error.message);

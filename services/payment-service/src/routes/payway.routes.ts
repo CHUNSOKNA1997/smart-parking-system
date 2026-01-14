@@ -5,23 +5,14 @@
  * It connects URLs to controller methods.
  *
  * ENDPOINTS:
- * - POST /api/v1/payments/payway/qr         → Generate QR code (protected)
- * - GET /api/v1/payments/:paymentId/status  → Check payment status (protected)
- * - POST /api/v1/payments/webhook/payway    → Receive webhook (public)
- *
- * "Protected" means user must be logged in (JWT token required)
- * "Public" means anyone can call it (PayWay doesn't have JWT token!)
+ * - GET /api/v1/payments/:paymentId/status  → Check payment status
+ * - POST /api/v1/payments/webhook/payway    → Receive webhook
  */
 
 import { Router } from "express";
 import { payWayController } from "../controllers/payway.controller.js";
-import { authMiddleware } from "../middleware/auth.middleware.js";
 import { validate } from "../middleware/validation.middleware.js";
-import { paymentCreationLimiter } from "../middleware/rate-limit.middleware.js";
-import {
-    generateQRSchema,
-    paymentIdSchema,
-} from "../validators/payway.validator.js";
+import { paymentIdSchema } from "../validators/payway.validator.js";
 
 // Create Express router
 const router = Router();
@@ -49,163 +40,6 @@ router.get(
     (req, res) => payWayController.checkPaymentStatus(req, res)
 );
 
-/**
- * =============================================================================
- * PROTECTED ROUTES (Require Authentication)
- * =============================================================================
- *
- * All routes below this line require JWT token in Authorization header:
- * Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
- *
- * If token is missing or invalid → 401 Unauthorized
- */
-router.use(authMiddleware);
-
-/**
- * Generate QR Code for Payment
- *
- * POST /api/v1/payments/payway/qr
- *
- * REQUEST:
- * Headers:
- *   Authorization: Bearer <jwt-token>
- *   Content-Type: application/json
- * Body:
- *   {
- *     "bookingId": "abc-123",
- *     "amount": 5.00,
- *     "currency": "USD",
- *     "description": "Parking Spot A1 - 2 hours"
- *   }
- *
- * RESPONSE (201 Created):
- *   {
- *     "success": true,
- *     "message": "qr code generated successfully",
- *     "data": {
- *       "paymentId": "uuid",
- *       "tranId": "booking-abc-123-1736156789",
- *       "qrString": "00020101021...",
- *       "qrImage": "data:image/png;base64,...",
- *       "deeplinkUrl": "abapay://qr?code=...",
- *       "amount": 5.00,
- *       "currency": "USD",
- *       "status": "PENDING",
- *       "expiresAt": "2024-01-03T14:45:00Z"
- *     }
- *   }
- *
- * SWAGGER DOCUMENTATION:
- * @swagger
- * /api/v1/payments/payway/qr:
- *   post:
- *     summary: Generate QR code for payment
- *     tags: [PayWay]
- *     security:
- *       - bearerAuth: []
- *     requestBody:
- *       required: true
- *       content:
- *         application/json:
- *           schema:
- *             type: object
- *             required:
- *               - bookingId
- *               - amount
- *               - currency
- *             properties:
- *               bookingId:
- *                 type: string
- *                 description: Parking booking ID
- *                 example: "abc-123"
- *               amount:
- *                 type: number
- *                 description: Payment amount
- *                 example: 5.00
- *               currency:
- *                 type: string
- *                 enum: [USD, KHR]
- *                 description: Payment currency
- *                 example: "USD"
- *               description:
- *                 type: string
- *                 description: Payment description
- *                 example: "Parking Spot A1 - 2 hours"
- *     responses:
- *       201:
- *         description: QR code generated successfully
- *       400:
- *         description: Invalid request (missing fields, invalid amount, etc.)
- *       401:
- *         description: User not authenticated
- *       500:
- *         description: Server error
- */
-router.post(
-    "/qr",
-    paymentCreationLimiter, // Prevent spam (max 10 requests per minute)
-    validate(generateQRSchema), // Validate request body
-    (req, res) => payWayController.generateQR(req, res)
-);
-
-/**
- * Check Payment Status (Polling)
- *
- * GET /api/v1/payments/:paymentId/status
- *
- * REQUEST:
- * Headers:
- *   Authorization: Bearer <jwt-token>
- * Parameters:
- *   paymentId: UUID of the payment
- *
- * RESPONSE (200 OK):
- *   {
- *     "success": true,
- *     "message": "Payment status retrieved",
- *     "data": {
- *       "paymentId": "uuid",
- *       "status": "PENDING" | "PAID" | "FAILED" | "EXPIRED",
- *       "amount": 5.00,
- *       "currency": "USD",
- *       "paidAt": "2024-01-03T14:30:00Z",
- *       "createdAt": "2024-01-03T14:15:00Z",
- *       "expiresAt": "2024-01-03T14:30:00Z"
- *     }
- *   }
- *
- * USAGE:
- * Mobile app calls this every 3 seconds to check if payment is completed.
- * Stops polling when status changes to PAID, FAILED, or EXPIRED.
- *
- * SWAGGER DOCUMENTATION:
- * @swagger
- * /api/v1/payments/{paymentId}/status:
- *   get:
- *     summary: Check payment status
- *     tags: [PayWay]
- *     security:
- *       - bearerAuth: []
- *     parameters:
- *       - in: path
- *         name: paymentId
- *         required: true
- *         schema:
- *           type: string
- *           format: uuid
- *         description: Payment ID
- *     responses:
- *       200:
- *         description: Payment status retrieved
- *       401:
- *         description: User not authenticated
- *       403:
- *         description: Access denied (payment doesn't belong to user)
- *       404:
- *         description: Payment not found
- *       500:
- *         description: Server error
- */
 // (status polling route moved to public section above)
 
 /**

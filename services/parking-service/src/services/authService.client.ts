@@ -11,19 +11,6 @@ interface UserData {
     updatedAt: Date;
 }
 
-interface TokenVerifyResponse {
-    success: boolean;
-    message: string;
-    data?: {
-        user: {
-            userId: string;
-            email: string;
-            firstName?: string;
-            lastName?: string;
-        };
-    };
-}
-
 interface UserResponse {
     success: boolean;
     message: string;
@@ -83,45 +70,18 @@ class AuthServiceClient {
     }
 
     /**
-     * Verify JWT token with auth-service
+     * Fetch current user using auth-service
      */
-    async verifyToken(token: string): Promise<TokenVerifyResponse> {
-        return this.retryWithBackoff(async () => {
-            try {
-                const response = await this.client.post<TokenVerifyResponse>(
-                    "/api/v1/auth/token/verify",
-                    { token }
-                );
-
-                return response.data;
-            } catch (error: any) {
-                console.error(
-                    "Auth service - verify token error:",
-                    error.message
-                );
-
-                if (error.response) {
-                    return {
-                        success: false,
-                        message:
-                            error.response.data.message ||
-                            "Token verification failed",
-                    };
-                }
-
-                throw new Error("Auth service unavailable");
-            }
-        });
-    }
-
-    /**
-     * Get user by ID from auth-service
-     */
-    async getUserById(userId: string): Promise<UserData | null> {
+    async getCurrentUser(token: string): Promise<UserData | null> {
         return this.retryWithBackoff(async () => {
             try {
                 const response = await this.client.get<UserResponse>(
-                    `/api/v1/auth/users/${userId}`
+                    "/api/v1/auth/me",
+                    {
+                        headers: {
+                            Authorization: `Bearer ${token}`,
+                        },
+                    }
                 );
 
                 if (response.data.success && response.data.data) {
@@ -130,9 +90,12 @@ class AuthServiceClient {
 
                 return null;
             } catch (error: any) {
-                console.error("Auth service - get user error:", error.message);
+                console.error(
+                    "Auth service - get current user error:",
+                    error.message
+                );
 
-                if (error.response?.status === 404) {
+                if (error.response) {
                     return null;
                 }
 

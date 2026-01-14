@@ -2,6 +2,21 @@ import prisma from "../config/prisma.js";
 import { BookingStatus } from "@prisma/client";
 
 class BookingModel {
+    static computeEndTime(booking) {
+        if (booking.endTime) {
+            return booking.endTime;
+        }
+        if (!booking.startTime || booking.durationHours == null) {
+            return null;
+        }
+        const durationHours = Number(booking.durationHours);
+        if (Number.isNaN(durationHours)) {
+            return null;
+        }
+        return new Date(
+            booking.startTime.getTime() + durationHours * 60 * 60 * 1000
+        );
+    }
     // Create new booking
     static async create(bookingData) {
         const { userId, spotId, durationHours, totalPrice, qrCode } =
@@ -241,9 +256,10 @@ class BookingModel {
         const expiredActiveBookings = await prisma.booking.findMany({
             where: {
                 status: BookingStatus.ACTIVE,
-                endTime: {
-                    lt: now,
-                },
+                OR: [
+                    { endTime: { lt: now } },
+                    { endTime: null },
+                ],
             },
         });
 
@@ -259,12 +275,17 @@ class BookingModel {
 
         for (const booking of expiredActiveBookings) {
             try {
+                const effectiveEndTime = BookingModel.computeEndTime(booking);
+                if (!effectiveEndTime || effectiveEndTime >= now) {
+                    continue;
+                }
+
                 await prisma.$transaction(async (tx) => {
                     await tx.booking.update({
                         where: { id: booking.id },
                         data: {
                             status: BookingStatus.COMPLETED,
-                            endTime: booking.endTime || now,
+                            endTime: effectiveEndTime,
                         },
                     });
 

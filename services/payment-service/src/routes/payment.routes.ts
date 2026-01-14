@@ -67,34 +67,6 @@ router.post(
 
 /**
  * @swagger
- * /api/v1/payments/{id}/confirm:
- *   post:
- *     summary: Manually confirm a payment (for testing/fallback)
- *     tags: [Payments]
- *     security:
- *       - bearerAuth: []
- *     description: Called by mobile app after user returns from payment
- *     parameters:
- *       - in: path
- *         name: id
- *         required: true
- *         schema:
- *           type: string
- *           format: uuid
- *     responses:
- *       200:
- *         description: Payment confirmed
- *       404:
- *         description: Payment not found
- *       403:
- *         description: Access denied
- */
-router.post("/:id/confirm", (req, res) =>
-    paymentController.confirmPaymentManually(req, res)
-);
-
-/**
- * @swagger
  * /api/v1/payments/{id}/cancel:
  *   post:
  *     summary: Cancel a payment (and booking if applicable)

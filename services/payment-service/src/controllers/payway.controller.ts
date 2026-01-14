@@ -5,16 +5,14 @@
  * It's the "middleman" between the mobile app and our PayWay service.
  * 
  * ENDPOINTS:
- * 1. POST /api/v1/payments/payway/qr - Generate QR code
- * 2. GET /api/v1/payments/:paymentId/status - Check payment status
- * 3. POST /api/v1/payments/webhook/payway - Receive webhook from PayWay
+ * 1. GET /api/v1/payments/:paymentId/status - Check payment status
+ * 2. POST /api/v1/payments/webhook/payway - Receive webhook from PayWay
  * 
  * FLOW:
  * Mobile App → Controller → Service → PayWay API
  */
 
 import type { Request, Response } from "express";
-import { payWayQRService } from "../services/payway.service.js";
 import { successResponse, errorResponse } from "../utils/response.js";
 import prisma from "../config/prisma.js";
 import axios from "axios";
@@ -27,178 +25,6 @@ import { PayWayUtils } from "../utils/payway.utils.js";
  * Handles all PayWay-related HTTP requests
  */
 export class PayWayController {
-    /**
-     * Generate QR Code for Payment
-     * 
-     * ENDPOINT: POST /api/v1/payments/payway/qr
-     * 
-     * WHAT IT DOES:
-     * 1. Receives payment request from mobile app
-     * 2. Validates user is authenticated
-     * 3. Calls PayWay service to generate QR
-     * 4. Saves payment record to database
-     * 5. Returns QR image and deep link to mobile app
-     * 
-     * REQUEST BODY:
-     * {
-     *   "bookingId": "abc-123",
-     *   "amount": 5.00,
-     *   "currency": "USD",
-     *   "description": "Parking Spot A1 - 2 hours"
-     * }
-     * 
-     * RESPONSE:
-     * {
-     *   "success": true,
-     *   "message": "qr code generated successfully",
-     *   "data": {
-     *     "paymentId": "uuid-here",
-     *     "tranId": "booking-abc-123-1736156789",
-     *     "qrString": "00020101021...",
-     *     "qrImage": "data:image/png;base64,...",
-     *     "deeplinkUrl": "abapay://qr?code=...",
-     *     "amount": 5.00,
-     *     "currency": "USD",
-     *     "status": "PENDING",
-     *     "expiresAt": "2024-01-03T14:45:00Z"
-     *   }
-     * }
-     */
-    async generateQR(req: Request, res: Response): Promise<void> {
-        try {
-            console.log("[payway controller] Generate QR request received");
-
-            // Extract data from request
-            const { bookingId, amount, currency, description, qrImageTemplate } = req.body;
-            const userId = req.user?.userId; // From auth middleware
-
-            // Step 1: Validate user is authenticated
-            if (!userId) {
-                console.error("[payway controller] User not authenticated");
-                res.status(401).json(errorResponse("User not authenticated"));
-                return;
-            }
-
-            // Step 2: Get auth token
-            const authToken = req.headers.authorization?.replace('Bearer ', '') || '';
-            
-            if (!authToken) {
-                res.status(401).json(errorResponse("Authorization token required"));
-                return;
-            }
-
-            // Step 3: Fetch booking details if amount/currency not provided
-            let finalAmount = amount;
-            let finalCurrency = currency;
-            
-            if (!finalAmount || !finalCurrency) {
-                console.log('[payway controller] Fetching booking details from booking service...');
-                
-                const { bookingServiceClient } = await import('../clients/booking-client.js');
-                const booking = await bookingServiceClient.getBooking(bookingId, authToken);
-                
-                finalAmount = finalAmount || parseFloat(booking.totalPrice);
-                finalCurrency = finalCurrency || booking.currency;
-                
-                console.log(`[payway controller] Booking details fetched: ${finalAmount} ${finalCurrency}`);
-            }
-            
-            // Force USD currency for PayWay
-            if (finalCurrency === 'KHR') {
-                // Convert KHR to USD (1 USD = ~4100 KHR)
-                const khrToUsdRate = 4100;
-                finalAmount = finalAmount / khrToUsdRate;
-                finalCurrency = 'USD';
-                console.log(`[payway controller] Converted to USD: ${finalAmount} USD`);
-            } else if (finalCurrency === 'USD') {
-                console.log(`[payway controller] Using USD: ${finalAmount} USD`);
-            }
-
-            // Step 4: Validate amount is positive
-            if (finalAmount <= 0) {
-                console.error("[payway controller] Invalid amount:", finalAmount);
-                res.status(400).json(
-                    errorResponse("Amount must be greater than 0")
-                );
-                return;
-            }
-
-            // Step 5: Validate currency
-            if (!["USD", "KHR"].includes(finalCurrency)) {
-                console.error("[payway controller] Invalid currency:", finalCurrency);
-                res.status(400).json(
-                    errorResponse("Currency must be USD or KHR")
-                );
-                return;
-            }
-
-            console.log(`[payway controller] Generating QR for booking: ${bookingId}`);
-
-            // Step 6: Customer info (optional - can be added later)
-            const customerName: string | undefined = undefined;
-            const customerEmail: string | undefined = undefined;
-            const customerPhone: string | undefined = undefined;
-
-            // Step 7: Call PayWay service to generate QR
-            const qrResult = await payWayQRService.generateQR({
-                bookingId,
-                amount: finalAmount,
-                currency: finalCurrency as any,
-                description: description || `Parking Payment - Booking ${bookingId}`,
-                customerName,
-                customerEmail,
-                customerPhone,
-                qrImageTemplate,
-            });
-
-            console.log(`[payway controller] Payment created: ${qrResult.tranId}`);
-
-            // Step 8: Save payment record to database
-            const payment = await prisma.transaction.create({
-                data: {
-                    bookingId: bookingId,
-                    userId: userId,
-                    amount: finalAmount,
-                    currency: finalCurrency as any,
-                    qrString: qrResult.qrString,
-                    deeplinkUrl: qrResult.deeplink,
-                    status: PaymentStatus.PENDING,
-                    description: description || `Parking Payment - Booking ${bookingId}`,
-                    paymentMethod: "payway",
-                    expiresAt: qrResult.expiresAt,
-                    // Store transaction ID for webhook matching
-                    transactionHash: qrResult.tranId,
-                },
-            });
-
-            console.log(`[payway controller] Payment created: ${payment.id}`);
-
-            // Step 9: Return success response with QR data
-            res.status(201).json(
-                successResponse("Payment created successfully", {
-                    paymentId: payment.id,
-                    tranId: qrResult.tranId,
-                    qrString: qrResult.qrString,
-                    qrImage: qrResult.qrImage,
-                    deeplink: qrResult.deeplink,
-                    amount: payment.amount,
-                    currency: payment.currency,
-                    status: payment.status,
-                    expiresAt: payment.expiresAt,
-                    createdAt: payment.createdAt,
-                })
-            );
-        } catch (error: any) {
-            console.error("[payway controller] Generate QR error:", error);
-            res.status(500).json(
-                errorResponse(
-                    "Failed to generate QR code",
-                    error.message
-                )
-            );
-        }
-    }
-
     /**
      * Check Payment Status
      * 
