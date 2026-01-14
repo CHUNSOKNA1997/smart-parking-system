@@ -4,7 +4,6 @@ import helmet from "helmet";
 import parkingRoutes from "./routes/parking.routes.js";
 import bookingRoutes from "./routes/booking.routes.js";
 
-import iotRoutes from "./routes/iot.routes.js";
 import { errorHandler, notFound } from "./middleware/error.middleware.js";
 import { setupSwagger } from "./config/swagger.js";
 
@@ -34,7 +33,6 @@ app.use((req: Request, res: Response, next: NextFunction) => {
 app.use("/api/v1/parking", parkingRoutes);
 app.use("/api/v1/bookings", bookingRoutes);
 
-app.use("/api/v1/iot", iotRoutes);
 // User routes removed - handled by auth-service
 
 setupSwagger(app);

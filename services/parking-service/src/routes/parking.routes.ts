@@ -54,41 +54,4 @@ router.get("/spots/available", ParkingController.getAvailableSpots);
  */
 router.get("/spots/type/:type", ParkingController.getSpotsByType);
 
-/**
- * @swagger
- * /api/v1/parking/spots/{spotId}:
- *   get:
- *     summary: Get parking spot by ID
- *     tags: [Parking]
- *     parameters:
- *       - in: path
- *         name: spotId
- *         required: true
- *         schema:
- *           type: string
- *           format: uuid
- *     responses:
- *       200:
- *         description: Parking spot details
- *       404:
- *         description: Spot not found
- *       500:
- *         description: Server error
- */
-router.get("/spots/:spotId", ParkingController.getSpotById);
-
-/**
- * @swagger
- * /api/v1/parking/statistics:
- *   get:
- *     summary: Get parking statistics
- *     tags: [Parking]
- *     responses:
- *       200:
- *         description: Parking statistics (total spots, available, occupied)
- *       500:
- *         description: Server error
- */
-router.get("/statistics", ParkingController.getStatistics);
-
 export default router;

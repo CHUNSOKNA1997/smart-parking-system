@@ -88,35 +88,6 @@ class ParkingSpotModel {
         });
     }
 
-    /**
-     * Retrieves comprehensive statistics about parking spot usage.
-     * Includes total spots, available spots, occupied spots, and availability breakdown by type.
-     *
-     * @returns Object containing parking statistics
-     */
-    static async getStatistics() {
-        const total = await prisma.parkingSpot.count();
-        const available = await prisma.parkingSpot.count({
-            where: { isAvailable: true },
-        });
-        const occupied = total - available;
-
-        const byType = await prisma.parkingSpot.groupBy({
-            by: ["spotType"],
-            _count: { spotType: true },
-            where: { isAvailable: true },
-        });
-
-        return {
-            total,
-            available,
-            occupied,
-            availableByType: byType.map((item) => ({
-                type: item.spotType,
-                count: item._count.spotType,
-            })),
-        };
-    }
 }
 
 /**

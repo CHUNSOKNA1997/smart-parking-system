@@ -54,34 +54,6 @@ class ParkingController {
         }
     }
 
-    // Get spot by ID
-    static async getSpotById(req: Request, res: Response): Promise<Response> {
-        try {
-            const { spotId } = req.params;
-
-            const spot = await ParkingSpotModel.findById(spotId);
-
-            if (!spot) {
-                return sendError(res, 404, "Parking spot not found");
-            }
-
-            return sendSuccess(
-                res,
-                200,
-                "Parking spot retrieved successfully",
-                { spot }
-            );
-        } catch (error) {
-            console.error("get spot by ID error:", error);
-            return sendError(
-                res,
-                500,
-                "Failed to retrieve parking spot",
-                error.message
-            );
-        }
-    }
-
     // Get spots by type (car/motorcycle)
     static async getSpotsByType(
         req: Request,
@@ -123,75 +95,6 @@ class ParkingController {
         }
     }
 
-    // Get parking statistics
-    static async getStatistics(req: Request, res: Response): Promise<Response> {
-        try {
-            const stats = await ParkingSpotModel.getStatistics();
-
-            return sendSuccess(res, 200, "Statistics retrieved successfully", {
-                statistics: stats,
-            });
-        } catch (error) {
-            console.error("Get statistics error:", error);
-            return sendError(
-                res,
-                500,
-                "Failed to retrieve statistics",
-                error.message
-            );
-        }
-    }
-
-    // Update spot status (IoT endpoint)
-    static async updateSpotStatus(
-        req: Request,
-        res: Response
-    ): Promise<Response> {
-        try {
-            const { spotId } = req.params;
-            const { isAvailable } = req.body;
-
-            if (typeof isAvailable !== "boolean") {
-                return sendError(
-                    res,
-                    400,
-                    "isAvailable must be a boolean value"
-                );
-            }
-
-            const spot = await ParkingSpotModel.findById(spotId);
-
-            if (!spot) {
-                return sendError(res, 404, "Parking spot not found");
-            }
-
-            const updatedSpot = await ParkingSpotModel.updateAvailability(
-                spotId,
-                isAvailable
-            );
-
-            console.log(
-                `IoT Update: Spot ${spot.id} -> ${
-                    isAvailable ? "AVAILABLE" : "OCCUPIED"
-                }`
-            );
-
-            return sendSuccess(
-                res,
-                200,
-                "Spot status updated successfully",
-                { spot: updatedSpot }
-            );
-        } catch (error) {
-            console.error("Update spot status error:", error);
-            return sendError(
-                res,
-                500,
-                "Failed to update spot status",
-                error.message
-            );
-        }
-    }
 }
 
 export default ParkingController;
