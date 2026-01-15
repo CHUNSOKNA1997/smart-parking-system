@@ -1,12 +1,15 @@
 # Dependencies
 node_modules/
-package-lock.json
 
 # Environment variables (NEVER commit these!)
 .env
-.env.docker
 .env.local
 .env.*.local
+.env.docker
+services/*/.env
+services/*/.env.docker
+aggregator/.env
+aggregator/.env.docker
 
 # Logs
 logs/
@@ -28,16 +31,10 @@ dist/
 build/
 *.tsbuildinfo
 
-.node_modules
-.aggregator
-aggregator/
 # Docker
 docker-compose.override.yml
 *.backup
-.env.backup
 
-# Environment files with sensitive data
-.env
-services/*/.env.docker
-conversation-dataset.json
+# Sensitive files
 credentials/credential_info.txt
+conversation-dataset.json
