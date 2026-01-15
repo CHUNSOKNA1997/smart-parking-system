@@ -1,62 +1,24 @@
-# Multi-stage build for Payment Service
-
-# Stage 1: Builder
-FROM node:20-alpine AS builder
+FROM node:20-alpine
 
 WORKDIR /app
 
-# Copy package files
-COPY package*.json ./
-COPY .npmrc ./
+RUN apk add --no-cache dumb-init openssl && \
+    addgroup -g 1001 -S nodejs && \
+    adduser -S nodejs -u 1001
 
-# Install dependencies
-RUN npm install
+COPY package*.json .npmrc ./
+RUN npm ci --omit=dev && npm cache clean --force
 
-# Copy prisma schema
 COPY prisma ./prisma/
+RUN npx prisma generate
 
+COPY src ./src/
 
+RUN chown -R nodejs:nodejs /app
 
-# Copy source code
-COPY . .
+USER nodejs
 
-# Stage 2: Production
-FROM node:20-alpine AS production
-
-WORKDIR /app
-
-# Install dumb-init for proper signal handling
-RUN apk add --no-cache dumb-init openssl
-
-
-# Copy package files
-COPY package*.json ./
-COPY .npmrc ./
-
-# Install only production dependencies
-RUN npm install --only=production && \
-    npm cache clean --force
-
-# Copy prisma schema and generated client from builder
-COPY --from=builder /app/prisma ./prisma/
-
-
-# Copy source code
-# Copy source code
-COPY . .
-
-# Create non-root user and fix permissions
-RUN addgroup -g 1001 -S nodejs && \
-    adduser -S nodejs -u 1001 && \
-    chown -R nodejs:nodejs /app
-
-
-
-# Expose port
 EXPOSE 3003
 
-# Use dumb-init to handle signals properly
 ENTRYPOINT ["dumb-init", "--"]
-
-# Start the application
-CMD ["sh", "-c", "npx prisma generate && npx prisma migrate deploy && npx tsx src/server.ts"]
+CMD ["sh", "-c", "npx prisma migrate deploy && npx tsx src/server.ts"]

@@ -2,8 +2,6 @@
 node_modules/
 npm-debug.log
 yarn-error.log
-package-lock.json
-yarn.lock
 
 # Environment files
 .env
@@ -38,12 +36,8 @@ logs/
 coverage/
 .nyc_output/
 
-# Prisma
-prisma/migrations/
-
 # Documentation
 *.md
-!README.md
 
 # Temporary files
 tmp/

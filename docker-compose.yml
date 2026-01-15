@@ -1,6 +1,5 @@
 services:
-    # PostgreSQL Databases
-
+    # ============ PostgreSQL Databases ============
     postgres-auth:
         image: postgres:16-alpine
         container_name: smart-parking-postgres-auth
@@ -16,7 +15,11 @@ services:
             - parking-network
         restart: unless-stopped
         healthcheck:
-            test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${AUTH_DB_NAME}"]
+            test:
+                [
+                    "CMD-SHELL",
+                    "pg_isready -U ${POSTGRES_USER} -d ${AUTH_DB_NAME}",
+                ]
             interval: 10s
             timeout: 5s
             retries: 5
@@ -36,7 +39,11 @@ services:
             - parking-network
         restart: unless-stopped
         healthcheck:
-            test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${PARKING_DB_NAME}"]
+            test:
+                [
+                    "CMD-SHELL",
+                    "pg_isready -U ${POSTGRES_USER} -d ${PARKING_DB_NAME}",
+                ]
             interval: 10s
             timeout: 5s
             retries: 5
@@ -56,13 +63,16 @@ services:
             - parking-network
         restart: unless-stopped
         healthcheck:
-            test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${PAYMENT_DB_NAME}"]
+            test:
+                [
+                    "CMD-SHELL",
+                    "pg_isready -U ${POSTGRES_USER} -d ${PAYMENT_DB_NAME}",
+                ]
             interval: 10s
             timeout: 5s
             retries: 5
 
-    # Microservices
-
+    # ============ Microservices ============
     auth-service:
         build:
             context: ./services/auth-service
@@ -138,15 +148,13 @@ services:
             - parking-network
         restart: unless-stopped
 
-# Networks
-
+# ============ Networks ============
 networks:
     parking-network:
         driver: bridge
         name: smart-parking-network
 
-# Volumes (Persistent Data)
-
+# ============ Volumes ============
 volumes:
     postgres-auth-data:
         name: smart-parking-auth-db-data
