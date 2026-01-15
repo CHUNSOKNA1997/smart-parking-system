@@ -5,12 +5,8 @@ export function validateEnvironment() {
     const requiredVars = [
         'DATABASE_URL',
         'JWT_SECRET',
-        'JWT_EXPIRES_IN',
-        'SMTP_HOST',
-        'SMTP_PORT',
-        'SMTP_USER',
-        'SMTP_PASS',
-        'SMTP_FROM',
+        'EMAIL_USER',
+        'EMAIL_PASSWORD',
         'PORT'
     ];
 
@@ -33,13 +29,6 @@ export function validateEnvironment() {
     const jwtSecret = process.env.JWT_SECRET as string;
     if (jwtSecret.length < 32) {
         console.error('error: JWT_SECRET must be at least 32 characters long');
-        process.exit(1);
-    }
-
-    // Validate SMTP_PORT is a number
-    const smtpPort = parseInt(process.env.SMTP_PORT as string);
-    if (isNaN(smtpPort)) {
-        console.error('error: SMTP_PORT must be a valid number');
         process.exit(1);
     }
 

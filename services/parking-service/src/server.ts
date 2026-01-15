@@ -1,4 +1,4 @@
-import "dotenv/config";
+import "dotenv/config.js";
 import { Server } from "http";
 import app from "./app.js";
 import prisma from "./config/prisma.js";
@@ -18,7 +18,9 @@ CronService.start();
 const server: Server = app.listen(PORT, () => {
     console.log(`\n[${SERVICE_NAME}] parking service running on port ${PORT}`);
     console.log(
-        `[${SERVICE_NAME}] environment: ${process.env.NODE_ENV || "development"}`
+        `[${SERVICE_NAME}] environment: ${
+            process.env.NODE_ENV || "development"
+        }`
     );
     console.log(`[${SERVICE_NAME}] health: http://localhost:${PORT}/health`);
     console.log(
