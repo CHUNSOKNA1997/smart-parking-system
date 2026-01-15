@@ -34,28 +34,36 @@ Create a `.env` file in each service directory if they don't exist.
 **`services/auth-service/.env`**
 ```env
 PORT=3001
-# Update with your DB credentials
-DATABASE_URL="postgresql://postgres:password@localhost:5432/auth_db?schema=public"
+DATABASE_URL="postgresql://postgres:password@localhost:5432/auth_db"
 JWT_SECRET="super-secret-key"
+EMAIL_USER=your-email@gmail.com
+EMAIL_PASSWORD=your-app-password
+EMAIL_FROM=Smart Parking <noreply@smartparking.com>
+CORS_ORIGIN=http://localhost:8080,http://localhost:3000
 ```
 
 **`services/parking-service/.env`**
 ```env
 PORT=3002
-DATABASE_URL="postgresql://postgres:password@localhost:5432/parking_db?schema=public"
-JWT_SECRET="super-secret-key"
-AUTH_SERVICE_URL="http://localhost:3001"
+DATABASE_URL="postgresql://postgres:password@localhost:5432/parking_db"
+AUTH_SERVICE_URL=http://localhost:3001
+IOT_API_KEY=your-iot-api-key-here
+CORS_ORIGIN=http://localhost:8080,http://localhost:3000
 ```
 
 **`services/payment-service/.env`**
 ```env
 PORT=3003
-DATABASE_URL="postgresql://postgres:password@localhost:5432/payment_db?schema=public"
+DATABASE_URL="postgresql://postgres:password@localhost:5432/payment_db"
 JWT_SECRET="super-secret-key"
-# ABA PayWay Config
-ABA_PAYWAY_API_URL=https://checkout-sandbox.payway.com.kh/api/payment-gateway/v1/payments/purchase
-ABA_PAYWAY_MERCHANT_ID=your_merchant_id
-ABA_PAYWAY_API_KEY=your_api_key
+# PayWay Config
+PAYWAY_MERCHANT_ID=your_merchant_id
+PAYWAY_API_KEY=your_api_key
+PAYWAY_GENERATE_QR_URL=https://checkout-sandbox.payway.com.kh/api/payment-gateway/v1/payments/purchase
+PAYWAY_WEBHOOK_BASE_URL=
+PARKING_SERVICE_URL=http://localhost:3002
+BOOKING_SERVICE_URL=http://localhost:3002
+CORS_ORIGIN=http://localhost:8080,http://localhost:3000
 ```
 
 ### 3. Run Everything
