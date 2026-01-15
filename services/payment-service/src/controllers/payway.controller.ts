@@ -1,13 +1,13 @@
 /**
  * PayWay Controller
- * 
+ *
  * This controller handles HTTP requests from the mobile app.
  * It's the "middleman" between the mobile app and our PayWay service.
- * 
+ *
  * ENDPOINTS:
  * 1. GET /api/v1/payments/:paymentId/status - Check payment status
  * 2. POST /api/v1/payments/webhook/payway - Receive webhook from PayWay
- * 
+ *
  * FLOW:
  * Mobile App → Controller → Service → PayWay API
  */
@@ -18,27 +18,28 @@ import prisma from "../config/prisma.js";
 import axios from "axios";
 import { PaymentStatus } from "@prisma/client";
 import { PayWayUtils } from "../utils/payway.utils.js";
+import { blockchainService } from "../blockchain/blockchain.service.js";
 
 /**
  * PayWay Controller Class
- * 
+ *
  * Handles all PayWay-related HTTP requests
  */
 export class PayWayController {
     /**
      * Check Payment Status
-     * 
+     *
      * ENDPOINT: GET /api/v1/payments/:paymentId/status
-     * 
+     *
      * WHAT IT DOES:
      * Mobile app polls this endpoint to check if payment is completed.
      * Returns current payment status: PENDING, PAID, FAILED, EXPIRED
-     * 
+     *
      * WHY POLLING?
      * - Webhook might be delayed
      * - Gives instant feedback to user
      * - Mobile app checks every 3 seconds
-     * 
+     *
      * RESPONSE:
      * {
      *   "success": true,
@@ -56,7 +57,9 @@ export class PayWayController {
             const { paymentId } = req.params;
             const userId = req.user?.userId;
 
-            console.log(`[payway controller] Checking status for payment: ${paymentId}`);
+            console.log(
+                `[payway controller] Checking status for payment: ${paymentId}`
+            );
 
             // Get payment from database
             const payment = await prisma.transaction.findUnique({
@@ -108,7 +111,8 @@ export class PayWayController {
                         } catch (bookingError: any) {
                             console.error(
                                 "[payway controller] Failed to cancel booking:",
-                                bookingError.response?.data || bookingError.message
+                                bookingError.response?.data ||
+                                    bookingError.message
                             );
                         }
                     }
@@ -137,9 +141,9 @@ export class PayWayController {
 
     /**
      * Handle Webhook from PayWay
-     * 
+     *
      * ENDPOINT: POST /api/v1/payments/webhook/payway
-     * 
+     *
      * WHAT IT DOES:
      * 1. Receives payment notification from PayWay
      * 2. Verifies HMAC signature (SECURITY!)
@@ -147,12 +151,12 @@ export class PayWayController {
      * 4. Updates booking status to CONFIRMED
      * 5. Updates parking spot to OCCUPIED
      * 6. Always responds 200 OK (so PayWay doesn't retry)
-     * 
+     *
      * WHEN CALLED:
      * - When user completes payment in banking app
      * - Usually 1-5 seconds after payment
      * - Real-time notification from PayWay
-     * 
+     *
      * WEBHOOK PAYLOAD:
      * {
      *   "req_time": "20240103143000",
@@ -164,8 +168,8 @@ export class PayWayController {
      *   "payment_option": "abapay_khqr",
      *   "hash": "abc123def456..."  // HMAC signature
      * }
-     * 
-     * IMPORTANT: 
+     *
+     * IMPORTANT:
      * - No authentication required (public endpoint)
      * - But MUST verify signature!
      * - Always return 200 OK (even if error)
@@ -173,15 +177,21 @@ export class PayWayController {
     async handleWebhook(req: Request, res: Response): Promise<void> {
         try {
             console.log("[payway webhook] Received webhook from PayWay");
-            console.log("[payway webhook] Payload:", JSON.stringify(req.body, null, 2));
+            console.log(
+                "[payway webhook] Payload:",
+                JSON.stringify(req.body, null, 2)
+            );
 
             const payload = req.body;
             const receivedHash = payload.hash;
 
             // Step 1: Verify signature (CRITICAL FOR SECURITY!)
             console.log("[payway webhook] Verifying webhook signature...");
-            console.log("[payway webhook] Received hash:", receivedHash || 'No hash provided');
-            
+            console.log(
+                "[payway webhook] Received hash:",
+                receivedHash || "No hash provided"
+            );
+
             const isValid = PayWayUtils.verifyWebhookSignature(
                 payload,
                 receivedHash,
@@ -189,12 +199,14 @@ export class PayWayController {
             );
 
             if (!isValid) {
-                console.error("[payway webhook] security warning: invalid signature! Possible fraud attempt!");
+                console.error(
+                    "[payway webhook] security warning: invalid signature! Possible fraud attempt!"
+                );
                 console.error("[payway webhook] Payload:", payload);
                 // Still return 200 to prevent retries
-                res.status(200).json({ 
-                    success: false, 
-                    error: "Invalid signature" 
+                res.status(200).json({
+                    success: false,
+                    error: "Invalid signature",
                 });
                 return;
             }
@@ -210,11 +222,13 @@ export class PayWayController {
             });
 
             if (!payment) {
-                console.error(`[payway webhook] Payment not found for tran_id: ${tran_id}`);
+                console.error(
+                    `[payway webhook] Payment not found for tran_id: ${tran_id}`
+                );
                 // Still return 200 (maybe payment was deleted)
-                res.status(200).json({ 
-                    success: false, 
-                    error: "Payment not found" 
+                res.status(200).json({
+                    success: false,
+                    error: "Payment not found",
                 });
                 return;
             }
@@ -223,18 +237,22 @@ export class PayWayController {
 
             // Step 4: Check if already processed (idempotency)
             if (payment.status === PaymentStatus.PAID) {
-                console.log("[payway webhook] Payment already processed, skipping");
-                res.status(200).json({ 
-                    success: true, 
-                    message: "Already processed" 
+                console.log(
+                    "[payway webhook] Payment already processed, skipping"
+                );
+                res.status(200).json({
+                    success: true,
+                    message: "Already processed",
                 });
                 return;
             }
 
             // Step 5: Check payment status from webhook
             // PayWay can send status as number (0) or string ("0" or "success")
-            console.log(`[payway webhook] Checking status field: "${status}" (type: ${typeof status})`);
-            
+            console.log(
+                `[payway webhook] Checking status field: "${status}" (type: ${typeof status})`
+            );
+
             if (status === 0 || status === "0" || status === "success") {
                 console.log(`[payway webhook] Payment successful: ${tran_id}`);
 
@@ -261,11 +279,71 @@ export class PayWayController {
                     },
                 });
 
-                console.log(`[payway webhook] Payment marked as PAID: ${payment.id}`);
+                console.log(
+                    `[payway webhook] Payment marked as PAID: ${payment.id}`
+                );
+
+                // Step 6.5: Record payment on blockchain
+                if (blockchainService.isReady()) {
+                    console.log(
+                        `[payway webhook] Recording payment on blockchain...`
+                    );
+                    try {
+                        const blockchainResult =
+                            await blockchainService.recordPayment(
+                                payment.id,
+                                payment.userId,
+                                Number(payment.amount),
+                                payment.currency
+                            );
+
+                        if (blockchainResult.success) {
+                            // Update payment with blockchain info
+                            await prisma.transaction.update({
+                                where: { id: payment.id },
+                                data: {
+                                    blockchainTxHash:
+                                        blockchainResult.transactionHash,
+                                    blockchainBlock:
+                                        blockchainResult.blockNumber,
+                                    blockchainStatus: "CONFIRMED",
+                                },
+                            });
+                            console.log(
+                                `[payway webhook] Payment recorded on blockchain: ${blockchainResult.transactionHash}`
+                            );
+                        } else {
+                            console.error(
+                                `[payway webhook] Blockchain recording failed: ${blockchainResult.error}`
+                            );
+                            await prisma.transaction.update({
+                                where: { id: payment.id },
+                                data: { blockchainStatus: "FAILED" },
+                            });
+                        }
+                    } catch (blockchainError: any) {
+                        console.error(
+                            "[payway webhook] Blockchain error:",
+                            blockchainError.message
+                        );
+                        await prisma.transaction.update({
+                            where: { id: payment.id },
+                            data: { blockchainStatus: "FAILED" },
+                        });
+                    }
+                } else {
+                    console.log(
+                        `[payway webhook] Blockchain service not ready, skipping...`
+                    );
+                }
 
                 if (payment.bookingId) {
-                    console.log(`[payway webhook] Booking to confirm: ${payment.bookingId}`);
-                    const parkingServiceUrl = process.env.PARKING_SERVICE_URL || "http://localhost:3002";
+                    console.log(
+                        `[payway webhook] Booking to confirm: ${payment.bookingId}`
+                    );
+                    const parkingServiceUrl =
+                        process.env.PARKING_SERVICE_URL ||
+                        "http://localhost:3002";
                     const bookingUpdateUrl = `${parkingServiceUrl}/api/v1/bookings/${payment.bookingId}/confirm-payment`;
                     try {
                         await axios.post(
@@ -281,7 +359,9 @@ export class PayWayController {
                                 },
                             }
                         );
-                        console.log(`[payway webhook] Booking ${payment.bookingId} updated successfully`);
+                        console.log(
+                            `[payway webhook] Booking ${payment.bookingId} updated successfully`
+                        );
                     } catch (bookingError: any) {
                         console.error(
                             "[payway webhook] Failed to update booking:",
@@ -294,28 +374,35 @@ export class PayWayController {
             } else {
                 // Payment failed
                 console.log(`[payway webhook] Payment FAILED: ${tran_id}`);
-                console.log(`[payway webhook] Status received: "${status}" (expected "0" or "success")`);
-                console.log(`[payway webhook] Full webhook data:`, JSON.stringify(payload, null, 2));
+                console.log(
+                    `[payway webhook] Status received: "${status}" (expected "0" or "success")`
+                );
+                console.log(
+                    `[payway webhook] Full webhook data:`,
+                    JSON.stringify(payload, null, 2)
+                );
 
                 await prisma.transaction.update({
                     where: { id: payment.id },
                     data: { status: PaymentStatus.FAILED },
                 });
-                
-                console.log(`[payway webhook] Payment marked as FAILED in database`);
+
+                console.log(
+                    `[payway webhook] Payment marked as FAILED in database`
+                );
             }
 
             // Step 9: Always return 200 OK
-            res.status(200).json({ 
+            res.status(200).json({
                 success: true,
-                message: "Webhook processed"
+                message: "Webhook processed",
             });
         } catch (error: any) {
             console.error("[payway webhook] Error processing webhook:", error);
             // Still return 200 to prevent PayWay from retrying
-            res.status(200).json({ 
-                success: false, 
-                error: error.message 
+            res.status(200).json({
+                success: false,
+                error: error.message,
             });
         }
     }

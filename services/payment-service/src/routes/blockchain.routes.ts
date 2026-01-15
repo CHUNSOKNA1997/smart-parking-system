@@ -20,7 +20,7 @@ const router = Router();
  *       200:
  *         description: Blockchain service status
  */
-router.get("/status", async (req: Request, res: Response) => {
+router.get("/blockchain/status", async (req: Request, res: Response) => {
     try {
         const status = await blockchainService.getStatus();
         res.json({
@@ -119,43 +119,46 @@ router.get(
  *       200:
  *         description: Transaction verification result
  */
-router.get("/verify/:txHash", async (req: Request, res: Response) => {
-    try {
-        const { txHash } = req.params;
+router.get(
+    "/blockchain/verify/:txHash",
+    async (req: Request, res: Response) => {
+        try {
+            const { txHash } = req.params;
 
-        // Find payment by blockchain tx hash
-        const payment = await prisma.transaction.findFirst({
-            where: { blockchainTxHash: txHash },
-        });
+            // Find payment by blockchain tx hash
+            const payment = await prisma.transaction.findFirst({
+                where: { blockchainTxHash: txHash },
+            });
 
-        if (!payment) {
-            return res.status(404).json({
+            if (!payment) {
+                return res.status(404).json({
+                    success: false,
+                    message: "No payment found with this transaction hash",
+                });
+            }
+
+            // Verify on blockchain
+            const verified = await blockchainService.verifyPayment(payment.id);
+            const onChainData = await blockchainService.getPayment(payment.id);
+
+            res.json({
+                success: true,
+                data: {
+                    paymentId: payment.id,
+                    transactionHash: txHash,
+                    verified: verified,
+                    onChainData: onChainData,
+                    recordedAt: payment.createdAt,
+                },
+            });
+        } catch (error: any) {
+            res.status(500).json({
                 success: false,
-                message: "No payment found with this transaction hash",
+                message: "Failed to verify transaction",
+                error: error.message,
             });
         }
-
-        // Verify on blockchain
-        const verified = await blockchainService.verifyPayment(payment.id);
-        const onChainData = await blockchainService.getPayment(payment.id);
-
-        res.json({
-            success: true,
-            data: {
-                paymentId: payment.id,
-                transactionHash: txHash,
-                verified: verified,
-                onChainData: onChainData,
-                recordedAt: payment.createdAt,
-            },
-        });
-    } catch (error: any) {
-        res.status(500).json({
-            success: false,
-            message: "Failed to verify transaction",
-            error: error.message,
-        });
     }
-});
+);
 
 export default router;
