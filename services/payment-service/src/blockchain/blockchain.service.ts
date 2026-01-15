@@ -6,6 +6,11 @@
 import { ethers, Contract, Wallet, JsonRpcProvider } from "ethers";
 import * as fs from "fs";
 import * as path from "path";
+import { fileURLToPath } from "url";
+
+// ES module compatible __dirname
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 // ABI will be generated after compiling the contract
 let PaymentRecordABI: any[] = [];
