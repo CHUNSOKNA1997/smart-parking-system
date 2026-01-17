@@ -1,6 +1,6 @@
-# Smart Parking System Backend - Quick Start
+# Smart Parking API - Quick Start
 
-This is the backend for the Smart Parking System, built with Microservices (Auth, Payment, Parking + Gateway).
+This is the api for the Smart Parking, built with Microservices (Auth, Payment, Parking + Gateway).
 
 ## How to Start
 
